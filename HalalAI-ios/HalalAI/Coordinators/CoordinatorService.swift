@@ -7,17 +7,23 @@
 
 import SwiftUI
 
-class CoordinatorService: ObservableObject {
+final class CoordinatorService: ObservableObject {
     static let shared = CoordinatorService()
     
+    static func createForTesting() -> CoordinatorService {
+        return CoordinatorService()
+    }
+    
     @Published var path: [Step] = []
-    @Published var chatTabPath: [Step] = []
-    @Published var settingsTabPath: [Step] = []
-    @Published var currentSelectedTab: TabBarItem = .chat
-
+    var chatTabPath: [Step] = []
+    var settingsTabPath: [Step] = []
+    
+    var currentSelectedTab: TabBarItem = .chat
     var currentStep: Step?
     
     private init() {}
+    
+    private init(forTesting: Bool) {}
     
     enum Step: Hashable, Equatable {
         case Chat(_ val: ChatCoordinator)
@@ -34,8 +40,10 @@ class CoordinatorService: ObservableObject {
     }
     
     func nextStep(step: Step) {
-        currentStep = step
-        path.append(step)
+        Task { @MainActor in
+            currentStep = step
+            path.append(step)
+        }
     }
     
     func selectTab(item: TabBarItem) {
@@ -69,8 +77,10 @@ class CoordinatorService: ObservableObject {
     }
     
     func toRoot() {
-        currentStep = .Chat(.chat)
-        path = []
+        Task { @MainActor in
+            currentStep = nil
+            path = []
+        }
     }
     
     // MARK: - Private

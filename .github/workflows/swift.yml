@@ -21,18 +21,18 @@ jobs:
 
     - name: Build iOS project
       run: |
-        xcodebuild -project HalalAI.xcodeproj \
+        xcodebuild -project HalalAI-ios/HalalAI.xcodeproj \
            -scheme HalalAI \
            -sdk iphonesimulator \
-           -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+           -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
            clean build
 
     - name: Run tests
       run: |
         xcodebuild test \
-           -project HalalAI.xcodeproj \
+           -project HalalAI-ios/HalalAI.xcodeproj \
            -scheme HalalAI \
            -sdk iphonesimulator \
-           -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+           -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
            -enableCodeCoverage YES \
            | xcpretty

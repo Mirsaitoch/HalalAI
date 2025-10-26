@@ -52,23 +52,33 @@ final class CoordinatorService: ObservableObject {
             case .chat:
                 if currentSelectedTab == .chat {
                     print("Значение на вкладке .chat сброшено")
-                    path = []
-                    chatTabPath = []
+                    path = [.Chat(.chat)]
+                    chatTabPath = [.Chat(.chat)]
                     return
                 } else {
                     savePreviousTabPath()
-                    path = chatTabPath
+                    if chatTabPath.isEmpty, path.isEmpty {
+                        path = [.Chat(.chat)]
+                    } else {
+                        path = chatTabPath
+                    }
+                    print("Нажата вкладка Chat, path: \(path)")
                 }
                 currentSelectedTab = .chat
             case .settings:
                 if currentSelectedTab == .settings {
                     print("Значение на вкладке .settings сброшено")
-                    path = []
-                    settingsTabPath = []
+                    path = [.Settings(.settings)]
+                    settingsTabPath = [.Settings(.settings)]
                     return
                 } else {
                     savePreviousTabPath()
-                    path = settingsTabPath
+                    if settingsTabPath.isEmpty || path.isEmpty {
+                        path = [.Settings(.settings)]
+                    } else {
+                        path = settingsTabPath
+                    }
+                    print("Нажата вкладка Setting, path: \(path)")
                 }
                 currentSelectedTab = .settings
             }
@@ -76,12 +86,12 @@ final class CoordinatorService: ObservableObject {
         }
     }
     
-    func toRoot() {
-        Task { @MainActor in
-            currentStep = nil
-            path = []
-        }
-    }
+//    func toRoot() {
+//        Task { @MainActor in
+//            currentStep = nil
+//            path = []
+//        }
+//    }
     
     // MARK: - Private
     

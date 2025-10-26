@@ -43,9 +43,10 @@ struct TabBarView: View {
             }
             .padding()
             .background {
-                RoundedRectangle(cornerRadius: 30)
-                    .fill(Color.red.opacity(0.7))
+                RoundedRectangle(cornerRadius: 100)
+                    .fill(Color.tabBar)
             }
+            
             Spacer()
         }
     }
@@ -59,8 +60,9 @@ struct SelectedIconModifier: ViewModifier {
             .scaleEffect(tabIsSelected ? 1.2 : 1.0)
             .padding(10)
             .background {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(tabIsSelected ? .white : .clear)
+                RoundedRectangle(cornerRadius: 100)
+                    .fill(tabIsSelected ? Color.greenForegroung : .clear)
+                    .frame(width: 70, height: 50)
             }
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: tabIsSelected)
     }

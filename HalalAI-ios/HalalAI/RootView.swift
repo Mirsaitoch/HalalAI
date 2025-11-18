@@ -9,10 +9,8 @@ import SwiftUI
 
 struct RootView: View {
     var body: some View {
-        ZStack {
-            RouterView {
-                MainMenu()
-            }
+        RouterView {
+            HomeView()
         }
     }
 }

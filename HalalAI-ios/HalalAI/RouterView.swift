@@ -28,7 +28,7 @@ struct RouterView<Content: View>: View {
             TabBarView()
         }
         .onAppear {
-            coordinator.selectTab(item: .chat)
+            coordinator.selectTab(item: .home)
         }
     }
 }

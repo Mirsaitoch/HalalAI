@@ -11,7 +11,10 @@ import SwiftUI
 struct HalalAIApp: App {
     var body: some Scene {
         WindowGroup {
-            RootView()
+            ZStack {
+                Color.greenBackground.ignoresSafeArea()
+                RootView()
+            }
         }
     }
 }

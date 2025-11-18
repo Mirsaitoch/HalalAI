@@ -15,6 +15,7 @@ final class CoordinatorService: ObservableObject {
     }
     
     @Published var path: [Step] = []
+    var homeTabPath: [Step] = []
     var chatTabPath: [Step] = []
     var settingsTabPath: [Step] = []
     
@@ -28,12 +29,14 @@ final class CoordinatorService: ObservableObject {
     enum Step: Hashable, Equatable {
         case Chat(_ val: ChatCoordinator)
         case Settings(_ val: SettingsCoordinator)
+        case Home(_ val: HomeCoordinator)
         
         var view: some View {
             Group {
                 switch self {
                 case .Chat(let value): value.view
                 case .Settings(let value): value.view
+                case .Home(let value): value.view
                 }
             }
         }
@@ -57,7 +60,7 @@ final class CoordinatorService: ObservableObject {
                     return
                 } else {
                     savePreviousTabPath()
-                    if chatTabPath.isEmpty, path.isEmpty {
+                    if chatTabPath.isEmpty || path.isEmpty {
                         path = [.Chat(.chat)]
                     } else {
                         path = chatTabPath
@@ -81,8 +84,25 @@ final class CoordinatorService: ObservableObject {
                     print("Нажата вкладка Setting, path: \(path)")
                 }
                 currentSelectedTab = .settings
+            case .home:
+                if currentSelectedTab == .home {
+                    print("Значение на вкладке .home сброшено")
+                    path = [.Home(.main)]
+                    homeTabPath = [.Home(.main)]
+                    return
+                } else {
+                    savePreviousTabPath()
+                    if homeTabPath.isEmpty || path.isEmpty {
+                        path = [.Home(.main)]
+                    } else {
+                        path = homeTabPath
+                    }
+                    print("Нажата вкладка Main, path: \(path)")
+                }
+                currentSelectedTab = .home
             }
             print("Выбрана вкладка \(currentSelectedTab)")
+            print("path: \(path)")
         }
     }
     
@@ -101,6 +121,8 @@ final class CoordinatorService: ObservableObject {
             chatTabPath = path
         case .settings:
             settingsTabPath = path
+        case .home:
+            homeTabPath = path
         }
     }
 }

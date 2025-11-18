@@ -6,6 +6,7 @@
 //
 
 enum TabBarItem {
+    case home
     case chat
     case settings
 }

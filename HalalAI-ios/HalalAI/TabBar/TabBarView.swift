@@ -12,8 +12,19 @@ struct TabBarView: View {
     
     var body: some View {
         HStack {
-            Spacer()
             HStack {
+                Spacer()
+                Image(systemName: "house.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 30, height: 30)
+                    .onTapGesture {
+                        print("Нажата вкладка .home")
+                        withAnimation {
+                            coordinator.selectTab(item: .home)
+                        }
+                    }
+                    .modifier(SelectedIconModifier(tabIsSelected: coordinator.currentSelectedTab == .home))
                 Spacer()
                 Image(systemName: "brain.head.profile.fill")
                     .resizable()
@@ -41,13 +52,11 @@ struct TabBarView: View {
 
                 Spacer()
             }
-            .padding()
             .background {
                 RoundedRectangle(cornerRadius: 100)
                     .fill(Color.tabBar)
             }
-            
-            Spacer()
+            .padding(.horizontal, 15)
         }
     }
 }
@@ -65,6 +74,7 @@ struct SelectedIconModifier: ViewModifier {
                     .frame(width: 70, height: 50)
             }
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: tabIsSelected)
+            .padding(.vertical, 12)
     }
 }
 

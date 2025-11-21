@@ -17,23 +17,19 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.halalai.backend.dto.ChatResponse;
-import com.halalai.backend.model.ChatMessage;
 
 @Service
 public class LLMService {
 
     private final RestTemplate restTemplate;
-    private final ChatHistoryService chatHistoryService;
     private final String llmServiceUrl;
     private final int maxTokens;
 
     public LLMService(
             RestTemplate restTemplate,
-            ChatHistoryService chatHistoryService,
             @Value("${llm.service.url:http://localhost:8000}") String llmServiceUrl,
             @Value("${llm.service.max-tokens:1024}") int maxTokens) {
         this.restTemplate = restTemplate;
-        this.chatHistoryService = chatHistoryService;
         this.llmServiceUrl = llmServiceUrl;
         this.maxTokens = maxTokens;
         
@@ -41,31 +37,41 @@ public class LLMService {
         System.out.println("URL: " + llmServiceUrl);
     }
 
-    public ChatResponse generateCompletion(String prompt, jakarta.servlet.http.HttpSession session) {
+    public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String prompt) {
         System.out.println("\n========== ЗАПРОС К LLM СЕРВИСУ ==========");
-        System.out.println("Запрос пользователя: " + prompt);
-        System.out.println("Session ID: " + (session != null ? session.getId() : "не создана"));
-        
-        // Получаем историю разговора (без текущего запроса)
-        List<ChatMessage> history = chatHistoryService.getHistory(session);
-        System.out.println("История разговора: " + history.size() + " сообщений");
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Accept-Charset", "UTF-8");
 
-        // Формируем запрос к Python LLM сервису с историей
+        // Формируем запрос к Python LLM сервису
         List<Map<String, String>> messages = new ArrayList<>();
         
-        // Добавляем историю сообщений
-        for (ChatMessage msg : history) {
-            messages.add(Map.of("role", msg.role(), "content", msg.content()));
+        // Если клиент отправил историю, используем её
+        if (clientMessages != null && !clientMessages.isEmpty()) {
+            messages.addAll(clientMessages);
+            System.out.println("Получена история от клиента: " + clientMessages.size() + " сообщений");
+        } else if (prompt != null) {
+            // Обратная совместимость: если нет истории, но есть prompt
+            // Добавляем системный промпт
+            String systemPrompt = "Ты — HalalAI, умный исламский ассистент, специализирующийся на вопросах халяль, исламских принципах, Коране и исламском образе жизни. " +
+                    "Твоя задача — давать точные, полезные и основанные на исламских источниках ответы. " +
+                    "Всегда отвечай на русском языке, используй исламские термины (халяль, харам, сунна и т.д.) и будь уважительным и терпеливым. " +
+                    "Если вопрос не связан с исламом, вежливо направь разговор в нужное русло. " +
+                    "Отвечай кратко, но информативно!!! Отвечай без markdown. Если assistant уже здоровался, то еще раз здороваться не нужно, продалжай диалог";
+            messages.add(Map.of("role", "system", "content", systemPrompt));
+            messages.add(Map.of("role", "user", "content", prompt));
+            System.out.println("Используется простой prompt (обратная совместимость)");
+        } else {
+            throw new RuntimeException("Не указаны ни messages, ни prompt");
         }
         
-        // Добавляем текущий запрос пользователя
-        messages.add(Map.of("role", "user", "content", prompt));
-        
-        // Сохраняем запрос пользователя в историю (после формирования messages)
-        chatHistoryService.addUserMessage(session, prompt);
+        // Системный промпт должен приходить от клиента в первом сообщении
+        // Если его нет - это ошибка конфигурации клиента, но не критично
+        boolean hasSystem = messages.stream().anyMatch(msg -> "system".equals(msg.get("role")));
+        if (!hasSystem) {
+            System.out.println("⚠️  Внимание: системный промпт отсутствует в истории от клиента");
+        }
         
         Map<String, Object> requestBody = Map.of(
                 "messages", messages,
@@ -80,8 +86,13 @@ public class LLMService {
             System.out.println("Тело запроса: messages=" + messages.size() + ", max_tokens=" + maxTokens);
             for (int i = 0; i < messages.size(); i++) {
                 Map<String, String> msg = messages.get(i);
-                System.out.println("  Message " + i + ": role=" + msg.get("role") + ", content=" + 
-                    (msg.get("content").length() > 100 ? msg.get("content").substring(0, 100) + "..." : msg.get("content")));
+                String content = msg.get("content");
+                String preview = content != null && content.length() > 100 ? content.substring(0, 100) + "..." : content;
+                // Выводим только первые 50 символов для системного промпта, чтобы не засорять логи
+                if ("system".equals(msg.get("role")) && content != null && content.length() > 50) {
+                    preview = content.substring(0, 50) + "... (системный промпт, обрезан)";
+                }
+                System.out.println("  Message " + i + ": role=" + msg.get("role") + ", content=" + preview);
             }
             
             ResponseEntity<JsonNode> responseEntity = restTemplate.exchange(
@@ -119,9 +130,6 @@ public class LLMService {
                 System.out.println("⚠️  Ответ пустой!");
             }
             System.out.println("========== КОНЕЦ ОТВЕТА ==========\n");
-
-            // Сохраняем ответ ассистента в историю
-            chatHistoryService.addAssistantMessage(session, reply);
 
             return new ChatResponse(reply);
             

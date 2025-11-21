@@ -74,15 +74,7 @@ struct ChatView: View {
                         }) {
                             Label("Настройки модели", systemImage: "gearshape")
                         }
-                        
-                        Button(action: {
-                            // TODO: Открыть историю
-                        }) {
-                            Label("История", systemImage: "clock")
-                        }
-                        
-                        Divider()
-                        
+                                                
                         Button(action: {
                             chatService.clearChat()
                         }) {
@@ -94,6 +86,9 @@ struct ChatView: View {
                 }
             }
             .keyboardAdaptive()
+            .background {
+                Color.greenBackground.ignoresSafeArea()
+            }
         }
     }
     

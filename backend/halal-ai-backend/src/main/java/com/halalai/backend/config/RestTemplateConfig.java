@@ -14,8 +14,8 @@ public class RestTemplateConfig {
         // Устанавливаем таймауты для запросов к LLM сервису
         // Генерация может занять время, поэтому ставим большой таймаут
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(5000); // 5 секунд на подключение
-        factory.setReadTimeout(300000); // 5 минут на чтение (генерация может быть долгой)
+        factory.setConnectTimeout(10000); // 10 секунд на подключение
+        factory.setReadTimeout(600000); // 10 минут на чтение (генерация может быть очень долгой)
         
         return builder
                 .requestFactory(() -> factory)

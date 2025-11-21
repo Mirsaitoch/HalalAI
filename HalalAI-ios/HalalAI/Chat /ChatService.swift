@@ -17,77 +17,244 @@ class ChatService: ObservableObject {
     @Published var connectionState: ConnectionState = .connected
     
     private var cancellables = Set<AnyCancellable>()
+    private var isSending = false  // Защита от спама
+    private var systemPrompt: String? = nil  // Системный промпт из конфига
+    private var configLoaded = false  // Флаг загрузки конфига
     
-    private init() {}
+    private let backendURL: String = {
+        #if DEBUG
+        return "http://localhost:8080"
+        #else
+        // TODO: Заменить на production URL
+        return "https://your-production-url.com"
+        #endif
+    }()
+    
+    // URLSession для запросов
+    private lazy var urlSession: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        return URLSession(configuration: configuration)
+    }()
+    
+    private init() {
+        // Загружаем конфиг при инициализации
+        Task {
+            await loadConfig()
+        }
+    }
     
     // MARK: - Public Methods
     
     func sendMessage(_ text: String) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
-        // Добавляем сообщение пользователя
+        // Защита от спама: не позволяем отправлять сообщения подряд
+        guard !isSending else {
+            print("⚠️ Попытка отправить сообщение во время обработки предыдущего")
+            return
+        }
+        
+        // Ждем загрузки конфига перед отправкой первого сообщения
+        if !configLoaded {
+            chatState = .typing
+            connectionState = .connecting
+            Task {
+                await loadConfig()
+                // После загрузки конфига отправляем сообщение
+                let userMessage = ChatMessage(role: .user, text: text)
+                // Добавляем сообщение пользователя сразу, чтобы оно отображалось
+                messages.append(userMessage)
+                await sendRequestToBackend(userMessage: userMessage, isRetry: false)
+            }
+            return
+        }
+        
+        // Создаем сообщение пользователя
         let userMessage = ChatMessage(role: .user, text: text)
+        
+        // Добавляем сообщение пользователя сразу, чтобы оно сразу отображалось в чате
         messages.append(userMessage)
         
         // Устанавливаем состояние "печатает"
         chatState = .typing
+        connectionState = .connecting
+        isSending = true
         
-        // Имитируем отправку запроса к API
+        // Отправляем запрос к бекенду
         Task {
-            await simulateAIResponse(for: text)
+            await sendRequestToBackend(userMessage: userMessage, isRetry: false)
         }
     }
     
     func retryLastMessage() {
-        guard let lastUserMessage = messages.last(where: { $0.role == .user }) else { return }
+        guard !isSending else { return }
         
-        // Удаляем последнее сообщение AI (если есть)
-        if let lastAIMessage = messages.last, lastAIMessage.role == .assistant {
-            messages.removeLast()
-        }
+        // Находим последнее сообщение пользователя и ответ AI
+        guard let lastUserIndex = messages.lastIndex(where: { $0.role == .user }) else { return }
+        
+        // Удаляем все сообщения после последнего вопроса пользователя (включая ответ AI)
+        let lastUserMessage = messages[lastUserIndex]
+        messages.removeSubrange((lastUserIndex + 1)..<messages.count)
         
         chatState = .typing
+        connectionState = .connecting
+        isSending = true
         
         Task {
-            await simulateAIResponse(for: lastUserMessage.text)
+            await sendRequestToBackend(userMessage: lastUserMessage, isRetry: true)
         }
     }
     
     func clearChat() {
         messages.removeAll()
         chatState = .idle
+        isSending = false
+        // Конфиг остается загруженным, системный промпт будет добавлен при следующем сообщении
     }
     
     // MARK: - Private Methods
     
-    private func simulateAIResponse(for userText: String) async {
-        // Имитируем задержку сети
-        try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 секунды
+    private func loadConfig() async {
+        guard let url = URL(string: "\(backendURL)/api/config") else {
+            print("⚠️ Неверный URL для загрузки конфига")
+            configLoaded = true  // Помечаем как загруженный, чтобы не блокировать
+            return
+        }
         
-        // Генерируем ответ в зависимости от введенного текста
-        let response = generateAIResponse(for: userText)
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 10
+        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Accept")
         
-        let aiMessage = ChatMessage(role: .assistant, text: response)
+        do {
+            let (data, response) = try await urlSession.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                print("⚠️ Ошибка загрузки конфига")
+                configLoaded = true
+                return
+            }
+            
+            // Декодируем JSON с правильной кодировкой UTF-8
+            guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                  let prompt = json["systemPrompt"] as? String else {
+                print("⚠️ Неверный формат конфига")
+                // Пробуем декодировать как UTF-8 строку для отладки
+                if let debugString = String(data: data, encoding: .utf8) {
+                    print("Полученные данные: \(debugString.prefix(200))")
+                }
+                configLoaded = true
+                return
+            }
+            
+            systemPrompt = prompt
+            configLoaded = true
+            print("✅ Конфиг загружен, системный промпт получен (длина: \(prompt.count) символов)")
+            
+        } catch {
+            print("⚠️ Ошибка при загрузке конфига: \(error.localizedDescription)")
+            configLoaded = true  // Помечаем как загруженный, чтобы не блокировать
+        }
+    }
+    
+    private func sendRequestToBackend(userMessage: ChatMessage, isRetry: Bool = false) async {
+        guard let url = URL(string: "\(backendURL)/api/chat") else {
+            await handleError("Неверный URL бекенда", userMessage: userMessage)
+            return
+        }
+        
+        // Формируем историю сообщений для отправки
+        var messagesToSend: [[String: String]] = []
+        
+        // Всегда добавляем системный промпт первым сообщением, если он загружен
+        if let prompt = systemPrompt, !prompt.isEmpty {
+            messagesToSend.append([
+                "role": "system",
+                "content": prompt
+            ])
+        }
+        
+        // Добавляем все существующие сообщения (включая только что добавленное сообщение пользователя)
+        for msg in messages {
+            messagesToSend.append([
+                "role": msg.role.rawValue,
+                "content": msg.text
+            ])
+        }
+        
+        // Формируем тело запроса
+        let requestBody: [String: Any] = [
+            "messages": messagesToSend
+        ]
+        
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
+            await handleError("Ошибка формирования запроса", userMessage: userMessage)
+            return
+        }
+        
+        // Создаем запрос
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Accept")
+        request.httpBody = jsonData
+        request.timeoutInterval = 300 // 5 минут для генерации ответа
+        
+        do {
+            connectionState = .connecting
+            
+            // Отправляем запрос
+            let (data, response) = try await urlSession.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                await handleError("Неверный ответ от сервера", userMessage: userMessage)
+                return
+            }
+            
+            // Проверяем статус ответа
+            guard httpResponse.statusCode == 200 else {
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Ошибка сервера"
+                await handleError("Ошибка сервера (\(httpResponse.statusCode)): \(errorMessage)", userMessage: userMessage)
+                return
+            }
+            
+            // Парсим ответ
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let reply = json["reply"] as? String else {
+                await handleError("Неверный формат ответа от сервера", userMessage: userMessage)
+                return
+            }
+            
+            // Успешный ответ: добавляем только ответ AI (сообщение пользователя уже в истории)
+            let aiMessage = ChatMessage(role: .assistant, text: reply)
         messages.append(aiMessage)
         
         chatState = .idle
+            connectionState = .connected
+            isSending = false
+            
+        } catch {
+            await handleError("Ошибка сети: \(error.localizedDescription)", userMessage: userMessage)
+        }
     }
     
-    private func generateAIResponse(for userText: String) -> String {
-        let lowercasedText = userText.lowercased()
+    private func handleError(_ message: String, userMessage: ChatMessage) async {
+        // При ошибке удаляем сообщение пользователя из истории (если оно было добавлено)
+        // чтобы оно не учитывалось в контексте при следующем запросе
+        if let index = messages.lastIndex(where: { $0.id == userMessage.id && $0.role == .user }) {
+            messages.remove(at: index)
+        }
         
-        if lowercasedText.contains("привет") || lowercasedText.contains("салам") {
-            return "Ассаламу алейкум! 👋\n\nЯ — HalalAI, ваш халяль-помощник. Готов ответить на ваши вопросы о халяль продуктах, брендах и исламских принципах питания.\n\nЧем могу помочь?"
-        } else if lowercasedText.contains("халяль") {
-            return "Халяль — это разрешенное в исламе. В контексте питания это означает продукты, которые соответствуют исламским принципам:\n\n• Мясо должно быть зарезано по исламским правилам\n• Не должно содержать алкоголь или свинину\n• Процесс производства должен соответствовать исламским нормам\n\nЕсть ли конкретные продукты, о которых хотите узнать?"
-        } else if lowercasedText.contains("мясо") {
-            return "Халяль мясо должно соответствовать следующим требованиям:\n\n• Животное должно быть зарезано мусульманином\n• При забое произносится «Бисмиллах»\n• Кровь должна быть полностью слита\n• Животное должно быть здоровым\n\nКакое именно мясо вас интересует?"
-        } else if lowercasedText.contains("молочн") {
-            return "Молочные продукты обычно халяль, если:\n\n• Не содержат алкогольных добавок\n• Не содержат свиных компонентов (желатин)\n• Произведены с соблюдением санитарных норм\n\nПроверяйте состав на наличие желатина животного происхождения."
-        } else if lowercasedText.contains("бренд") {
-            return "Популярные халяль бренды:\n\n• **Мясо**: «Халяль», «Ас-Салам»\n• **Молочные**: «Акбарс», «Простоквашино»\n• **Кондитерские**: «Бахетле», «Рахат»\n\nВсегда проверяйте сертификаты халяль на упаковке!"
-        } else {
-            return "Спасибо за ваш вопрос! 🤲\n\nЯ специализируюсь на вопросах халяль питания. Могу помочь с:\n\n• Определением халяль продуктов\n• Информацией о брендах\n• Исламскими принципами питания\n• Сертификацией продуктов\n\nЗадайте более конкретный вопрос, и я с радостью помогу!"
+        // Показываем ошибку пользователю
+        chatState = .error(message)
+        connectionState = .disconnected
+        isSending = false
+        
+        // Через 3 секунды возвращаемся в idle, чтобы можно было повторить
+        try? await Task.sleep(nanoseconds: 3_000_000_000)
+        if case .error = chatState {
+            chatState = .idle
         }
     }
 }

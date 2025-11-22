@@ -243,15 +243,9 @@ class ChatService: ObservableObject {
         let errorMessage = ChatMessage(role: .assistant, text: "У нас что-то сломалось, попробуйте позже или повторите попытку.")
         messages.append(errorMessage)
         
-        // Показываем ошибку пользователю
         chatState = .error(message)
         connectionState = .disconnected
         isSending = false
         
-        // Через 3 секунды возвращаемся в idle, чтобы можно было повторить
-        // try? await Task.sleep(nanoseconds: 3_000_000_000)
-        // if case .error = chatState {
-        //     chatState = .idle
-        // }
     }
 }

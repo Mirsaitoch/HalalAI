@@ -18,26 +18,44 @@ struct MessageBubble: View {
             }
             
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
-                Text(message.text)
-                    .font(.system(size: 16))
-                    .foregroundColor(message.role == .user ? .white : .primary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background {
-                        RoundedRectangle(cornerRadius: 18)
-                            .fill(message.role == .user ? Color.blue : Color.green.opacity(0.1))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 18)
-                                    .stroke(message.role == .user ? Color.clear : Color.green.opacity(0.3), lineWidth: 1)
-                            }
-                    }
-                    .contextMenu {
-                        Button(action: {
-                            UIPasteboard.general.string = message.text
-                        }) {
-                            Label("Копировать", systemImage: "doc.on.doc")
+                // Для сообщений ассистента используем markdown, для пользователя - обычный текст
+                if message.role == .assistant {
+                    messageTextView
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background {
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(Color.green.opacity(0.1))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 18)
+                                        .stroke(Color.green.opacity(0.3), lineWidth: 1)
+                                }
                         }
-                    }
+                        .contextMenu {
+                            Button(action: {
+                                UIPasteboard.general.string = message.text
+                            }) {
+                                Label("Копировать", systemImage: "doc.on.doc")
+                            }
+                        }
+                } else {
+                    Text(message.text)
+                        .font(.system(size: 16))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background {
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(Color.blue)
+                        }
+                        .contextMenu {
+                            Button(action: {
+                                UIPasteboard.general.string = message.text
+                            }) {
+                                Label("Копировать", systemImage: "doc.on.doc")
+                            }
+                        }
+                }
                 
                 Text(formatTime(message.date))
                     .font(.caption2)
@@ -62,6 +80,28 @@ struct MessageBubble: View {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+    
+    // MARK: - Markdown Support
+    
+    private var messageTextView: some View {
+        Text(parseMarkdown(message.text))
+            .font(.system(size: 16))
+            .foregroundColor(.primary)
+            .textSelection(.enabled)
+    }
+    
+    private func parseMarkdown(_ text: String) -> AttributedString {
+        do {
+            let options = AttributedString.MarkdownParsingOptions(
+                interpretedSyntax: .full,
+                failurePolicy: .returnPartiallyParsedIfPossible
+            )
+            let attributedString = try AttributedString(markdown: text, options: options)
+            return attributedString
+        } catch {
+            return AttributedString(text)
+        }
     }
 }
 

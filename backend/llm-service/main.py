@@ -16,7 +16,7 @@ app = FastAPI(title="LLM Service", version="1.0.0")
 model = None
 tokenizer = None
 model_device = torch.device("cpu")
-model_name = os.getenv("LLM_MODEL_NAME", "Qwen/Qwen3-4B-Instruct-2507")
+model_name = os.getenv("LLM_MODEL_NAME", "Qwen/Qwen3-1.7B")
 
 DEFAULT_SYSTEM_PROMPT = (
     "Ты — HalalAI, умный исламский ассистент, специализирующийся на вопросах халяль, "
@@ -77,14 +77,14 @@ def _limit_history_length(messages: List[Dict[str, str]]) -> List[Dict[str, str]
     """Ограничивает историю по количеству сообщений и длине в токенах."""
     if tokenizer is None or not messages:
         return messages
-    
+
     system_message = messages[0] if messages[0].get("role") == "system" else None
     history = messages[1:] if system_message else messages[:]
-    
+
     # Ограничиваем сначала по количеству сообщений
     if len(history) > MAX_HISTORY_MESSAGES:
         history = history[-MAX_HISTORY_MESSAGES:]
-    
+
     if not history:
         return messages
 
@@ -96,10 +96,10 @@ def _limit_history_length(messages: List[Dict[str, str]]) -> List[Dict[str, str]
     for message in reversed(history):
         content = message.get("content", "")
         token_count = len(tokenizer.encode(content, add_special_tokens=False))
-        
+
         if trimmed_history and token_used + token_count > token_budget:
             break
-        
+
         trimmed_history.append(message)
         token_used += token_count
 
@@ -127,6 +127,7 @@ def _prepare_messages(request: ChatRequest) -> List[Dict[str, str]]:
             normalized.append({"role": role, "content": content})
     elif request.prompt:
         normalized.append({"role": "user", "content": request.prompt.strip()})
+        print("request.prompt.strip(): " + request.prompt.strip())
     else:
         raise HTTPException(status_code=400, detail="Either 'prompt' or 'messages' must be provided")
 
@@ -142,6 +143,7 @@ def _build_model_inputs(messages: List[Dict[str, str]]):
         messages,
         tokenize=False,
         add_generation_prompt=True,
+        enable_thinking=False
     )
     return tokenizer([text], return_tensors="pt").to(model_device)
 
@@ -157,7 +159,7 @@ def _run_generation(model_inputs, generation_kwargs):
 async def load_model():
     """Загружает модель при старте приложения"""
     global model, tokenizer, model_device
-    
+
     logger.info(f"Загрузка модели {model_name}...")
     try:
         model_device = _select_device()
@@ -167,16 +169,19 @@ async def load_model():
             dtype = torch.float16
             device_map = "auto"
 
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            trust_remote_code=True,
+        )
         # Устанавливаем pad_token если его нет
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
             tokenizer.pad_token_id = tokenizer.eos_token_id
             logger.info(f"Установлен pad_token = eos_token (ID: {tokenizer.pad_token_id})")
-        
+
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype=dtype,
+            dtype=dtype,
             device_map=device_map,
             low_cpu_mem_usage=True,
         )
@@ -206,7 +211,7 @@ async def chat(request: ChatRequest):
     if model is None or tokenizer is None:
         logger.error("Модель не загружена!")
         raise HTTPException(status_code=503, detail="Model not loaded")
-    
+
     try:
         messages = _prepare_messages(request)
         logger.info("Используется история из %s сообщений (после нормализации)", len(messages))
@@ -271,4 +276,3 @@ async def chat(request: ChatRequest):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-

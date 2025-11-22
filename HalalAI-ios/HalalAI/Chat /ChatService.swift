@@ -240,11 +240,8 @@ class ChatService: ObservableObject {
     }
     
     private func handleError(_ message: String, userMessage: ChatMessage) async {
-        // При ошибке удаляем сообщение пользователя из истории (если оно было добавлено)
-        // чтобы оно не учитывалось в контексте при следующем запросе
-        if let index = messages.lastIndex(where: { $0.id == userMessage.id && $0.role == .user }) {
-            messages.remove(at: index)
-        }
+        let errorMessage = ChatMessage(role: .assistant, text: "У нас что-то сломалось, попробуйте позже или повторите попытку.")
+        messages.append(errorMessage)
         
         // Показываем ошибку пользователю
         chatState = .error(message)
@@ -252,9 +249,9 @@ class ChatService: ObservableObject {
         isSending = false
         
         // Через 3 секунды возвращаемся в idle, чтобы можно было повторить
-        try? await Task.sleep(nanoseconds: 3_000_000_000)
-        if case .error = chatState {
-            chatState = .idle
-        }
+        // try? await Task.sleep(nanoseconds: 3_000_000_000)
+        // if case .error = chatState {
+        //     chatState = .idle
+        // }
     }
 }

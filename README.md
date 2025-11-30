@@ -20,6 +20,8 @@ Halal AI — это интеллектуальное мобильное прил
 ## Схема архитектуры
 <img width="531" height="287" alt="image" src="https://github.com/user-attachments/assets/56707ff7-2a26-4e55-8ffd-2c182e800263" />
 
+<img width="820" height="372" alt="image" src="https://github.com/user-attachments/assets/f3ce03f4-3cab-41a3-a2d9-92f185fbb2e7" />
+
 ## Основные функции
 
 * Проверка продуктов на соответствие халяль-принципам.

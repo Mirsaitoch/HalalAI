@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct HomeView: View {
+    @StateObject private var coordinator = CoordinatorService.shared
+    
     var body: some View {
         VStack {
             ScrollView(.vertical, showsIndicators: false) {
@@ -18,6 +20,11 @@ struct HomeView: View {
                         title: "Чат с AI",
                         description: "Задай вопрос"
                     )
+                    .onTapGesture {
+                        withAnimation {
+                            coordinator.selectTab(item: .chat)
+                        }
+                    }
                     Spacer()
                     ImageTextComponent(
                         componentSize: .medium,

@@ -1,67 +1,180 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List, Dict
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from typing import Optional, List, Dict, Any
+from uuid import uuid4
 import logging
-import os
+import re
+import torch
 
-# Настройка логирования
+from config import (
+    DEFAULT_SYSTEM_PROMPT,
+    DEFAULT_MAX_NEW_TOKENS,
+    MAX_NEW_TOKENS,
+    MIN_NEW_TOKENS,
+    DEFAULT_RAG_TOP_K,
+    RAG_ENABLED,
+    RAG_SEARCH_TOP_K,
+    MAX_HISTORY_MESSAGES,
+    MAX_HISTORY_TOKEN_LENGTH,
+    REMOTE_LLM_ENABLED,
+    REMOTE_LLM_MODEL,
+    model_name,
+    RAG_EMBEDDING_MODEL,
+    DEFAULT_VECTOR_STORE_PATH,
+)
+from rag import RAGPipeline
+from rag.surah_catalog import describe_surah
+from rag.utils import build_rag_filters, format_source_heading
+from prompt_utils import sanitize_system_prompt_content
+from services.local_llm import LocalLLM
+from remote_llm import call_remote_llm, should_use_remote_llm
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="LLM Service", version="1.0.0")
 
-# Глобальные переменные для модели и токенизатора
-model = None
-tokenizer = None
-model_device = torch.device("cpu")
-model_name = os.getenv("LLM_MODEL_NAME", "Qwen/Qwen3-1.7B")
-
-DEFAULT_SYSTEM_PROMPT = (
-    "Ты — HalalAI, умный исламский ассистент, специализирующийся на вопросах халяль, "
-    "исламских принципах, Коране и исламском образе жизни. Твоя задача — давать точные, "
-    "полезные и основанные на исламских источниках ответы. Всегда отвечай на русском языке, "
-    "используй исламские термины (халяль, харам, сунна и т.д.) и будь уважительным и терпеливым. "
-    "Если вопрос не связан с исламом, вежливо направь разговор в нужное русло. Отвечай кратко, "
-    "но информативно."
-)
-
-MAX_HISTORY_MESSAGES = 16  # ограничение истории по количеству сообщений
-MAX_HISTORY_TOKEN_LENGTH = 2048  # ограничения истории по количеству токенов
-DEFAULT_MAX_NEW_TOKENS = int(os.getenv("LLM_DEFAULT_MAX_TOKENS", "256"))
-MAX_NEW_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "1024"))
-MIN_NEW_TOKENS = 16
+rag_pipeline: Optional[RAGPipeline] = None
+local_llm = LocalLLM()
 ALLOWED_ROLES = {"system", "user", "assistant"}
 
+def _sanitize_max_tokens(value: Optional[int]) -> int:
+    if value is None:
+        return MAX_NEW_TOKENS
+    return max(MIN_NEW_TOKENS, min(value, MAX_NEW_TOKENS))
+
+def _sanitize_top_k(value: Optional[int]) -> int:
+    if value is None:
+        return DEFAULT_RAG_TOP_K
+    return max(1, min(value, 10))
+
 class ChatMessage(BaseModel):
-    role: str  # "user" или "assistant"
+    role: str
     content: str
 
 class ChatRequest(BaseModel):
-    prompt: Optional[str] = None  # Для обратной совместимости
-    messages: Optional[List[ChatMessage]] = None  # История сообщений
+    prompt: Optional[str] = None
+    messages: Optional[List[ChatMessage]] = None
     max_tokens: Optional[int] = 1024
+    use_rag: bool = True
+    rag_top_k: Optional[int] = None
+    api_key: Optional[str] = None
+    remote_model: Optional[str] = None
 
 class ChatResponse(BaseModel):
     reply: str
+    sources: Optional[List[Dict[str, Any]]] = None
 
-def _select_device() -> torch.device:
-    """Определяет оптимальное устройство для инференса."""
-    if torch.cuda.is_available():
-        logger.info("Обнаружен CUDA, используем GPU")
-        return torch.device("cuda")
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        logger.info("Обнаружен Apple Silicon (MPS), используем mps")
-        return torch.device("mps")
-    logger.info("GPU не найден, используем CPU (это значительно медленнее)")
-    return torch.device("cpu")
+class KnowledgeDocument(BaseModel):
+    document_id: Optional[str] = None
+    text: str
+    metadata: Optional[Dict[str, Any]] = None
 
-def _sanitize_max_tokens(value: Optional[int]) -> int:
-    """Гарантирует допустимый диапазон количества генерируемых токенов."""
-    if value is None:
-        return DEFAULT_MAX_NEW_TOKENS
-    return max(MIN_NEW_TOKENS, min(value, MAX_NEW_TOKENS))
+class KnowledgeIngestRequest(BaseModel):
+    documents: List[KnowledgeDocument]
+    chunk_size: int = 800
+    chunk_overlap: int = 100
+
+def _extract_last_user_query(messages: List[Dict[str, str]]) -> str:
+    for message in reversed(messages):
+        if message.get("role") == "user":
+            return (message.get("content") or "").strip()
+    return ""
+
+def _inject_surah_guardrail(messages: List[Dict[str, str]], surah_numbers: List[int]):
+    unique_numbers = sorted({num for num in surah_numbers if isinstance(num, int)})
+    if not unique_numbers:
+        return messages
+
+    labels = [describe_surah(num) or f"Сура {num}" for num in unique_numbers]
+    if len(unique_numbers) == 1:
+        guard_text = (
+            f"Вопрос относится исключительно к {labels[0]}. "
+            "Никогда не упоминай другие номера сур и не придумывай фактов вне предоставленных источников."
+        )
+    else:
+        joined = "; ".join(labels)
+        guard_text = (
+            f"Вопрос относится к следующим сурам: {joined}. "
+            "Используй только эти номера и избегай упоминания любых других сур."
+        )
+
+    guard_message = {"role": "system", "content": guard_text}
+    augmented = messages[:]
+    insert_idx = 1 if augmented and augmented[0].get("role") == "system" else 0
+    augmented.insert(insert_idx, guard_message)
+    return augmented
+
+def _inject_rag_context(messages: List[Dict[str, str]], contexts: List[Dict[str, Any]]):
+    if not contexts:
+        return messages
+
+    context_blocks = []
+    for ctx in contexts:
+        text = (ctx.get("text") or "").strip()
+        if not text:
+            continue
+        metadata = ctx.get("metadata") or {}
+        heading = format_source_heading(metadata)
+        block = f"{heading}\n{text}"
+        context_blocks.append(block)
+
+    if not context_blocks:
+        return messages
+
+    rag_instruction = (
+        "Ниже приведены выдержки из базы знаний HalalAI. Используй только указанные в них факты. "
+        "Когда ссылаешься на аяты, обязательно указывай их в формате (сура XX, аят YY). "
+        "Если данных недостаточно, прямо говори об этом."
+    )
+    rag_message = {
+        "role": "system",
+        "content": f"{rag_instruction}\n\n" + "\n\n".join(context_blocks),
+    }
+
+    augmented = messages[:]
+    insert_idx = 1 if augmented and augmented[0].get("role") == "system" else 0
+    augmented.insert(insert_idx, rag_message)
+    return augmented
+
+def _serialize_sources(sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Подготавливает список источников для ответа."""
+    serialized: List[Dict[str, Any]] = []
+    for src in sources:
+        serialized.append(
+            {
+                "id": src.get("id"),
+                "score": round(float(src.get("score", 0.0)), 4),
+                "metadata": src.get("metadata") or {},
+            }
+        )
+    return serialized
+
+def _chunk_text(text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
+    """Нарезает текст на перекрывающиеся фрагменты."""
+    normalized = re.sub(r"\s+", " ", (text or "")).strip()
+    if not normalized:
+        return []
+    if len(normalized) <= chunk_size:
+        return [normalized]
+
+    chunks: List[str] = []
+    start = 0
+    while start < len(normalized):
+        end = min(start + chunk_size, len(normalized))
+        chunk = normalized[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        if end == len(normalized):
+            break
+        start = max(0, end - chunk_overlap)
+    return chunks
+
+def _log_model_output(content: str, model_label: str):
+    if not content:
+        logger.info("Ответ модели [%s] пустой.", model_label)
+        return
+    logger.info("Ответ модели [%s]: %s символов.\n%s", model_label, len(content), content)
 
 def _ensure_system_prompt(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """Добавляет дефолтный системный промпт, если он отсутствует."""
@@ -71,10 +184,16 @@ def _ensure_system_prompt(messages: List[Dict[str, str]]) -> List[Dict[str, str]
     if first_role != "system":
         logger.info("Системный промпт отсутствует, добавляем дефолтный (client-side history без system role).")
         return [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}] + messages
+    original_content = messages[0].get("content", "")
+    sanitized = sanitize_system_prompt_content(original_content)
+    if sanitized != original_content:
+        logger.info("Получен пользовательский system prompt, выполняем санитизацию.")
+    messages[0]["content"] = sanitized
     return messages
 
 def _limit_history_length(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """Ограничивает историю по количеству сообщений и длине в токенах."""
+    tokenizer = local_llm.tokenizer
     if tokenizer is None or not messages:
         return messages
 
@@ -127,7 +246,6 @@ def _prepare_messages(request: ChatRequest) -> List[Dict[str, str]]:
             normalized.append({"role": role, "content": content})
     elif request.prompt:
         normalized.append({"role": "user", "content": request.prompt.strip()})
-        print("request.prompt.strip(): " + request.prompt.strip())
     else:
         raise HTTPException(status_code=400, detail="Either 'prompt' or 'messages' must be provided")
 
@@ -137,68 +255,41 @@ def _prepare_messages(request: ChatRequest) -> List[Dict[str, str]]:
     with_system = _ensure_system_prompt(normalized)
     return _limit_history_length(with_system)
 
-def _build_model_inputs(messages: List[Dict[str, str]]):
-    """Создает строку с историей и токенизирует ее."""
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=False
-    )
-    return tokenizer([text], return_tensors="pt").to(model_device)
+def _initialize_rag_pipeline():
+    global rag_pipeline
+    if not RAG_ENABLED:
+        logger.info("RAG отключен (RAG_ENABLED=false) — пропускаем инициализацию.")
+        return
+    try:
+        from config import DEFAULT_VECTOR_STORE_PATH, RAG_EMBEDDING_MODEL, RAG_EMBEDDING_DEVICE
 
-@torch.inference_mode()
-def _run_generation(model_inputs, generation_kwargs):
-    """Запускает генерацию с отключенным градиентом."""
-    return model.generate(
-        **model_inputs,
-        **generation_kwargs,
-    )
+        rag_pipeline = RAGPipeline(
+            embedding_model_name=RAG_EMBEDDING_MODEL,
+            store_path=DEFAULT_VECTOR_STORE_PATH,
+            device=RAG_EMBEDDING_DEVICE,
+        )
+    except Exception as exc:
+        rag_pipeline = None
+        logger.error("Не удалось инициализировать RAG pipeline: %s", exc)
+
+def _should_use_remote_llm(api_key: Optional[str]) -> bool:
+    return bool(api_key and REMOTE_LLM_ENABLED)
 
 @app.on_event("startup")
-async def load_model():
-    """Загружает модель при старте приложения"""
-    global model, tokenizer, model_device
-
-    logger.info(f"Загрузка модели {model_name}...")
+async def startup_event():
     try:
-        model_device = _select_device()
-        dtype = torch.float32
-        device_map = None
-        if model_device.type in {"cuda", "mps"}:
-            dtype = torch.float16
-            device_map = "auto"
-
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
-            trust_remote_code=True,
-        )
-        # Устанавливаем pad_token если его нет
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-            tokenizer.pad_token_id = tokenizer.eos_token_id
-            logger.info(f"Установлен pad_token = eos_token (ID: {tokenizer.pad_token_id})")
-
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            dtype=dtype,
-            device_map=device_map,
-            low_cpu_mem_usage=True,
-        )
-        if device_map is None:
-            model.to(model_device)
-        model.eval()
-        logger.info("✅ Модель успешно загружена (device=%s, dtype=%s)", model_device, dtype)
-    except Exception as e:
-        logger.error(f"❌ Ошибка при загрузке модели: {e}")
+        await local_llm.load()
+        _initialize_rag_pipeline()
+    except Exception as exc:
+        logger.error("❌ Ошибка при загрузке компонентов LLM сервиса: %s", exc)
         raise
 
 @app.get("/health")
 async def health_check():
     """Проверка здоровья сервиса"""
-    if model is None or tokenizer is None:
+    if local_llm.model is None or local_llm.tokenizer is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-    return {"status": "healthy", "model": model_name}
+    return {"status": "healthy", "model": local_llm.model_name}
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
@@ -208,7 +299,7 @@ async def chat(request: ChatRequest):
         bool(request.prompt),
         len(request.messages) if request.messages else 0,
     )
-    if model is None or tokenizer is None:
+    if local_llm.model is None or local_llm.tokenizer is None:
         logger.error("Модель не загружена!")
         raise HTTPException(status_code=503, detail="Model not loaded")
 
@@ -216,47 +307,78 @@ async def chat(request: ChatRequest):
         messages = _prepare_messages(request)
         logger.info("Используется история из %s сообщений (после нормализации)", len(messages))
 
-        model_inputs = _build_model_inputs(messages)
+        rag_sources: List[Dict[str, Any]] = []
+        if request.use_rag:
+            if not RAG_ENABLED:
+                logger.info("RAG отключен через конфиг, пропускаем поиск контекста.")
+            elif rag_pipeline is None:
+                logger.info("RAG запрошен, но пайплайн не инициализирован.")
+            elif rag_pipeline.document_count == 0:
+                logger.info("RAG включен, но индекс пуст. Требуются данные для наполнения.")
+            else:
+                query_text = _extract_last_user_query(messages)
+                if query_text:
+                    rag_top_k = _sanitize_top_k(request.rag_top_k)
+                    rag_filters = build_rag_filters(query_text)
+                    if rag_filters:
+                        logger.info("Попытка RAG с фильтрами: %s", rag_filters)
+                        rag_sources = rag_pipeline.retrieve(
+                            query_text,
+                            top_k=rag_top_k,
+                            filters=rag_filters or None,
+                            search_top_k=RAG_SEARCH_TOP_K,
+                        )
+                        if not rag_sources:
+                            logger.info("RAG: не найдено контекстов по фильтрам, пробуем без ограничений.")
+                            rag_sources = rag_pipeline.retrieve(
+                                query_text,
+                                top_k=rag_top_k,
+                                search_top_k=RAG_SEARCH_TOP_K,
+                            )
+                    else:
+                        logger.info("RAG: фильтры не определены, выполняем поиск по всей базе.")
+                        rag_sources = rag_pipeline.retrieve(
+                            query_text,
+                            top_k=rag_top_k,
+                            search_top_k=RAG_SEARCH_TOP_K,
+                        )
+
+                    if rag_sources:
+                        surah_numbers = [
+                            ctx.get("metadata", {}).get("surah")
+                            for ctx in rag_sources
+                            if ctx.get("metadata", {}).get("surah") is not None
+                        ]
+                        if surah_numbers:
+                            messages = _inject_surah_guardrail(messages, surah_numbers)
+                        messages = _inject_rag_context(messages, rag_sources)
+                        logger.info("Добавлено %s контекстов из RAG.", len(rag_sources))
+                else:
+                    logger.info("Не удалось определить пользовательский запрос для RAG.")
+
         max_new_tokens = _sanitize_max_tokens(request.max_tokens)
 
-        input_token_size = model_inputs.input_ids.shape[1]
-        logger.info(
-            "Начинаем генерацию ответа (max_new_tokens=%s, input_tokens=%s)",
-            max_new_tokens,
-            input_token_size,
-        )
-
-        generation_kwargs = {
-            "max_new_tokens": max_new_tokens,
-            "do_sample": False,
-            "eos_token_id": tokenizer.eos_token_id,
-        }
-        if tokenizer.pad_token_id is not None:
-            generation_kwargs["pad_token_id"] = tokenizer.pad_token_id
-
-        try:
-            generated_ids = _run_generation(model_inputs, generation_kwargs)
-        except Exception as greedy_error:
-            error_str = str(greedy_error).lower()
-            logger.warning("Greedy decoding failed: %s", greedy_error)
-            if any(keyword in error_str for keyword in ("probability", "inf", "nan")):
-                sampling_kwargs = dict(generation_kwargs)
-                sampling_kwargs["do_sample"] = True
-                logger.info("Пробуем генерацию с sampling (минимальные параметры)...")
-                generated_ids = _run_generation(model_inputs, sampling_kwargs)
-            else:
-                raise
-
-        input_length = model_inputs.input_ids.shape[1]
-        output_ids = generated_ids[0][input_length:].tolist()
-        content = tokenizer.decode(output_ids, skip_special_tokens=True).strip()
-
-        if content:
-            logger.info("✅ Сгенерирован ответ длиной %s символов", len(content))
-        else:
-            logger.warning("⚠️ Ответ пустой после декодирования")
-
-        return ChatResponse(reply=content)
+        if should_use_remote_llm(request.api_key):
+            logger.info("Используем удаленную LLM по пользовательскому ключу.")
+            try:
+                content = call_remote_llm(
+                    messages=messages,
+                    max_tokens=max_new_tokens,
+                    api_key=request.api_key,  # type: ignore[arg-type]
+                    model_override=request.remote_model,
+                )
+                _log_model_output(content, f"remote:{request.remote_model or REMOTE_LLM_MODEL}")
+                return ChatResponse(reply=content, sources=_serialize_sources(rag_sources) or None)
+            except Exception as remote_error:
+                logger.info(
+                    "Удаленная LLM недоступна или вернула ошибку (%s). Переходим на локальную модель.",
+                    remote_error,
+                )
+        content = local_llm.generate(messages, max_new_tokens)
+        if not content:
+            logger.info("Ответ локальной модели пустой.")
+        _log_model_output(content, f"local:{local_llm.model_name}")
+        return ChatResponse(reply=content, sources=_serialize_sources(rag_sources) or None)
 
     except HTTPException:
         raise
@@ -272,6 +394,59 @@ async def chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"Ошибка при генерации: {e}")
         raise HTTPException(status_code=500, detail=f"Generation error: {str(e)}")
+
+@app.get("/rag/status")
+async def rag_status():
+    """Возвращает состояние векторного индекса."""
+    return {
+        "enabled": RAG_ENABLED,
+        "documents": rag_pipeline.document_count if rag_pipeline else 0,
+        "embedding_model": RAG_EMBEDDING_MODEL,
+        "store_path": DEFAULT_VECTOR_STORE_PATH,
+    }
+
+@app.post("/rag/documents")
+async def ingest_documents(payload: KnowledgeIngestRequest):
+    """Добавляет новые документы в векторный индекс."""
+    if not RAG_ENABLED:
+        raise HTTPException(status_code=503, detail="RAG отключен через конфигурацию")
+    if rag_pipeline is None:
+        raise HTTPException(status_code=503, detail="RAG pipeline не инициализирован")
+
+    chunk_size = max(200, min(payload.chunk_size, 2000))
+    chunk_overlap = max(0, min(payload.chunk_overlap, chunk_size - 1))
+
+    prepared_docs: List[Dict[str, Any]] = []
+    for doc in payload.documents:
+        text = (doc.text or "").strip()
+        if not text:
+            continue
+        base_id = doc.document_id or str(uuid4())
+        metadata = doc.metadata or {}
+        chunks = _chunk_text(text, chunk_size, chunk_overlap)
+        for idx, chunk in enumerate(chunks):
+            prepared_docs.append(
+                {
+                    "id": f"{base_id}_chunk_{idx}",
+                    "text": chunk,
+                    "metadata": {
+                        **metadata,
+                        "chunk_index": idx,
+                        "source_document_id": base_id,
+                    },
+                }
+            )
+
+    if not prepared_docs:
+        raise HTTPException(status_code=400, detail="Не передано ни одного непустого документа")
+
+    added = rag_pipeline.add_texts(prepared_docs)
+    return {
+        "chunks_indexed": added,
+        "total_chunks": rag_pipeline.document_count,
+        "chunk_size": chunk_size,
+        "chunk_overlap": chunk_overlap,
+    }
 
 if __name__ == "__main__":
     import uvicorn

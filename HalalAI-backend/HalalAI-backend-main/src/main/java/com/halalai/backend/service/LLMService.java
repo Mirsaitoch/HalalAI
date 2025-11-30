@@ -1,6 +1,7 @@
 package com.halalai.backend.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +38,7 @@ public class LLMService {
         System.out.println("URL: " + llmServiceUrl);
     }
 
-    public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String prompt) {
+    public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String prompt, String apiKey, String remoteModel) {
         System.out.println("\n========== ЗАПРОС К LLM СЕРВИСУ ==========");
         
         HttpHeaders headers = new HttpHeaders();
@@ -67,17 +68,24 @@ public class LLMService {
             System.out.println("⚠️  Внимание: системный промпт отсутствует в истории от клиента");
         }
         
-        Map<String, Object> requestBody = Map.of(
-                "messages", messages,
-                "max_tokens", maxTokens
-        );
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("messages", messages);
+        requestBody.put("max_tokens", maxTokens);
+        if (apiKey != null && !apiKey.isBlank()) {
+            requestBody.put("api_key", apiKey.trim());
+        }
+        if (remoteModel != null && !remoteModel.isBlank()) {
+            requestBody.put("remote_model", remoteModel.trim());
+        }
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
         String chatUrl = llmServiceUrl + "/chat";
 
         try {
             System.out.println("Отправка запроса к LLM сервису: " + chatUrl);
-            System.out.println("Тело запроса: messages=" + messages.size() + ", max_tokens=" + maxTokens);
+            System.out.println("Тело запроса: messages=" + messages.size() + ", max_tokens=" + maxTokens
+                    + (requestBody.containsKey("api_key") ? ", api_key=***" : "")
+                    + (requestBody.containsKey("remote_model") ? ", remote_model=" + requestBody.get("remote_model") : ""));
             for (int i = 0; i < messages.size(); i++) {
                 Map<String, String> msg = messages.get(i);
                 String content = msg.get("content");

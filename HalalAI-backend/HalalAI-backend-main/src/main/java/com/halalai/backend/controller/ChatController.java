@@ -58,7 +58,11 @@ public class ChatController {
     @PostMapping("/chat")
     public ChatResponse createChatCompletion(@RequestBody ChatRequest request) {
         // История теперь приходит от клиента, не используем сессию для хранения
-        return llmService.generateCompletion(request.messages(), request.prompt());
+        return llmService.generateCompletion(
+                request.messages(),
+                request.prompt(),
+                request.apiKey(),
+                request.remoteModel());
     }
 }
 

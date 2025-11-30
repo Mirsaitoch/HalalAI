@@ -15,11 +15,20 @@ class ChatService: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var chatState: ChatState = .idle
     @Published var connectionState: ConnectionState = .connected
+    @Published var userApiKey: String = "" {
+        didSet {
+            UserDefaults.standard.set(userApiKey, forKey: apiKeyDefaultsKey)
+        }
+    }
     
     private var cancellables = Set<AnyCancellable>()
     private var isSending = false  // Защита от спама
-    private var systemPrompt: String? = nil  // Системный промпт из конфига
-    private var configLoaded = false  // Флаг загрузки конфига
+    private var systemPrompt: String? = nil
+    private var configLoaded = true
+    
+    private let defaultSystemPrompt = """
+    Ты — HalalAI, умный исламский ассистент, специализирующийся на вопросах халяль, исламских принципах, Коране и исламском образе жизни. Твоя задача — давать точные, полезные и основанные на исламских источниках ответы. Всегда отвечай на русском языке, используй исламские термины (халяль, харам, сунна и т.д.) и будь уважительным и терпеливым. Если вопрос не связан с исламом, вежливо направь разговор в нужное русло. Отвечай кратко, но информативно.
+    """
     
     private let backendURL: String = {
         #if DEBUG
@@ -35,12 +44,12 @@ class ChatService: ObservableObject {
         let configuration = URLSessionConfiguration.default
         return URLSession(configuration: configuration)
     }()
+    private let apiKeyDefaultsKey = "HalalAI.userApiKey"
     
     private init() {
-        // Загружаем конфиг при инициализации
-        Task {
-            await loadConfig()
-        }
+        self.userApiKey = UserDefaults.standard.string(forKey: apiKeyDefaultsKey) ?? ""
+        self.systemPrompt = defaultSystemPrompt
+        self.configLoaded = true
     }
     
     // MARK: - Public Methods
@@ -51,21 +60,6 @@ class ChatService: ObservableObject {
         // Защита от спама: не позволяем отправлять сообщения подряд
         guard !isSending else {
             print("⚠️ Попытка отправить сообщение во время обработки предыдущего")
-            return
-        }
-        
-        // Ждем загрузки конфига перед отправкой первого сообщения
-        if !configLoaded {
-            chatState = .typing
-            connectionState = .connecting
-            Task {
-                await loadConfig()
-                // После загрузки конфига отправляем сообщение
-                let userMessage = ChatMessage(role: .user, text: text)
-                // Добавляем сообщение пользователя сразу, чтобы оно отображалось
-                messages.append(userMessage)
-                await sendRequestToBackend(userMessage: userMessage, isRetry: false)
-            }
             return
         }
         
@@ -184,9 +178,14 @@ class ChatService: ObservableObject {
         }
         
         // Формируем тело запроса
-        let requestBody: [String: Any] = [
+        var requestBody: [String: Any] = [
             "messages": messagesToSend
         ]
+        
+        let trimmedKey = userApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedKey.isEmpty {
+            requestBody["api_key"] = trimmedKey
+        }
         
         guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
             await handleError("Ошибка формирования запроса", userMessage: userMessage)

@@ -106,12 +106,12 @@ final class CoordinatorService: ObservableObject {
         }
     }
     
-//    func toRoot() {
-//        Task { @MainActor in
-//            currentStep = nil
-//            path = []
-//        }
-//    }
+    func toRoot() {
+        Task { @MainActor in
+            currentStep = nil
+            path = []
+        }
+    }
     
     // MARK: - Private
     

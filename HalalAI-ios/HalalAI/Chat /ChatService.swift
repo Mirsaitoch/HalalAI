@@ -197,6 +197,12 @@ class ChatService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Accept")
+        
+        // Добавляем токен авторизации, если он есть
+        if let token = AuthManager.shared.authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
         request.httpBody = jsonData
         request.timeoutInterval = 300 // 5 минут для генерации ответа
         

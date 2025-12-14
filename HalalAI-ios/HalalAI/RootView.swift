@@ -8,9 +8,17 @@
 import SwiftUI
 
 struct RootView: View {
+    @StateObject private var authManager = AuthManager.shared
+    
     var body: some View {
-        RouterView {
-            HomeView()
+        Group {
+            if authManager.isAuthenticated {
+                RouterView {
+                    HomeView()
+                }
+            } else {
+                AuthView(initialView: .login)
+            }
         }
     }
 }

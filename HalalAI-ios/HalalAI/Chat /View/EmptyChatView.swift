@@ -69,7 +69,7 @@ struct QuickQuestionButton: View {
                 .padding(.vertical, 8)
                 .background {
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.greenForegroung)
+                        .fill(Color.greenForeground)
                 }
         }
         .scaleEffect(isPressed ? 0.95 : 1.0)

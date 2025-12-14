@@ -70,7 +70,7 @@ struct SelectedIconModifier: ViewModifier {
             .padding(10)
             .background {
                 RoundedRectangle(cornerRadius: 100)
-                    .fill(tabIsSelected ? Color.greenForegroung : .clear)
+                    .fill(tabIsSelected ? Color.greenForeground : .clear)
                     .frame(width: 70, height: 50)
             }
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: tabIsSelected)

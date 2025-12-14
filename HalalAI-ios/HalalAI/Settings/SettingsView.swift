@@ -9,10 +9,30 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject private var chatService = ChatService.shared
+    @StateObject private var authManager = AuthManager.shared
     @State private var isApiKeyVisible = false
     
     var body: some View {
         Form {
+            // Информация о пользователе
+            if let user = authManager.currentUser {
+                Section(header: Text("Аккаунт")) {
+                    HStack {
+                        Text("Пользователь")
+                        Spacer()
+                        Text(user.username)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    HStack {
+                        Text("Email")
+                        Spacer()
+                        Text(user.email)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
             Section(header: Text("API ключ провайдера")) {
                 if isApiKeyVisible {
                     TextField("Введите ключ", text: $chatService.userApiKey)
@@ -41,6 +61,19 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .padding(.top, 4)
+            }
+            
+            // Выход из аккаунта
+            Section {
+                Button(role: .destructive) {
+                    authManager.logout()
+                } label: {
+                    HStack {
+                        Spacer()
+                        Label("Выйти из аккаунта", systemImage: "rectangle.portrait.and.arrow.right")
+                        Spacer()
+                    }
+                }
             }
         }
         .navigationTitle("Настройки")

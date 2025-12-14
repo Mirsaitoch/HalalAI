@@ -48,7 +48,7 @@ struct ImageTextComponent: View {
         .padding(.horizontal, 13)
         .background {
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.greenForegroung)
+                .fill(Color.greenForeground)
         }
     }
 }

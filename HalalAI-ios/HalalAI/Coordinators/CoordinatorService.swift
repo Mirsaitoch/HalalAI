@@ -97,7 +97,7 @@ final class CoordinatorService: ObservableObject {
                     } else {
                         path = homeTabPath
                     }
-                    print("Нажата вкладка Main, path: \(path)")
+                    print("Нажата вкладка Home, path: \(path)")
                 }
                 currentSelectedTab = .home
             }

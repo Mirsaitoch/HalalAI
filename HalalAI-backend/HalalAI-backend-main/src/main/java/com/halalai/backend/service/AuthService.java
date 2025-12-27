@@ -74,8 +74,8 @@ public class AuthService {
         );
 
         // Получение пользователя из базы данных
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.usernameOrEmail());
-        User user = userRepository.findByUsername(userDetails.getUsername())
+        // После успешной аутентификации находим пользователя по usernameOrEmail
+        User user = userRepository.findByUsername(request.usernameOrEmail())
                 .orElseGet(() -> userRepository.findByEmail(request.usernameOrEmail())
                         .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден")));
 

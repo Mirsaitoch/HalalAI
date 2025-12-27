@@ -67,11 +67,12 @@ public class OpenRouterService {
             }
             
             // Извлекаем ответ из поля "reply"
-            String reply = "";
-            if (responseBody.has("reply")) {
-                reply = responseBody.get("reply").asText("");
-            } else {
-                throw new RuntimeException("Ответ не содержит поле 'reply'. Структура: " + responseBody.toString());
+            String reply = responseBody.has("reply") ? responseBody.get("reply").asText("") : "";
+            String model = responseBody.has("model") ? responseBody.get("model").asText("") : "";
+            Boolean usedRemote = responseBody.has("used_remote") ? responseBody.get("used_remote").asBoolean(false) : Boolean.FALSE;
+            String remoteError = responseBody.has("remote_error") ? responseBody.get("remote_error").asText("") : "";
+            if (reply == null || reply.isEmpty()) {
+                throw new RuntimeException("Ответ не содержит поле 'reply' или оно пустое. Структура: " + responseBody.toString());
             }
             
             System.out.println("========== ОТВЕТ ОТ LLM ==========");
@@ -87,7 +88,7 @@ public class OpenRouterService {
             }
             System.out.println("========== КОНЕЦ ОТВЕТА ==========\n");
 
-            return new ChatResponse(reply);
+            return new ChatResponse(reply, model, usedRemote, remoteError);
             
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             System.err.println("Ошибка HTTP при запросе к LLM сервису: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());

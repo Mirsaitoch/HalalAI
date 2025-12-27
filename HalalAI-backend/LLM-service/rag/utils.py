@@ -29,8 +29,21 @@ def format_source_heading(metadata: Dict[str, Any]) -> str:
         parts.append(f"Сура {surah_num}")
 
     ayah = metadata.get("ayah_index")
-    if ayah:
-        parts.append(f"Аят {ayah}")
+    ayah_from = metadata.get("ayah_from")
+    ayah_to = metadata.get("ayah_to")
+    ayah_range = metadata.get("ayah_range")
+
+    def _fmt(value):
+        return int(value) if isinstance(value, str) and value.isdigit() else value
+
+    if ayah_range:
+        parts.append(f"Аяты {ayah_range}")
+    elif ayah_from is not None and ayah_to is not None and ayah_from != ayah_to:
+        parts.append(f"Аяты {_fmt(ayah_from)}–{_fmt(ayah_to)}")
+    elif ayah_from is not None:
+        parts.append(f"Аят {_fmt(ayah_from)}")
+    elif ayah:
+        parts.append(f"Аят {_fmt(ayah)}")
 
     heading = ", ".join(parts) if parts else metadata.get("title") or "Источник"
 
@@ -39,4 +52,6 @@ def format_source_heading(metadata: Dict[str, Any]) -> str:
         heading += f" ({', '.join(tafsir_sources)})"
 
     return heading
+
+
 

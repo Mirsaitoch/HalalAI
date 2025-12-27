@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
+		3B35683C2EEEAC7500FD1CBE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3B925A372E92A983007D84F8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3B925A3E2E92A983007D84F8;
+			remoteInfo = HalalAI;
+		};
 		3BD4020D2E9C2B4700BE53FE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3B925A372E92A983007D84F8 /* Project object */;
@@ -17,6 +24,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3B3568362EEEAC7500FD1CBE /* HalalAIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HalalAIUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B925A3F2E92A983007D84F8 /* HalalAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HalalAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BD402092E9C2B4700BE53FE /* HalalAITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HalalAITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -32,6 +40,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		3B3568372EEEAC7500FD1CBE /* HalalAIUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HalalAIUITests;
+			sourceTree = "<group>";
+		};
 		3B925A412E92A983007D84F8 /* HalalAI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -48,6 +61,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		3B3568332EEEAC7500FD1CBE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3B925A3C2E92A983007D84F8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -70,6 +90,7 @@
 			children = (
 				3B925A412E92A983007D84F8 /* HalalAI */,
 				3BD4020A2E9C2B4700BE53FE /* HalalAITests */,
+				3B3568372EEEAC7500FD1CBE /* HalalAIUITests */,
 				3B925A402E92A983007D84F8 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -79,6 +100,7 @@
 			children = (
 				3B925A3F2E92A983007D84F8 /* HalalAI.app */,
 				3BD402092E9C2B4700BE53FE /* HalalAITests.xctest */,
+				3B3568362EEEAC7500FD1CBE /* HalalAIUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -86,6 +108,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		3B3568352EEEAC7500FD1CBE /* HalalAIUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3B35683E2EEEAC7500FD1CBE /* Build configuration list for PBXNativeTarget "HalalAIUITests" */;
+			buildPhases = (
+				3B3568322EEEAC7500FD1CBE /* Sources */,
+				3B3568332EEEAC7500FD1CBE /* Frameworks */,
+				3B3568342EEEAC7500FD1CBE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3B35683D2EEEAC7500FD1CBE /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3B3568372EEEAC7500FD1CBE /* HalalAIUITests */,
+			);
+			name = HalalAIUITests;
+			packageProductDependencies = (
+			);
+			productName = HalalAIUITests;
+			productReference = 3B3568362EEEAC7500FD1CBE /* HalalAIUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		3B925A3E2E92A983007D84F8 /* HalalAI */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3B925A4A2E92A984007D84F8 /* Build configuration list for PBXNativeTarget "HalalAI" */;
@@ -141,6 +186,10 @@
 				LastSwiftUpdateCheck = 1630;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
+					3B3568352EEEAC7500FD1CBE = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 3B925A3E2E92A983007D84F8;
+					};
 					3B925A3E2E92A983007D84F8 = {
 						CreatedOnToolsVersion = 16.3;
 					};
@@ -166,11 +215,19 @@
 			targets = (
 				3B925A3E2E92A983007D84F8 /* HalalAI */,
 				3BD402082E9C2B4700BE53FE /* HalalAITests */,
+				3B3568352EEEAC7500FD1CBE /* HalalAIUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3B3568342EEEAC7500FD1CBE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3B925A3D2E92A983007D84F8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -188,6 +245,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		3B3568322EEEAC7500FD1CBE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3B925A3B2E92A983007D84F8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -205,6 +269,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		3B35683D2EEEAC7500FD1CBE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3B925A3E2E92A983007D84F8 /* HalalAI */;
+			targetProxy = 3B35683C2EEEAC7500FD1CBE /* PBXContainerItemProxy */;
+		};
 		3BD4020E2E9C2B4700BE53FE /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 3B925A3E2E92A983007D84F8 /* HalalAI */;
@@ -213,6 +282,50 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		3B35683F2EEEAC7500FD1CBE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5KT477LB69;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mirsait.halal.ai.HalalAIUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = HalalAI;
+			};
+			name = Debug;
+		};
+		3B3568402EEEAC7500FD1CBE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5KT477LB69;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mirsait.halal.ai.HalalAIUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = HalalAI;
+			};
+			name = Release;
+		};
 		3B925A482E92A984007D84F8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -439,6 +552,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		3B35683E2EEEAC7500FD1CBE /* Build configuration list for PBXNativeTarget "HalalAIUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3B35683F2EEEAC7500FD1CBE /* Debug */,
+				3B3568402EEEAC7500FD1CBE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		3B925A3A2E92A983007D84F8 /* Build configuration list for PBXProject "HalalAI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

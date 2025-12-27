@@ -1,6 +1,7 @@
 package com.halalai.backend.controller;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Properties;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -62,7 +63,13 @@ public class ChatController {
                 request.messages(),
                 request.prompt(),
                 request.apiKey(),
-                request.remoteModel());
+                request.remoteModel(),
+                request.maxTokens());
+    }
+
+    @GetMapping(value = "/models", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public Map<String, Object> listModels() {
+        return llmService.fetchModels();
     }
 }
 

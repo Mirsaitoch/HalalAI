@@ -11,11 +11,11 @@ public class RestTemplateConfig {
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        // Устанавливаем таймауты для запросов к LLM сервису
-        // Генерация может занять время, поэтому ставим большой таймаут
+        // Устанавливаем таймауты для запросов к LLM сервису.
+        // Генерация ограничена сервером до 3 минут, поэтому читаем не дольше 3 минут.
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(10000); // 10 секунд на подключение
-        factory.setReadTimeout(600000); // 10 минут на чтение (генерация может быть очень долгой)
+        factory.setReadTimeout(180000); // 3 минуты на чтение ответа
         
         return builder
                 .requestFactory(() -> factory)

@@ -1,33 +1,35 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
-from uuid import uuid4
+import asyncio
 import logging
 import re
+from typing import Any, Dict, List, Optional
+from uuid import uuid4
+
 import torch
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 from config import (
-    DEFAULT_SYSTEM_PROMPT,
-    DEFAULT_MAX_NEW_TOKENS,
-    MAX_NEW_TOKENS,
-    MIN_NEW_TOKENS,
     DEFAULT_RAG_TOP_K,
-    RAG_ENABLED,
-    RAG_SEARCH_TOP_K,
+    DEFAULT_SYSTEM_PROMPT,
+    DEFAULT_VECTOR_STORE_PATH,
     MAX_HISTORY_MESSAGES,
     MAX_HISTORY_TOKEN_LENGTH,
-    REMOTE_LLM_ENABLED,
-    REMOTE_LLM_MODEL,
-    model_name,
+    MAX_NEW_TOKENS,
+    MIN_NEW_TOKENS,
     RAG_EMBEDDING_MODEL,
-    DEFAULT_VECTOR_STORE_PATH,
+    RAG_ENABLED,
+    RAG_SEARCH_TOP_K,
+    REMOTE_LLM_ALLOWED_MODELS,
+    REMOTE_LLM_MODEL,
+    REMOTE_LLM_BASE_URL,
+    REQUEST_TIMEOUT_SECONDS,
 )
+from prompt_utils import sanitize_system_prompt_content
 from rag import RAGPipeline
 from rag.surah_catalog import describe_surah
 from rag.utils import build_rag_filters, format_source_heading
-from prompt_utils import sanitize_system_prompt_content
-from services.local_llm import LocalLLM
 from remote_llm import call_remote_llm, should_use_remote_llm
+from services.local_llm import LocalLLM
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,12 +39,32 @@ app = FastAPI(title="LLM Service", version="1.0.0")
 rag_pipeline: Optional[RAGPipeline] = None
 local_llm = LocalLLM()
 ALLOWED_ROLES = {"system", "user", "assistant"}
+HALAL_SAFETY_PROMPT = (
+    "Строго следуй исламским нормам: свинина и всё, что связано с ней, всегда харам; "
+    "не допускай формулировок, что свинина может быть халяль. "
+    "Если вопрос про свинину — объясни, что это харам, ссылаясь на релевантные аяты. "
+    "Не утверждай, что запреты могут быть нарушены, кроме случаев крайней необходимости, "
+    "и всегда подчёркивай, что это исключение, а не разрешение."
+)
 
+# Ограничивает выполнение произвольной корутины по времени
+async def _execute_with_timeout(coro, stage: str):
+    try:
+        return await asyncio.wait_for(coro, timeout=REQUEST_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        logger.error("%s превысила лимит %s секунд.", stage, REQUEST_TIMEOUT_SECONDS)
+        raise HTTPException(
+            status_code=504,
+            detail=f"{stage} timed out after {REQUEST_TIMEOUT_SECONDS} seconds",
+        )
+
+# Нормализует значение max_tokens, не выходя за допустимые рамки
 def _sanitize_max_tokens(value: Optional[int]) -> int:
     if value is None:
         return MAX_NEW_TOKENS
     return max(MIN_NEW_TOKENS, min(value, MAX_NEW_TOKENS))
 
+# Нормализует количество RAG-контекстов
 def _sanitize_top_k(value: Optional[int]) -> int:
     if value is None:
         return DEFAULT_RAG_TOP_K
@@ -64,6 +86,9 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     sources: Optional[List[Dict[str, Any]]] = None
+    model: Optional[str] = None
+    used_remote: Optional[bool] = None
+    remote_error: Optional[str] = None
 
 class KnowledgeDocument(BaseModel):
     document_id: Optional[str] = None
@@ -75,12 +100,14 @@ class KnowledgeIngestRequest(BaseModel):
     chunk_size: int = 800
     chunk_overlap: int = 100
 
+# Достаёт последний пользовательский вопрос из истории
 def _extract_last_user_query(messages: List[Dict[str, str]]) -> str:
     for message in reversed(messages):
         if message.get("role") == "user":
             return (message.get("content") or "").strip()
     return ""
 
+# Вставляет guardrail, чтобы зафиксировать нужные суры
 def _inject_surah_guardrail(messages: List[Dict[str, str]], surah_numbers: List[int]):
     unique_numbers = sorted({num for num in surah_numbers if isinstance(num, int)})
     if not unique_numbers:
@@ -105,6 +132,7 @@ def _inject_surah_guardrail(messages: List[Dict[str, str]], surah_numbers: List[
     augmented.insert(insert_idx, guard_message)
     return augmented
 
+# Добавляет контекст из RAG в начало истории
 def _inject_rag_context(messages: List[Dict[str, str]], contexts: List[Dict[str, Any]]):
     if not contexts:
         return messages
@@ -123,9 +151,12 @@ def _inject_rag_context(messages: List[Dict[str, str]], contexts: List[Dict[str,
         return messages
 
     rag_instruction = (
-        "Ниже приведены выдержки из базы знаний HalalAI. Используй только указанные в них факты. "
+        "Ниже приведены выдержки из базы знаний HalalAI. Используй только указанные в них факты "
+        "и не додумывай за пределами контекста. "
+        "Если данных недостаточно для ответа, прямо скажи об этом и не придумывай. "
         "Когда ссылаешься на аяты, обязательно указывай их в формате (сура XX, аят YY). "
-        "Если данных недостаточно, прямо говори об этом."
+        "Свинина всегда харам, это можно упоминать только как запрет с ссылкой на аят; "
+        "не формулируй свинину как халяль ни при каких обстоятельствах."
     )
     rag_message = {
         "role": "system",
@@ -137,6 +168,7 @@ def _inject_rag_context(messages: List[Dict[str, str]], contexts: List[Dict[str,
     augmented.insert(insert_idx, rag_message)
     return augmented
 
+# Сериализует источники для ответа
 def _serialize_sources(sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Подготавливает список источников для ответа."""
     serialized: List[Dict[str, Any]] = []
@@ -150,6 +182,7 @@ def _serialize_sources(sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         )
     return serialized
 
+# Режет текст на куски для индексации
 def _chunk_text(text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
     """Нарезает текст на перекрывающиеся фрагменты."""
     normalized = re.sub(r"\s+", " ", (text or "")).strip()
@@ -170,12 +203,14 @@ def _chunk_text(text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
         start = max(0, end - chunk_overlap)
     return chunks
 
+# Логирует ответ модели
 def _log_model_output(content: str, model_label: str):
     if not content:
         logger.info("Ответ модели [%s] пустой.", model_label)
         return
     logger.info("Ответ модели [%s]: %s символов.\n%s", model_label, len(content), content)
 
+# Гарантирует наличие system-промпта и его санитизацию
 def _ensure_system_prompt(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """Добавляет дефолтный системный промпт, если он отсутствует."""
     if not messages:
@@ -191,6 +226,7 @@ def _ensure_system_prompt(messages: List[Dict[str, str]]) -> List[Dict[str, str]
     messages[0]["content"] = sanitized
     return messages
 
+# Ограничивает историю по количеству сообщений и токенов
 def _limit_history_length(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """Ограничивает историю по количеству сообщений и длине в токенах."""
     tokenizer = local_llm.tokenizer
@@ -231,6 +267,36 @@ def _limit_history_length(messages: List[Dict[str, str]]) -> List[Dict[str, str]
         return [system_message] + trimmed_history
     return trimmed_history
 
+
+def _remote_skip_reason(api_key: Optional[str]) -> Optional[str]:
+    """Возвращает причину, по которой remote LLM не будет вызвана."""
+    if not api_key:
+        return "api_key не передан"
+    if not REMOTE_LLM_ENABLED:
+        return "REMOTE_LLM_ENABLED=false"
+    return None
+
+
+def _select_remote_model(user_model: Optional[str]) -> str:
+    """Выбирает удалённую модель с учётом разрешённого списка."""
+    candidate = (user_model or "").strip() or REMOTE_LLM_MODEL
+    # Убираем возможный префикс "remote:" или "local:" — некоторые клиенты могут прислать метку модели из ответа
+    if candidate.startswith("remote:") or candidate.startswith("local:"):
+        candidate = candidate.split(":", 1)[1].strip()
+    # Если явно указали "none", считаем что модели нет
+    if candidate.lower() == "none":
+        raise HTTPException(status_code=400, detail="remote_model не задан")
+    if REMOTE_LLM_ALLOWED_MODELS and candidate not in REMOTE_LLM_ALLOWED_MODELS:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"remote_model '{candidate}' не разрешен. "
+                f"Доступные: {', '.join(REMOTE_LLM_ALLOWED_MODELS)}"
+            ),
+        )
+    return candidate
+
+# Нормализует входящие сообщения из запроса
 def _prepare_messages(request: ChatRequest) -> List[Dict[str, str]]:
     """Нормализует и проверяет структуру сообщений из запроса."""
     normalized: List[Dict[str, str]] = []
@@ -253,8 +319,22 @@ def _prepare_messages(request: ChatRequest) -> List[Dict[str, str]]:
         raise HTTPException(status_code=400, detail="Message list is empty after normalization")
 
     with_system = _ensure_system_prompt(normalized)
-    return _limit_history_length(with_system)
+    guarded = _inject_halal_guardrail(with_system)
+    return _limit_history_length(guarded)
 
+# Добавляет обязательный safety-блок о хараме свинины
+def _inject_halal_guardrail(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    if not messages:
+        return [{"role": "system", "content": HALAL_SAFETY_PROMPT}]
+    insert_idx = 1 if messages[0].get("role") == "system" else 0
+    augmented = messages[:]
+    augmented.insert(
+        insert_idx,
+        {"role": "system", "content": HALAL_SAFETY_PROMPT},
+    )
+    return augmented
+
+# Инициализирует RAG-пайплайн, если включён
 def _initialize_rag_pipeline():
     global rag_pipeline
     if not RAG_ENABLED:
@@ -272,9 +352,7 @@ def _initialize_rag_pipeline():
         rag_pipeline = None
         logger.error("Не удалось инициализировать RAG pipeline: %s", exc)
 
-def _should_use_remote_llm(api_key: Optional[str]) -> bool:
-    return bool(api_key and REMOTE_LLM_ENABLED)
-
+# Загружает локальную модель и индекс при старте сервиса
 @app.on_event("startup")
 async def startup_event():
     try:
@@ -291,9 +369,21 @@ async def health_check():
         raise HTTPException(status_code=503, detail="Model not loaded")
     return {"status": "healthy", "model": local_llm.model_name}
 
-@app.post("/chat", response_model=ChatResponse)
+# Обрабатывает запрос на генерацию ответа (основная точка входа)
+@app.post("/chat", response_model=ChatResponse, response_model_exclude_none=False)
 async def chat(request: ChatRequest):
     """Генерация ответа на основе промпта или истории сообщений"""
+    try:
+        return await _execute_with_timeout(_handle_chat_request(request), "LLM generation")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Ошибка при генерации: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Generation error: {str(exc)}")
+
+
+# Выполняет полноценный пайплайн генерации (подготовка, RAG, remote/local)
+async def _handle_chat_request(request: ChatRequest) -> ChatResponse:
     logger.info(
         "Получен запрос: prompt_provided=%s, messages=%s",
         bool(request.prompt),
@@ -308,6 +398,7 @@ async def chat(request: ChatRequest):
         logger.info("Используется история из %s сообщений (после нормализации)", len(messages))
 
         rag_sources: List[Dict[str, Any]] = []
+        remote_error: Optional[str] = None
         if request.use_rag:
             if not RAG_ENABLED:
                 logger.info("RAG отключен через конфиг, пропускаем поиск контекста.")
@@ -322,7 +413,8 @@ async def chat(request: ChatRequest):
                     rag_filters = build_rag_filters(query_text)
                     if rag_filters:
                         logger.info("Попытка RAG с фильтрами: %s", rag_filters)
-                        rag_sources = rag_pipeline.retrieve(
+                        rag_sources = await asyncio.to_thread(
+                            rag_pipeline.retrieve,
                             query_text,
                             top_k=rag_top_k,
                             filters=rag_filters or None,
@@ -330,14 +422,16 @@ async def chat(request: ChatRequest):
                         )
                         if not rag_sources:
                             logger.info("RAG: не найдено контекстов по фильтрам, пробуем без ограничений.")
-                            rag_sources = rag_pipeline.retrieve(
+                            rag_sources = await asyncio.to_thread(
+                                rag_pipeline.retrieve,
                                 query_text,
                                 top_k=rag_top_k,
                                 search_top_k=RAG_SEARCH_TOP_K,
                             )
                     else:
                         logger.info("RAG: фильтры не определены, выполняем поиск по всей базе.")
-                        rag_sources = rag_pipeline.retrieve(
+                        rag_sources = await asyncio.to_thread(
+                            rag_pipeline.retrieve,
                             query_text,
                             top_k=rag_top_k,
                             search_top_k=RAG_SEARCH_TOP_K,
@@ -359,26 +453,50 @@ async def chat(request: ChatRequest):
         max_new_tokens = _sanitize_max_tokens(request.max_tokens)
 
         if should_use_remote_llm(request.api_key):
-            logger.info("Используем удаленную LLM по пользовательскому ключу.")
+            remote_model = _select_remote_model(request.remote_model)
+            logger.info(
+                "Используем удаленную LLM по пользовательскому ключу (model=%s, base_url=%s, max_tokens=%s).",
+                remote_model,
+                REMOTE_LLM_BASE_URL or "default",
+                max_new_tokens,
+            )
             try:
-                content = call_remote_llm(
-                    messages=messages,
-                    max_tokens=max_new_tokens,
-                    api_key=request.api_key,  # type: ignore[arg-type]
-                    model_override=request.remote_model,
+                content = await asyncio.to_thread(
+                    call_remote_llm,
+                    messages,
+                    max_new_tokens,
+                    request.api_key,  # type: ignore[arg-type]
+                    remote_model,
                 )
-                _log_model_output(content, f"remote:{request.remote_model or REMOTE_LLM_MODEL}")
-                return ChatResponse(reply=content, sources=_serialize_sources(rag_sources) or None)
-            except Exception as remote_error:
+                _log_model_output(content, f"remote:{remote_model}")
+                return ChatResponse(
+                    reply=content,
+                    sources=_serialize_sources(rag_sources) or None,
+                    model=f"remote:{remote_model}",
+                    used_remote=True,
+                    remote_error="",
+                )
+            except Exception as remote_exc:
                 logger.info(
                     "Удаленная LLM недоступна или вернула ошибку (%s). Переходим на локальную модель.",
-                    remote_error,
+                    remote_exc,
                 )
-        content = local_llm.generate(messages, max_new_tokens)
+                remote_error = str(remote_exc)
+        else:
+            reason = _remote_skip_reason(request.api_key)
+            if reason:
+                logger.info("Remote LLM пропущен: %s", reason)
+        content = await asyncio.to_thread(local_llm.generate, messages, max_new_tokens)
         if not content:
             logger.info("Ответ локальной модели пустой.")
         _log_model_output(content, f"local:{local_llm.model_name}")
-        return ChatResponse(reply=content, sources=_serialize_sources(rag_sources) or None)
+        return ChatResponse(
+            reply=content,
+            sources=_serialize_sources(rag_sources) or None,
+            model=f"local:{local_llm.model_name}",
+            used_remote=False,
+            remote_error=remote_error or "",
+        )
 
     except HTTPException:
         raise
@@ -391,10 +509,11 @@ async def chat(request: ChatRequest):
             raise HTTPException(status_code=500, detail="LLM ran out of memory during generation")
         logger.error("RuntimeError во время генерации: %s", runtime_error)
         raise HTTPException(status_code=500, detail=str(runtime_error))
-    except Exception as e:
-        logger.error(f"Ошибка при генерации: {e}")
-        raise HTTPException(status_code=500, detail=f"Generation error: {str(e)}")
+    except Exception as exc:
+        logger.error("Ошибка при генерации: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Generation error: {str(exc)}")
 
+# Возвращает статус векторного индекса
 @app.get("/rag/status")
 async def rag_status():
     """Возвращает состояние векторного индекса."""
@@ -405,6 +524,16 @@ async def rag_status():
         "store_path": DEFAULT_VECTOR_STORE_PATH,
     }
 
+
+@app.get("/models")
+async def available_models():
+    """Возвращает список доступных удалённых моделей и модель по умолчанию."""
+    return {
+        "default_model": REMOTE_LLM_MODEL,
+        "allowed_models": REMOTE_LLM_ALLOWED_MODELS or [],
+    }
+
+# Добавляет новые документы в векторный индекс
 @app.post("/rag/documents")
 async def ingest_documents(payload: KnowledgeIngestRequest):
     """Добавляет новые документы в векторный индекс."""
@@ -447,6 +576,38 @@ async def ingest_documents(payload: KnowledgeIngestRequest):
         "chunk_size": chunk_size,
         "chunk_overlap": chunk_overlap,
     }
+
+
+class RemoteTestRequest(BaseModel):
+    api_key: str
+    prompt: str = "Короткий пинг"
+    model: Optional[str] = None
+    max_tokens: int = 64
+
+
+@app.post("/remote/test")
+async def remote_test(payload: RemoteTestRequest):
+    """Проверяет доступность удаленной LLM с переданным api_key (diag endpoint)."""
+    reason = _remote_skip_reason(payload.api_key)
+    if reason:
+        raise HTTPException(status_code=400, detail=f"Remote LLM skipped: {reason}")
+    try:
+        remote_model = _select_remote_model(payload.model)
+        messages = [
+            {"role": "system", "content": "Ты — HalalAI. Ответь кратко одним предложением."},
+            {"role": "user", "content": payload.prompt.strip() or "Пинг"},
+        ]
+        content = await asyncio.to_thread(
+            call_remote_llm,
+            messages,
+            _sanitize_max_tokens(payload.max_tokens),
+            payload.api_key,
+            remote_model,
+        )
+        return {"status": "ok", "reply": content, "model": remote_model}
+    except Exception as exc:
+        logger.error("Remote test failed: %s", exc)
+        raise HTTPException(status_code=502, detail=f"Remote test failed: {exc}")
 
 if __name__ == "__main__":
     import uvicorn

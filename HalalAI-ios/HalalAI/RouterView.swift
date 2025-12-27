@@ -27,6 +27,7 @@ struct RouterView<Content: View>: View {
             }
             TabBarView()
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
             coordinator.selectTab(item: .home)
         }

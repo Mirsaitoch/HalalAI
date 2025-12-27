@@ -9,6 +9,7 @@ from config import (
     REMOTE_LLM_ENABLED,
     REMOTE_LLM_MODEL,
     REMOTE_LLM_REFERER,
+    REQUEST_TIMEOUT_SECONDS,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ def call_remote_llm(
     default_headers: Dict[str, str] = {}
     if REMOTE_LLM_REFERER:
         default_headers["HTTP-Referer"] = REMOTE_LLM_REFERER
+        default_headers["Referer"] = REMOTE_LLM_REFERER  # на случай, если провайдер ждет стандартный заголовок
     if REMOTE_LLM_APP_TITLE:
         default_headers["X-Title"] = REMOTE_LLM_APP_TITLE
     if default_headers:
@@ -60,6 +62,7 @@ def call_remote_llm(
             top_p=LLM_TOP_P,
             max_tokens=max_tokens,
             stream=False,
+            timeout=REQUEST_TIMEOUT_SECONDS,
         )
     except Exception as exc:
         logger.error("Ошибка при обращении к удаленной модели: %s", exc)
@@ -77,13 +80,19 @@ def call_remote_llm(
         )
         raise RuntimeError("Remote LLM returned empty response")
 
-    if source != "content" or finish_reason == "length":
+    if source != "content":
         logger.info(
-            "Удаленная LLM вернула reasoning вместо финального ответа (source=%s, finish_reason=%s).",
+            "Удаленная LLM вернула reasoning вместо финального ответа (source=%s, finish_reason=%s). "
+            "Возвращаем reasoning как текст.",
             source,
             finish_reason,
         )
-        raise RuntimeError("Remote LLM returned reasoning instead of final answer")
+        return content_value
+
+    if finish_reason == "length":
+        logger.info(
+            "Удаленная LLM завершилась по длине (finish_reason=length). Возвращаем усеченный ответ.",
+        )
 
     return content_value
 

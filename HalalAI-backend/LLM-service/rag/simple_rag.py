@@ -44,6 +44,14 @@ class SimpleVectorStore:
         self._loaded = True
         logger.info("Загружено %s фрагментов векторного индекса.", len(self.documents))
 
+    def reset(self) -> None:
+        """Очищает индекс и сохраняет пустое состояние."""
+        self._loaded = True
+        self.documents = []
+        self.embeddings = None
+        self.save()
+        logger.info("Векторный индекс очищен и готов к перезаписи.")
+
     def save(self) -> None:
         if not self._loaded:
             return
@@ -171,6 +179,11 @@ class RAGPipeline:
             normalize_embeddings=True,
         )
         return self.store.add_documents(docs, embeddings)
+
+    def rebuild(self, docs: List[Dict[str, Any]]) -> int:
+        """Полностью пересоздаёт индекс, очищая его перед добавлением новых документов."""
+        self.store.reset()
+        return self.add_texts(docs)
 
     def retrieve(
         self,

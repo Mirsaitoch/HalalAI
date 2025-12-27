@@ -9,7 +9,8 @@ public record ChatRequest(
     String prompt,  // Для обратной совместимости
     List<Map<String, String>> messages,  // История сообщений от клиента
     @JsonProperty("api_key") String apiKey,
-    @JsonProperty("remote_model") String remoteModel
+    @JsonProperty("remote_model") String remoteModel,
+    @JsonProperty("max_tokens") Integer maxTokens
 ) {
 }
 

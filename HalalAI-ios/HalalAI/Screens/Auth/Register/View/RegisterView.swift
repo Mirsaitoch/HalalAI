@@ -8,20 +8,9 @@
 import SwiftUI
 
 struct RegisterView: View {
-    @StateObject private var authService = AuthService.shared
-    @StateObject private var authManager = AuthManager.shared
-    
-    @State private var username: String = ""
-    @State private var email: String = ""
-    @State private var password: String = ""
-    @State private var confirmPassword: String = ""
-    @State private var showPassword: Bool = false
-    @State private var showConfirmPassword: Bool = false
-    @State private var showError: Bool = false
-    @State private var errorMessage: String = ""
-    
-    var onShowLogin: () -> Void
-    
+    var onShowLogin: (() -> Void)? = nil
+    @StateObject var viewModel = ViewModel()
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -47,7 +36,7 @@ struct RegisterView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         
-                        TextField("Введите имя пользователя", text: $username)
+                        TextField("Введите имя пользователя", text: $viewModel.username)
                             .textFieldStyle(.roundedBorder)
                             .textInputAutocapitalization(.never)
                             .disableAutocorrection(true)
@@ -60,7 +49,7 @@ struct RegisterView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         
-                        TextField("Введите email", text: $email)
+                        TextField("Введите email", text: $viewModel.email)
                             .textFieldStyle(.roundedBorder)
                             .textInputAutocapitalization(.never)
                             .disableAutocorrection(true)
@@ -75,16 +64,16 @@ struct RegisterView: View {
                             .foregroundColor(.secondary)
                         
                         HStack {
-                            if showPassword {
-                                TextField("Введите пароль", text: $password)
+                            if viewModel.showPassword {
+                                TextField("Введите пароль", text: $viewModel.password)
                                     .textInputAutocapitalization(.never)
                                     .disableAutocorrection(true)
                             } else {
-                                SecureField("Введите пароль", text: $password)
+                                SecureField("Введите пароль", text: $viewModel.password)
                             }
                             
-                            Button(action: { showPassword.toggle() }) {
-                                Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
+                            Button(action: { viewModel.showPassword.toggle() }) {
+                                Image(systemName: viewModel.showPassword ? "eye.slash.fill" : "eye.fill")
                                     .foregroundColor(.secondary)
                             }
                         }
@@ -93,7 +82,7 @@ struct RegisterView: View {
                         .background(Color(.systemGray6))
                         .cornerRadius(8)
                         
-                        if !password.isEmpty && password.count < 8 {
+                        if !viewModel.password.isEmpty && viewModel.password.count < 8 {
                             Text("Пароль должен содержать минимум 8 символов")
                                 .font(.caption)
                                 .foregroundColor(.red)
@@ -107,16 +96,16 @@ struct RegisterView: View {
                             .foregroundColor(.secondary)
                         
                         HStack {
-                            if showConfirmPassword {
-                                TextField("Повторите пароль", text: $confirmPassword)
+                            if viewModel.showConfirmPassword {
+                                TextField("Повторите пароль", text: $viewModel.confirmPassword)
                                     .textInputAutocapitalization(.never)
                                     .disableAutocorrection(true)
                             } else {
-                                SecureField("Повторите пароль", text: $confirmPassword)
+                                SecureField("Повторите пароль", text: $viewModel.confirmPassword)
                             }
                             
-                            Button(action: { showConfirmPassword.toggle() }) {
-                                Image(systemName: showConfirmPassword ? "eye.slash.fill" : "eye.fill")
+                            Button(action: { viewModel.showConfirmPassword.toggle() }) {
+                                Image(systemName: viewModel.showConfirmPassword ? "eye.slash.fill" : "eye.fill")
                                     .foregroundColor(.secondary)
                             }
                         }
@@ -125,7 +114,7 @@ struct RegisterView: View {
                         .background(Color(.systemGray6))
                         .cornerRadius(8)
                         
-                        if !confirmPassword.isEmpty && password != confirmPassword {
+                        if !viewModel.confirmPassword.isEmpty && viewModel.password != viewModel.confirmPassword {
                             Text("Пароли не совпадают")
                                 .font(.caption)
                                 .foregroundColor(.red)
@@ -135,11 +124,11 @@ struct RegisterView: View {
                     // Кнопка регистрации
                     Button(action: {
                         Task {
-                            await register()
+                            await viewModel.register()
                         }
                     }) {
                         HStack {
-                            if authService.isLoading {
+                            if viewModel.authService.isLoading {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             } else {
@@ -149,19 +138,19 @@ struct RegisterView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(isFormValid ? Color.greenForeground : Color.gray)
+                        .background(viewModel.isFormValid ? Color.greenForeground : Color.gray)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
-                    .disabled(!isFormValid || authService.isLoading)
-                    .opacity((!isFormValid || authService.isLoading) ? 0.6 : 1.0)
+                    .disabled(!viewModel.isFormValid || viewModel.authService.isLoading)
+                    .opacity((!viewModel.isFormValid || viewModel.authService.isLoading) ? 0.6 : 1.0)
                     
                     // Кнопка входа
                     HStack {
                         Text("Уже есть аккаунт?")
                             .foregroundColor(.secondary)
                         Button(action: {
-                            onShowLogin()
+                            onShowLogin?()
                         }) {
                             Text("Войти")
                                 .fontWeight(.semibold)
@@ -175,65 +164,10 @@ struct RegisterView: View {
             }
         }
         .background(Color.greenBackground.ignoresSafeArea())
-        .alert("Ошибка", isPresented: $showError) {
+        .alert("Ошибка", isPresented: $viewModel.showError) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(errorMessage)
+            Text(viewModel.errorMessage)
         }
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var isFormValid: Bool {
-        !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        password.count >= 8 &&
-        password == confirmPassword &&
-        isValidEmail(email)
-    }
-    
-    private func isValidEmail(_ email: String) -> Bool {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegex)
-        return emailPredicate.evaluate(with: email)
-    }
-    
-    // MARK: - Private Methods
-    
-    private func register() async {
-        guard !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              password.count >= 8,
-              password == confirmPassword else {
-            errorMessage = "Проверьте правильность заполнения всех полей"
-            showError = true
-            return
-        }
-        
-        guard isValidEmail(email) else {
-            errorMessage = "Введите корректный email адрес"
-            showError = true
-            return
-        }
-        
-        do {
-            let response = try await authService.register(
-                username: username,
-                email: email,
-                password: password
-            )
-            authManager.saveAuth(response)
-        } catch let error as AuthError {
-            errorMessage = error.errorDescription ?? "Неизвестная ошибка"
-            showError = true
-        } catch {
-            errorMessage = "Произошла ошибка при регистрации"
-            showError = true
-        }
-    }
+    }   
 }
-
-#Preview {
-    RegisterView(onShowLogin: {})
-}
-

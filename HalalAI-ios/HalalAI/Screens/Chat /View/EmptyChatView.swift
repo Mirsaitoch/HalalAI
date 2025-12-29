@@ -9,7 +9,7 @@ import SwiftUI
 
 struct EmptyChatView: View {
     @State private var isAnimating = false
-    @StateObject private var chatService = ChatService.shared
+    @ObservedObject var chatService: ChatServiceImpl
     
     var body: some View {
         VStack(spacing: 24) {
@@ -73,9 +73,4 @@ struct QuickQuestionButton: View {
             isPressed = pressing
         }
     }
-}
-
-#Preview {
-    EmptyChatView()
-        .background(Color(.systemGroupedBackground))
 }

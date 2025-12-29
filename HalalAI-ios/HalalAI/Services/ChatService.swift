@@ -9,9 +9,15 @@ import Foundation
 import Combine
 
 @MainActor
-class ChatService: ObservableObject {
-    static let shared = ChatService()
-    
+protocol ChatServiceProtocol: ObservableObject {
+    func loadModels() async
+    func sendMessage(_ text: String)
+    func retryLastMessage()
+    func clearChat()
+}
+
+@MainActor
+class ChatServiceImpl: ChatServiceProtocol {
     @Published var messages: [ChatMessage] = []
     @Published var chatState: ChatState = .idle
     @Published var connectionState: ConnectionState = .connected
@@ -57,6 +63,7 @@ class ChatService: ObservableObject {
         #endif
     }()
     
+    private var authManager: any AuthManagerProtocol
     // URLSession для запросов
     private lazy var urlSession: URLSession = {
         let configuration = URLSessionConfiguration.default
@@ -66,7 +73,8 @@ class ChatService: ObservableObject {
     private let remoteModelDefaultsKey = "HalalAI.remoteModel"
     private let maxTokensDefaultsKey = "HalalAI.maxTokens"
     
-    private init() {
+    init(authManager: any AuthManagerProtocol) {
+        self.authManager = authManager
         self.userApiKey = UserDefaults.standard.string(forKey: apiKeyDefaultsKey) ?? ""
         self.remoteModel = UserDefaults.standard.string(forKey: remoteModelDefaultsKey) ?? ""
         let savedMax = UserDefaults.standard.integer(forKey: maxTokensDefaultsKey)
@@ -280,7 +288,7 @@ class ChatService: ObservableObject {
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Accept")
         
         // Добавляем токен авторизации, если он есть
-        if let token = AuthManager.shared.authToken {
+        if let token = authManager.authToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         

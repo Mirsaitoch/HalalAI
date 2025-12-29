@@ -8,17 +8,10 @@
 import SwiftUI
 
 struct LoginView: View {
-    @StateObject private var authService = AuthService.shared
-    @StateObject private var authManager = AuthManager.shared
+    var onShowRegister: (() -> Void)? = nil
     
-    @State private var usernameOrEmail: String = ""
-    @State private var password: String = ""
-    @State private var showPassword: Bool = false
-    @State private var showError: Bool = false
-    @State private var errorMessage: String = ""
-    
-    var onShowRegister: () -> Void
-    
+    @StateObject var viewModel = ViewModel()
+
     var body: some View {
         VStack(spacing: 20) {
             // Заголовок
@@ -43,7 +36,7 @@ struct LoginView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    TextField("Введите имя пользователя или email", text: $usernameOrEmail)
+                    TextField("Введите имя пользователя или email", text: $viewModel.usernameOrEmail)
                         .textFieldStyle(.roundedBorder)
                         .textInputAutocapitalization(.never)
                         .disableAutocorrection(true)
@@ -57,16 +50,16 @@ struct LoginView: View {
                         .foregroundColor(.secondary)
                     
                     HStack {
-                        if showPassword {
-                            TextField("Введите пароль", text: $password)
+                        if viewModel.showPassword {
+                            TextField("Введите пароль", text: $viewModel.password)
                                 .textInputAutocapitalization(.never)
                                 .disableAutocorrection(true)
                         } else {
-                            SecureField("Введите пароль", text: $password)
+                            SecureField("Введите пароль", text: $viewModel.password)
                         }
                         
-                        Button(action: { showPassword.toggle() }) {
-                            Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
+                        Button(action: { viewModel.showPassword.toggle() }) {
+                            Image(systemName: viewModel.showPassword ? "eye.slash.fill" : "eye.fill")
                                 .foregroundColor(.secondary)
                         }
                     }
@@ -79,11 +72,11 @@ struct LoginView: View {
                 // Кнопка входа
                 Button(action: {
                     Task {
-                        await login()
+                        await viewModel.login()
                     }
                 }) {
                     HStack {
-                        if authService.isLoading {
+                        if viewModel.authService.isLoading {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
@@ -97,15 +90,15 @@ struct LoginView: View {
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
-                .disabled(authService.isLoading || usernameOrEmail.isEmpty || password.isEmpty)
-                .opacity((authService.isLoading || usernameOrEmail.isEmpty || password.isEmpty) ? 0.6 : 1.0)
+                .disabled(viewModel.isDisable)
+                .opacity((viewModel.isDisable) ? 0.6 : 1.0)
                 
                 // Кнопка регистрации
                 HStack {
                     Text("Нет аккаунта?")
                         .foregroundColor(.secondary)
                     Button(action: {
-                        onShowRegister()
+                        onShowRegister?()
                     }) {
                         Text("Зарегистрироваться")
                             .fontWeight(.semibold)
@@ -119,40 +112,10 @@ struct LoginView: View {
             Spacer()
         }
         .background(Color.greenBackground.ignoresSafeArea())
-        .alert("Ошибка", isPresented: $showError) {
+        .alert("Ошибка", isPresented: $viewModel.showError) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(errorMessage)
-        }
-    }
-    
-    // MARK: - Private Methods
-    
-    private func login() async {
-        guard !usernameOrEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !password.isEmpty else {
-            errorMessage = "Заполните все поля"
-            showError = true
-            return
-        }
-        
-        do {
-            let response = try await authService.login(
-                usernameOrEmail: usernameOrEmail,
-                password: password
-            )
-            authManager.saveAuth(response)
-        } catch let error as AuthError {
-            errorMessage = error.errorDescription ?? "Неизвестная ошибка"
-            showError = true
-        } catch {
-            errorMessage = "Произошла ошибка при входе"
-            showError = true
+            Text(viewModel.errorMessage)
         }
     }
 }
-
-#Preview {
-    LoginView(onShowRegister: {})
-}
-

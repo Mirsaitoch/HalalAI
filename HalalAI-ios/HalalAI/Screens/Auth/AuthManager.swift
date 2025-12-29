@@ -9,9 +9,15 @@ import Foundation
 import Combine
 
 @MainActor
-class AuthManager: ObservableObject {
-    static let shared = AuthManager()
-    
+protocol AuthManagerProtocol: ObservableObject {
+    var isAuthenticated: Bool { get }
+    var authToken: String? { get }
+    func saveAuth(_ response: AuthResponse)
+    func logout()
+}
+
+@MainActor
+class AuthManagerImpl: AuthManagerProtocol {
     @Published var authState: AuthState = .unauthenticated
     @Published var currentUser: AuthResponse?
     @Published var errorMessage: String?
@@ -19,7 +25,7 @@ class AuthManager: ObservableObject {
     private let tokenKey = "HalalAI.authToken"
     private let userKey = "HalalAI.currentUser"
     
-    private init() {
+    init() {
         loadStoredAuth()
     }
     

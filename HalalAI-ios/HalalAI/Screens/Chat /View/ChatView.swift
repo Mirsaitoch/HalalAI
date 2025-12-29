@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct ChatView: View {
-    @StateObject private var chatService = ChatService.shared
+    @EnvironmentObject var coordinator: Coordinator
+    @StateObject private var chatService = DependencyContainer.shared.chatService
     @State private var messageText = ""
     
     var body: some View {
@@ -16,7 +17,7 @@ struct ChatView: View {
             VStack(spacing: 0) {
                 ZStack {
                     if chatService.messages.isEmpty {
-                        EmptyChatView()
+                        EmptyChatView(chatService: chatService)
                     } else {
                         ScrollViewReader { proxy in
                             ScrollView {
@@ -68,7 +69,7 @@ struct ChatView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button(action: {
-                            // TODO: Открыть настройки модели
+                            coordinator.currentSelectedTab = .settings
                         }) {
                             Label("Настройки модели", systemImage: "gearshape")
                         }

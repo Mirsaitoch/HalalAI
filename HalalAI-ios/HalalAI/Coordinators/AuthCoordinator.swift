@@ -7,53 +7,17 @@
 
 import SwiftUI
 
-enum AuthCoordinator {
+enum AuthCoordinator: Hashable {
     case login
     case register
     
+    @ViewBuilder
     var view: some View {
         switch self {
         case .login:
-            AuthView(initialView: .login)
+            LoginView()
         case .register:
-            AuthView(initialView: .register)
+            RegisterView()
         }
     }
 }
-
-struct AuthView: View {
-    @StateObject private var authManager = AuthManager.shared
-    @State private var currentView: AuthViewType = .login
-    
-    enum AuthViewType {
-        case login
-        case register
-    }
-    
-    let initialView: AuthViewType
-    
-    init(initialView: AuthViewType = .login) {
-        self.initialView = initialView
-        _currentView = State(initialValue: initialView)
-    }
-    
-    var body: some View {
-        Group {
-            switch currentView {
-            case .login:
-                LoginView(onShowRegister: {
-                    withAnimation {
-                        currentView = .register
-                    }
-                })
-            case .register:
-                RegisterView(onShowLogin: {
-                    withAnimation {
-                        currentView = .login
-                    }
-                })
-            }
-        }
-    }
-}
-

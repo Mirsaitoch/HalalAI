@@ -9,8 +9,6 @@ import Foundation
 
 protocol IngredientServiceProtocol {
     func loadIngredients() async throws -> [Ingredient]
-    func findIngredient(by name: String) async -> Ingredient?
-    func analyzeIngredients(_ ingredientNames: [String]) async -> ProductAnalysis
     func analyzeText(_ text: String) async -> ProductAnalysis
 }
 
@@ -51,18 +49,9 @@ class IngredientService: IngredientServiceProtocol {
             
             let eCode = components[0].isEmpty ? nil : components[0]
             let statusString = components[1]
-            let nameRu = components[2]
-                .replacingOccurrences(of: "&l", with: "")
-                .replacingOccurrences(of: "&amp;", with: "&")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            let nameEn = components.count > 3 ? components[3]
-                .replacingOccurrences(of: "&l", with: "")
-                .replacingOccurrences(of: "&amp;", with: "&")
-                .trimmingCharacters(in: .whitespacesAndNewlines) : ""
-            let note = components.count > 4 ? components[4]
-                .replacingOccurrences(of: "&l", with: "")
-                .replacingOccurrences(of: "&amp;", with: "&")
-                .trimmingCharacters(in: .whitespacesAndNewlines) : nil
+            let nameRu = components[2].trimmingCharacters(in: .whitespacesAndNewlines)
+            let nameEn = components[3].trimmingCharacters(in: .whitespacesAndNewlines)
+            let note = components[4].trimmingCharacters(in: .whitespacesAndNewlines)
             
             guard let status = IngredientStatus(rawValue: statusString) else { continue }
             
@@ -71,7 +60,7 @@ class IngredientService: IngredientServiceProtocol {
                 status: status,
                 nameRu: nameRu,
                 nameEn: nameEn,
-                note: note?.isEmpty == false ? note : nil
+                note: note.isEmpty == false ? note : nil
             )
             parsedIngredients.append(ingredient)
         }
@@ -81,84 +70,7 @@ class IngredientService: IngredientServiceProtocol {
         
         return ingredients
     }
-    
-    func findIngredient(by name: String) -> Ingredient? {
-        let searchName = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Поиск по русскому названию
-        if let found = ingredients.first(where: { ingredient in
-            ingredient.nameRu.lowercased().contains(searchName) ||
-            searchName.contains(ingredient.nameRu.lowercased())
-        }) {
-            return found
-        }
-        
-        // Поиск по английскому названию
-        if let found = ingredients.first(where: { ingredient in
-            ingredient.nameEn.lowercased().contains(searchName) ||
-            searchName.contains(ingredient.nameEn.lowercased())
-        }) {
-            return found
-        }
-        
-        // Поиск по E-коду
-        if let found = ingredients.first(where: { ingredient in
-            guard let eCode = ingredient.eCode else { return false }
-            return eCode.lowercased() == searchName || searchName.contains(eCode.lowercased())
-        }) {
-            return found
-        }
-        
-        // Частичное совпадение слов
-        let searchWords = searchName.components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter { !$0.isEmpty }
-        
-        for word in searchWords {
-            if let found = ingredients.first(where: { ingredient in
-                ingredient.nameRu.lowercased().contains(word) ||
-                ingredient.nameEn.lowercased().contains(word)
-            }) {
-                return found
-            }
-        }
-        
-        return nil
-    }
-    
-    func analyzeIngredients(_ ingredientNames: [String]) -> ProductAnalysis {
-        var detectedIngredients: [DetectedIngredient] = []
-        
-        for name in ingredientNames {
-            let cleanedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !cleanedName.isEmpty else { continue }
             
-            let matchedIngredient = findIngredient(by: cleanedName)
-            let detected = DetectedIngredient(name: cleanedName, matchedIngredient: matchedIngredient)
-            detectedIngredients.append(detected)
-        }
-        
-        let haramIngredients = detectedIngredients.filter { $0.status == .haram }
-        let mushboohIngredients = detectedIngredients.filter { $0.status == .mushbooh }
-        
-        let overallStatus: IngredientStatus
-        if !haramIngredients.isEmpty {
-            overallStatus = .haram
-        } else if !mushboohIngredients.isEmpty {
-            overallStatus = .mushbooh
-        } else if detectedIngredients.allSatisfy({ $0.status == .halal }) {
-            overallStatus = .halal
-        } else {
-            overallStatus = .unknown
-        }
-        
-        return ProductAnalysis(
-            ingredients: detectedIngredients,
-            overallStatus: overallStatus,
-            haramIngredients: haramIngredients,
-            mushboohIngredients: mushboohIngredients
-        )
-    }
-    
     func analyzeText(_ text: String) -> ProductAnalysis {
         var detectedIngredients: [DetectedIngredient] = []
         var foundECodes: Set<String> = []

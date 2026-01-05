@@ -62,17 +62,7 @@ class IngredientScannerViewModel: ObservableObject {
     
     private func processText(_ text: String) {
         print("Распознанный текст: \(text)")
-        
-//        // Извлекаем текст от "Состав" до точки
-//        let compositionText = extractCompositionText(from: text)
-//        print("Извлеченный состав: \(compositionText)")
-//        
-//        if compositionText.isEmpty {
-//            print("Не удалось найти состав в тексте")
-//            isLoading = false
-//            return
-//        }
-        
+
         Task {
             let analysis = await ingredientService.analyzeText(text)
             await MainActor.run {
@@ -83,96 +73,7 @@ class IngredientScannerViewModel: ObservableObject {
             }
         }
     }
-    
-    private func extractCompositionText(from text: String) -> String {
-        // Ищем маркеры начала состава
-        let compositionMarkers = ["Состав:", "Ingredients:", "Ингредиенты:", "Состав", "INGREDIENTS", "INGREDIENTS:"]
-        var compositionStart: String.Index?
         
-        for marker in compositionMarkers {
-            if let range = text.range(of: marker, options: [.caseInsensitive, .diacriticInsensitive]) {
-                compositionStart = range.upperBound
-                break
-            }
-        }
-        
-        guard let startIndex = compositionStart else {
-            return ""
-        }
-        
-        // Берем текст после маркера
-        var textAfterComposition = String(text[startIndex...])
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Ищем первую точку, которая не является частью числа или E-кода
-        // Ищем точку, за которой идет пробел или конец строки, или перед которой не цифра
-        var dotIndex: String.Index?
-        var searchIndex = textAfterComposition.startIndex
-        
-        while searchIndex < textAfterComposition.endIndex {
-            if let foundIndex = textAfterComposition[searchIndex...].firstIndex(of: ".") {
-                // Проверяем контекст вокруг точки
-                let beforeIndex = textAfterComposition.index(before: foundIndex)
-                let afterIndex = textAfterComposition.index(after: foundIndex)
-                
-                // Если точка не в числе (перед ней не цифра или после не цифра)
-                let charBefore = beforeIndex >= textAfterComposition.startIndex ? textAfterComposition[beforeIndex] : " "
-                let charAfter = afterIndex < textAfterComposition.endIndex ? textAfterComposition[afterIndex] : " "
-                
-                let isDigitBefore = charBefore.isNumber
-                let isDigitAfter = charAfter.isNumber
-                
-                // Если точка не в числе и после нее пробел или конец - это конец состава
-                if !isDigitBefore && !isDigitAfter && (charAfter.isWhitespace || afterIndex == textAfterComposition.endIndex) {
-                    dotIndex = foundIndex
-                    break
-                }
-                
-                // Продолжаем поиск после этой точки
-                searchIndex = textAfterComposition.index(after: foundIndex)
-            } else {
-                break
-            }
-        }
-        
-        if let dotIndex = dotIndex {
-            // Берем текст до точки (не включая точку)
-            let compositionText = String(textAfterComposition[..<dotIndex])
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            return compositionText
-        }
-        
-        // Если точки нет, ищем другие маркеры конца состава
-        let endMarkers = [
-            "Пищевая ценность",
-            "Nutrition",
-            "Nutritional",
-            "Пищевая и энергетическая",
-            "Энергетическая ценность",
-            "Количество",
-            "ВСТРЯХНУТЬ",
-            "Температура",
-            "Дата",
-            "ГОСТ",
-            "Изготовитель"
-        ]
-        
-        for marker in endMarkers {
-            if let range = textAfterComposition.range(of: marker, options: [.caseInsensitive, .diacriticInsensitive]) {
-                let compositionText = String(textAfterComposition[..<range.lowerBound])
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                return compositionText
-            }
-        }
-        
-        // Если ничего не найдено, берем текст до конца (но ограничиваем длиной)
-        let maxLength = min(textAfterComposition.count, 1000)
-        let compositionText = String(textAfterComposition.prefix(maxLength))
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        return compositionText
-    }
-    
     private func recognizeText(from image: UIImage) async -> String {
         guard let cgImage = image.cgImage else {
             print("Ошибка: не удалось получить CGImage")

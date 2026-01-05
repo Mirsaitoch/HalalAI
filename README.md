@@ -2,6 +2,10 @@
 
 Halal AI — это интеллектуальное мобильное приложение для iOS, которое помогает пользователям быстро получать ответы на вопросы, связанные с халяль-образом жизни. Система использует LLM (Large Language Models) с технологией RAG (Retrieval-Augmented Generation) для обработки запросов на естественном языке, обеспечивая точные и основанные на исламских источниках ответы.
 
+<img width="201" height="437" alt="image" src="https://github.com/user-attachments/assets/2f0519aa-f601-433e-8ac6-a693b2cea6eb" />
+<img width="201" height="437" alt="image" src="https://github.com/user-attachments/assets/aedcb0b2-91db-4432-80d5-e45aae7df77e" />
+<img width="201" height="437" alt="image" src="https://github.com/user-attachments/assets/a9d08325-574d-40cf-8ec4-679e15794b17" />
+
 ## Архитектура
 
 Проект построен по принципу микросервисной архитектуры с разделением ответственности:

@@ -9,11 +9,15 @@ import SwiftUI
 
 enum HomeCoordinator {
     case main
+    case scanner
     
+    @ViewBuilder
     var view: some View {
         switch self {
         case .main:
-            return HomeView()
+            HomeView()
+        case .scanner:
+            IngredientScannerView()
         }
     }
 }

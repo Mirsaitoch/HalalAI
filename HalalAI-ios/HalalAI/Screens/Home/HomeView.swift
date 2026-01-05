@@ -33,12 +33,25 @@ struct HomeView: View {
                         description: "Халяль места рядом"
                     )
                 }
+                
                 ImageTextComponent(
                     componentSize: .large,
                     image: .mosque,
                     title: "Изучай Ислам",
                     description: "Суры и Аяты из Корана"
                 )
+                
+                ImageTextComponent(
+                    componentSize: .large,
+                    image: .quran,
+                    title: "Сканировать состав",
+                    description: "Проверь ингредиенты на халяльность"
+                )
+                .onTapGesture {
+                    withAnimation {
+                        coordinator.nextStep(step: .Home(.scanner))
+                    }
+                }
             }
         }
         .padding(.horizontal, 15)

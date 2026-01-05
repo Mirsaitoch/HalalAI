@@ -52,6 +52,9 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Нам нужен доступ к камере, чтобы отсканировать состав продуктов</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Нам нужен доступ к фото библиотеке, чтобы выбрать фото состава продукта</string>
 </dict>
 </plist>
-

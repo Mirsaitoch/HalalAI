@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RootView: View {
-    @StateObject private var authManager = DependencyContainer.shared.authManager
+    var authManager: any AuthManager
     
     var body: some View {
         Group {

@@ -19,8 +19,14 @@ extension RegisterView {
         @Published var showError: Bool = false
         @Published var errorMessage: String = ""
         
-        var authService = DependencyContainer.shared.authService
-        var authManager = DependencyContainer.shared.authManager
+        var authManager: any AuthManager
+        var authService: any AuthService
+        
+        init(authManager: any AuthManager, authService: any AuthService, ) {
+            self.authManager = authManager
+            self.authService = authService
+        }
+        
         var isFormValid: Bool {
             !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
             !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&

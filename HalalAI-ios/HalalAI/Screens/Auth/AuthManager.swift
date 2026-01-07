@@ -5,11 +5,14 @@
 //  Created by Auto on 2025.
 //
 
-import Foundation
+import SwiftUI
 import Combine
 
 @MainActor
-protocol AuthManagerProtocol: ObservableObject {
+protocol AuthManager {
+    var authState: AuthState { get set }
+    var currentUser: AuthResponse? { get set }
+    var errorMessage: String? { get set }
     var isAuthenticated: Bool { get }
     var authToken: String? { get }
     func saveAuth(_ response: AuthResponse)
@@ -17,10 +20,11 @@ protocol AuthManagerProtocol: ObservableObject {
 }
 
 @MainActor
-class AuthManagerImpl: AuthManagerProtocol {
-    @Published var authState: AuthState = .unauthenticated
-    @Published var currentUser: AuthResponse?
-    @Published var errorMessage: String?
+@Observable
+class AuthManagerImpl: AuthManager {
+    var authState: AuthState = .unauthenticated
+    var currentUser: AuthResponse?
+    var errorMessage: String?
     
     private let tokenKey = "HalalAI.authToken"
     private let userKey = "HalalAI.currentUser"

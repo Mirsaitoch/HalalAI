@@ -9,7 +9,15 @@ import Foundation
 import Combine
 
 @MainActor
-protocol ChatServiceProtocol: ObservableObject {
+protocol ChatService: ObservableObject {
+    var messages: [ChatMessage] { get set }
+    var chatState: ChatState { get set }
+    var connectionState: ConnectionState { get set }
+    var userApiKey: String { get set }
+    var remoteModel: String { get set }
+    var maxTokens: Int { get set }
+    var availableModels: [String] { get set }
+    var defaultRemoteModel: String { get set }
     func loadModels() async
     func sendMessage(_ text: String)
     func retryLastMessage()
@@ -17,21 +25,23 @@ protocol ChatServiceProtocol: ObservableObject {
 }
 
 @MainActor
-class ChatServiceImpl: ChatServiceProtocol {
-    @Published var messages: [ChatMessage] = []
-    @Published var chatState: ChatState = .idle
-    @Published var connectionState: ConnectionState = .connected
-    @Published var userApiKey: String = "" {
+@Observable
+class ChatServiceImpl: ChatService {
+    // MARK: - public
+    var messages: [ChatMessage] = []
+    var chatState: ChatState = .idle
+    var connectionState: ConnectionState = .connected
+    var userApiKey: String = "" {
         didSet {
             UserDefaults.standard.set(userApiKey, forKey: apiKeyDefaultsKey)
         }
     }
-    @Published var remoteModel: String = "" {
+    var remoteModel: String = "" {
         didSet {
             UserDefaults.standard.set(remoteModel, forKey: remoteModelDefaultsKey)
         }
     }
-    @Published var maxTokens: Int = 2048 {
+    var maxTokens: Int = 2048 {
         didSet {
             let clamped = max(16, min(maxTokens, 6144))
             if clamped != maxTokens {
@@ -41,9 +51,11 @@ class ChatServiceImpl: ChatServiceProtocol {
             UserDefaults.standard.set(maxTokens, forKey: maxTokensDefaultsKey)
         }
     }
-    @Published var availableModels: [String] = []
-    @Published var defaultRemoteModel: String = ""
     
+    var availableModels: [String] = []
+    var defaultRemoteModel: String = ""
+    
+    // MARK: - private
     private var cancellables = Set<AnyCancellable>()
     private var isSending = false 
     private var lastSendAt: Date?
@@ -63,9 +75,9 @@ class ChatServiceImpl: ChatServiceProtocol {
         #endif
     }()
     
-    private var authManager: any AuthManagerProtocol
+    private var authManager: any AuthManager
     // URLSession для запросов
-    private lazy var urlSession: URLSession = {
+    private var urlSession: URLSession = {
         let configuration = URLSessionConfiguration.default
         return URLSession(configuration: configuration)
     }()
@@ -73,7 +85,7 @@ class ChatServiceImpl: ChatServiceProtocol {
     private let remoteModelDefaultsKey = "HalalAI.remoteModel"
     private let maxTokensDefaultsKey = "HalalAI.maxTokens"
     
-    init(authManager: any AuthManagerProtocol) {
+    init(authManager: any AuthManager) {
         self.authManager = authManager
         self.userApiKey = UserDefaults.standard.string(forKey: apiKeyDefaultsKey) ?? ""
         self.remoteModel = UserDefaults.standard.string(forKey: remoteModelDefaultsKey) ?? ""
@@ -360,6 +372,5 @@ class ChatServiceImpl: ChatServiceProtocol {
         connectionState = .disconnected
         isSending = false
         lastSendAt = nil
-        
     }
 }

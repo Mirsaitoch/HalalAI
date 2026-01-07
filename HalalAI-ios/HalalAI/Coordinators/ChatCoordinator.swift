@@ -10,10 +10,11 @@ import SwiftUI
 enum ChatCoordinator {
     case chat
     
+    @MainActor
     var view: some View {
         switch self {
         case .chat:
-            return ChatView()
+            screenFactory.makeChatView()
         }
     }
 }

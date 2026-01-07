@@ -10,10 +10,11 @@ import SwiftUI
 enum SettingsCoordinator {
     case settings
     
+    @MainActor
     var view: some View {
         switch self {
         case .settings:
-            return SettingsView()
+            screenFactory.makeSettingsView()
         }
     }
 }

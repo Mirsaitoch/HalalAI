@@ -9,7 +9,7 @@ import SwiftUI
 
 @main
 struct HalalAIApp: App {
-    //нужно для тестирования камеры
+    // нужно для тестирования камеры
     private func loadRocketSimConnect() {
         #if DEBUG
         guard (Bundle(path: "/Applications/RocketSim.app/Contents/Frameworks/RocketSimConnectLinker.nocache.framework")?.load() == true) else {
@@ -21,14 +21,14 @@ struct HalalAIApp: App {
     }
     
     init() {
+        // тоже нужно для тестирования камеры
         loadRocketSimConnect()
     }
-    
     var body: some Scene {
         WindowGroup {
             ZStack {
                 Color.greenBackground.ignoresSafeArea()
-                RootView()
+                screenFactory.makeRootView()
             }
         }
     }

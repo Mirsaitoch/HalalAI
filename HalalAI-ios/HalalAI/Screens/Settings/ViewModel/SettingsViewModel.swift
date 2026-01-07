@@ -10,8 +10,13 @@ import Foundation
 extension SettingsView {
     @MainActor
     final class ViewModel: ObservableObject {
-        var chatService = DependencyContainer.shared.chatService
-        var authManager = DependencyContainer.shared.authManager
+        var chatService: any ChatService
+        var authManager: any AuthManager
+        
+        init(chatService: any ChatService, authManager: any AuthManager) {
+            self.chatService = chatService
+            self.authManager = authManager
+        }
 
         @Published var isApiKeyVisible = false
         @Published var maxTokensSlider: Double = 2048

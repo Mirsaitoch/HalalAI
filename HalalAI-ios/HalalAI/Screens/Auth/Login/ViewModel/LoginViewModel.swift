@@ -10,13 +10,12 @@ import Foundation
 extension LoginView {
     @MainActor
     final class ViewModel: ObservableObject {
-        var authManager: AuthManagerImpl
-        var authService: AuthServiceImpl
+        var authManager: any AuthManager
+        var authService: any AuthService
         
-        init() {
-            let dc = DependencyContainer.shared
-            self.authManager = dc.authManager
-            self.authService = dc.authService
+        init(authManager: any AuthManager, authService: any AuthService) {
+            self.authManager = authManager
+            self.authService = authService
         }
         
         @Published var usernameOrEmail: String = ""

@@ -8,9 +8,8 @@
 import SwiftUI
 
 struct LoginView: View {
+    @ObservedObject var viewModel: ViewModel
     var onShowRegister: (() -> Void)? = nil
-    
-    @StateObject var viewModel = ViewModel()
 
     var body: some View {
         VStack(spacing: 20) {

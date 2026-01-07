@@ -8,21 +8,20 @@
 import SwiftUI
 
 struct ChatView: View {
+    @State var viewModel: ViewModel
     @EnvironmentObject var coordinator: Coordinator
-    @StateObject private var chatService = DependencyContainer.shared.chatService
-    @State private var messageText = ""
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 ZStack {
-                    if chatService.messages.isEmpty {
-                        EmptyChatView(chatService: chatService)
+                    if viewModel.chatService.messages.isEmpty {
+                        EmptyChatView(chatService: viewModel.chatService)
                     } else {
                         ScrollViewReader { proxy in
                             ScrollView {
                                 LazyVStack(spacing: 16) {
-                                    ForEach(chatService.messages) { message in
+                                    ForEach(viewModel.chatService.messages) { message in
                                         MessageBubble(message: message)
                                             .id(message.id)
                                             .transition(.asymmetric(
@@ -32,17 +31,17 @@ struct ChatView: View {
                                     }
                                     
                                     // Индикатор печати
-                                    if chatService.chatState == .typing {
+                                    if viewModel.chatService.chatState == .typing {
                                         TypingIndicator()
                                             .id("typing")
                                     }
                                     
                                     // Сообщение об ошибке
-                                    if case .error(let errorMessage) = chatService.chatState {
+                                    if case .error(let errorMessage) = viewModel.chatService.chatState {
                                         ErrorMessageView(
                                             message: errorMessage,
                                             onRetry: {
-                                                chatService.retryLastMessage()
+                                                viewModel.chatService.retryLastMessage()
                                             }
                                         )
                                         .id("error")
@@ -54,9 +53,10 @@ struct ChatView: View {
                         }
                     }
                 }
+                
                 InputBar(
-                    messageText: $messageText,
-                    onSend: sendMessage,
+                    messageText: $viewModel.messageText,
+                    onSend: viewModel.sendMessage,
                     onMicrophoneTap: {
                         // TODO: Реализовать голосовой ввод, пока кнопка скрыта
                         print("Микрофон нажат")
@@ -75,7 +75,7 @@ struct ChatView: View {
                         }
                                                 
                         Button(action: {
-                            chatService.clearChat()
+                            viewModel.chatService.clearChat()
                         }) {
                             Label("Очистить чат", systemImage: "trash")
                         }
@@ -91,14 +91,6 @@ struct ChatView: View {
 //        .onTapGesture {
 //            hideKeyboard()
 //        }
-    }
-    
-    private func sendMessage() {
-        let trimmedText = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedText.isEmpty else { return }
-        
-        chatService.sendMessage(trimmedText)
-        messageText = ""
     }
 }
 
@@ -150,8 +142,4 @@ struct ErrorMessageView: View {
             removal: .opacity
         ))
     }
-}
-
-#Preview {
-    ChatView()
 }

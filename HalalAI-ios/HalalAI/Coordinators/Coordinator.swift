@@ -11,15 +11,14 @@ enum Step: Hashable, Equatable {
     case Chat(_ val: ChatCoordinator)
     case Settings(_ val: SettingsCoordinator)
     case Home(_ val: HomeCoordinator)
-    case Auth(_ val: AuthCoordinator)
 
+    @MainActor
     var view: some View {
         Group {
             switch self {
             case .Chat(let value): value.view
             case .Settings(let value): value.view
             case .Home(let value): value.view
-            case .Auth(let value): value.view
             }
         }
     }
@@ -67,7 +66,6 @@ final class Coordinator: ObservableObject {
         case .Chat(let value): value.view
         case .Settings(let value): value.view
         case .Home(let value): value.view
-        case .Auth(let value): value.view
         }
     }
     

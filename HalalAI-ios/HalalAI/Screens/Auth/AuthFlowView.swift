@@ -12,13 +12,13 @@ struct AuthFlowView: View {
     
     var body: some View {
         NavigationStack(path: $path) {
-            LoginView(onShowRegister: { path = [.register] })
+            screenFactory.makeLoginView(path: $path)
                 .navigationDestination(for: AuthCoordinator.self) { step in
                     switch step {
                     case .login:
-                        LoginView(onShowRegister: { path = [.register] })
+                        screenFactory.makeLoginView(path: $path)
                     case .register:
-                        RegisterView(onShowLogin: { path = [] })
+                        screenFactory.makeRegisterView(path: $path)
                             .navigationBarBackButtonHidden()
                     }
                 }

@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct RegisterView: View {
+    @ObservedObject var viewModel: ViewModel
     var onShowLogin: (() -> Void)? = nil
-    @StateObject var viewModel = ViewModel()
 
     var body: some View {
         ScrollView {

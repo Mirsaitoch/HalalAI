@@ -8,13 +8,15 @@
 import Foundation
 
 @MainActor
-protocol AuthServiceProtocol: ObservableObject {
+protocol AuthService: ObservableObject {
+    var isLoading: Bool { get set }
+    var errorMessage: String? { get set }
     func register(username: String, email: String, password: String) async throws -> AuthResponse
     func login(usernameOrEmail: String, password: String) async throws -> AuthResponse
 }
 
 @MainActor
-class AuthServiceImpl: AuthServiceProtocol {
+class AuthServiceImpl: AuthService {
     @Published var isLoading = false
     @Published var errorMessage: String?
     

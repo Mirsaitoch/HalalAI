@@ -7,19 +7,19 @@
 
 import Foundation
 
-protocol IngredientServiceProtocol {
+protocol IngredientService {
     func loadIngredients() async throws -> [Ingredient]
     func analyzeText(_ text: String) async -> ProductAnalysis
 }
 
 @MainActor
-class IngredientService: IngredientServiceProtocol {
-    static let shared = IngredientService()
-    
+class IngredientServiceImpl: IngredientService {
     private var ingredients: [Ingredient] = []
     private var ingredientsLoaded = false
     
-    private init() {}
+    init() {
+        print("Создаем AuthManagerImpl")
+    }
     
     func loadIngredients() async throws -> [Ingredient] {
         if ingredientsLoaded {

@@ -9,15 +9,16 @@ import Foundation
 
 extension RegisterView {
     @MainActor
+    @Observable
     final class ViewModel: ObservableObject {
-        @Published var username: String = ""
-        @Published var email: String = ""
-        @Published var password: String = ""
-        @Published var confirmPassword: String = ""
-        @Published var showPassword: Bool = false
-        @Published var showConfirmPassword: Bool = false
-        @Published var showError: Bool = false
-        @Published var errorMessage: String = ""
+        var username: String = ""
+        var email: String = ""
+        var password: String = ""
+        var confirmPassword: String = ""
+        var showPassword: Bool = false
+        var showConfirmPassword: Bool = false
+        var showError: Bool = false
+        var errorMessage: String = ""
         
         var authManager: any AuthManager
         var authService: any AuthService

@@ -25,9 +25,8 @@ protocol ChatService: ObservableObject {
 }
 
 @MainActor
-@Observable
 class ChatServiceImpl: ChatService {
-    // MARK: - public
+    // MARK
     var messages: [ChatMessage] = []
     var chatState: ChatState = .idle
     var connectionState: ConnectionState = .connected
@@ -86,6 +85,7 @@ class ChatServiceImpl: ChatService {
     private let maxTokensDefaultsKey = "HalalAI.maxTokens"
     
     init(authManager: any AuthManager) {
+        print("Создаем AuthManagerImpl")
         self.authManager = authManager
         self.userApiKey = UserDefaults.standard.string(forKey: apiKeyDefaultsKey) ?? ""
         self.remoteModel = UserDefaults.standard.string(forKey: remoteModelDefaultsKey) ?? ""

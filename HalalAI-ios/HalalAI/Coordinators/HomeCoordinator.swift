@@ -8,16 +8,17 @@
 import SwiftUI
 
 enum HomeCoordinator {
-    case main
+    case home
     case scanner
     
+    @MainActor
     @ViewBuilder
     var view: some View {
         switch self {
-        case .main:
-            HomeView()
+        case .home:
+            screenFactory.makeHomeView()
         case .scanner:
-            IngredientScannerView()
+            screenFactory.makeScannerView()
         }
     }
 }

@@ -8,8 +8,8 @@
 import SwiftUI
 import UIKit
 
-struct IngredientScannerView: View {
-    @StateObject private var viewModel = IngredientScannerViewModel()
+struct ScannerView: View {
+    @Bindable var viewModel: ViewModel
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {

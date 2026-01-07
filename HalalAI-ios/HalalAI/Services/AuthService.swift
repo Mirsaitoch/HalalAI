@@ -34,7 +34,9 @@ class AuthServiceImpl: AuthService {
         return URLSession(configuration: configuration)
     }()
     
-    init() {}
+    init() {
+        print("Создаем AuthServiceImpl")
+    }
     
     // MARK: - Public Methods
     

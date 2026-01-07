@@ -9,6 +9,7 @@ import Foundation
 
 extension LoginView {
     @MainActor
+    @Observable
     final class ViewModel: ObservableObject {
         var authManager: any AuthManager
         var authService: any AuthService
@@ -18,11 +19,11 @@ extension LoginView {
             self.authService = authService
         }
         
-        @Published var usernameOrEmail: String = ""
-        @Published var password: String = ""
-        @Published var showPassword: Bool = false
-        @Published var showError: Bool = false
-        @Published var errorMessage: String = ""
+        var usernameOrEmail: String = ""
+        var password: String = ""
+        var showPassword: Bool = false
+        var showError: Bool = false
+        var errorMessage: String = ""
         var isDisable: Bool {
             authService.isLoading || usernameOrEmail.isEmpty || password.isEmpty
         }

@@ -20,7 +20,6 @@ protocol AuthManager {
 }
 
 @MainActor
-@Observable
 class AuthManagerImpl: AuthManager {
     var authState: AuthState = .unauthenticated
     var currentUser: AuthResponse?

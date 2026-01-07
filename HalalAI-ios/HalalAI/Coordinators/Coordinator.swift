@@ -25,9 +25,10 @@ enum Step: Hashable, Equatable {
 }
 
 @MainActor
-final class Coordinator: ObservableObject {
-    @Published var path: [Step] = []
-    @Published var currentSelectedTab: TabBarItem = .home
+@Observable
+final class Coordinator {
+    var path: [Step] = []
+    var currentSelectedTab: TabBarItem = .home
     
     private var homeTabPath: [Step] = []
     private var chatTabPath: [Step] = []
@@ -52,7 +53,7 @@ final class Coordinator: ObservableObject {
         case .settings:
             return .Settings(.settings)
         case .home:
-            return .Home(.main)
+            return .Home(.home)
         }
     }
     

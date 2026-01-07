@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct HomeView: View {
-    @EnvironmentObject private var coordinator: Coordinator
-    
+    @Environment(Coordinator.self) var coordinator
+
     var body: some View {
         VStack {
             ScrollView(.vertical, showsIndicators: false) {

@@ -8,7 +8,15 @@
 import Foundation
 import SwiftUI
 
-protocol ScreenFactory {}
+protocol ScreenFactory {
+    func makeLoginView(path: Binding<[AuthCoordinator]>) -> LoginView
+    func makeRegisterView(path: Binding<[AuthCoordinator]>) -> RegisterView
+    func makeRootView() -> RootView
+    func makeSettingsView() -> SettingsView
+    func makeChatView() -> ChatView
+    func makeScannerView() -> ScannerView
+    func makeHomeView() -> HomeView
+}
 
 @MainActor
 let screenFactory = ScreenFactoryImpl()
@@ -45,6 +53,15 @@ final class ScreenFactoryImpl {
         let viewModel = ChatView.ViewModel(chatService: dc.chatService)
         return ChatView(viewModel: viewModel)
     }
+    
+    func makeScannerView() -> ScannerView {
+        let viewModel = ScannerView.ViewModel(ingredientService: dc.ingredientService)
+        return ScannerView(viewModel: viewModel)
+    }
+    
+    func makeHomeView() -> HomeView {
+        return HomeView()
+    }
 }
 
 @MainActor
@@ -52,10 +69,12 @@ final class DependencyContainer {
     fileprivate var authManager: any AuthManager
     fileprivate var authService: any AuthService
     fileprivate var chatService: any ChatService
-
+    fileprivate var ingredientService: any IngredientService
+    
     init() {
         self.authManager = AuthManagerImpl()
         self.authService = AuthServiceImpl()
         self.chatService = ChatServiceImpl(authManager: authManager)
+        self.ingredientService = IngredientServiceImpl()
     }
 }

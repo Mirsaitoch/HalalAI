@@ -15,7 +15,7 @@ public class User {
     private Long id;
 
     @NotBlank
-    @Size(min = 3, max = 50)
+    @Size(min = 2, max = 50)
     @Column(unique = true, nullable = false)
     private String username;
 
@@ -49,7 +49,6 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-    // Конструкторы
     public User() {
     }
 

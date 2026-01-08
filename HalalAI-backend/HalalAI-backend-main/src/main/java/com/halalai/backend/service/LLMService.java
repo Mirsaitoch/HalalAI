@@ -101,7 +101,11 @@ public class LLMService {
             String reply = responseBody.has("reply") ? responseBody.get("reply").asText("") : "";
             String model = responseBody.has("model") ? responseBody.get("model").asText("") : "";
             Boolean usedRemote = responseBody.has("used_remote") ? responseBody.get("used_remote").asBoolean(false) : Boolean.FALSE;
-            String remoteError = responseBody.has("remote_error") ? responseBody.get("remote_error").asText("") : null;
+            String remoteError = null;
+            if (responseBody.has("remote_error") && !responseBody.get("remote_error").isNull()) {
+                String error = responseBody.get("remote_error").asText("");
+                remoteError = error.isEmpty() ? null : error;
+            }
             
             if (reply.isEmpty()) {
                 throw new RuntimeException("Ответ не содержит поле 'reply' или оно пустое. Структура: " + responseBody);

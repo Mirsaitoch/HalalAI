@@ -18,7 +18,7 @@ class IngredientServiceImpl: IngredientService {
     private var ingredientsLoaded = false
     
     init() {
-        print("Создаем AuthManagerImpl")
+        print("Создаем IngredientServiceImpl")
     }
     
     func loadIngredients() async throws -> [Ingredient] {

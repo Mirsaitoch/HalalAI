@@ -20,6 +20,10 @@ struct LoginRequest: Codable {
     let password: String
 }
 
+struct RefreshTokenRequest: Codable {
+    let token: String
+}
+
 struct AuthResponse: Codable {
     let token: String
     let type: String

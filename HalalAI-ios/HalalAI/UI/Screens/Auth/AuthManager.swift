@@ -17,9 +17,11 @@ protocol AuthManager {
     var authToken: String? { get }
     func saveAuth(_ response: AuthResponse)
     func logout()
+    func refreshToken() async throws
 }
 
 @MainActor
+@Observable
 class AuthManagerImpl: AuthManager {
     var authState: AuthState = .unauthenticated
     var currentUser: AuthResponse?
@@ -59,6 +61,19 @@ class AuthManagerImpl: AuthManager {
         cleanUserDefaults()
         authState = .unauthenticated
         errorMessage = nil
+    }
+    
+    func refreshToken() async throws {
+        guard let oldToken = authToken, !oldToken.isEmpty else {
+            throw NSError(domain: "AuthManager", code: 401, userInfo: [NSLocalizedDescriptionKey: "Токен не найден"])
+        }
+        
+        // Создаем временный AuthService для refresh
+        let authService = AuthServiceImpl()
+        let newAuthResponse = try await authService.refreshToken(oldToken)
+        
+        // Сохраняем новый токен
+        saveAuth(newAuthResponse)
     }
     
     // MARK: - Private Methods

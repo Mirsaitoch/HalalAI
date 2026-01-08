@@ -3,6 +3,8 @@ package com.halalai.backend.exception;
 import com.halalai.backend.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(
             MethodArgumentNotValidException ex, WebRequest request) {
@@ -29,13 +33,7 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Ошибка валидации");
-        response.put("errors", errors);
-        response.put("timestamp", java.time.LocalDateTime.now());
-        response.put("path", request.getDescription(false).replace("uri=", ""));
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return getMapResponseEntity(request, errors);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -47,6 +45,10 @@ public class GlobalExceptionHandler {
                         ConstraintViolation::getMessage
                 ));
 
+        return getMapResponseEntity(request, errors);
+    }
+
+    private ResponseEntity<Map<String, Object>> getMapResponseEntity(WebRequest request, Map<String, String> errors) {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Ошибка валидации");
         response.put("errors", errors);
@@ -71,11 +73,29 @@ public class GlobalExceptionHandler {
                         request.getDescription(false).replace("uri=", "")));
     }
 
+    @ExceptionHandler(org.springframework.security.core.userdetails.UsernameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(
+            org.springframework.security.core.userdetails.UsernameNotFoundException ex, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.of("Пользователь не найден", 
+                        request.getDescription(false).replace("uri=", "")));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(
+            RuntimeException ex, WebRequest request) {
+        logger.error("RuntimeException: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of(ex.getMessage(),
+                        request.getDescription(false).replace("uri=", "")));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex, WebRequest request) {
+        logger.error("Необработанное исключение: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ErrorResponse.of("Внутренняя ошибка сервера: " + ex.getMessage(),
+                .body(ErrorResponse.of("Внутренняя ошибка сервера",
                         request.getDescription(false).replace("uri=", "")));
     }
 }

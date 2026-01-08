@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -22,55 +24,47 @@ import com.halalai.backend.dto.ChatResponse;
 @Service
 public class LLMService {
 
+    private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
+
     private final RestTemplate restTemplate;
     private final String llmServiceUrl;
     private final int defaultMaxTokens;
+    private final String systemPrompt;
 
     public LLMService(
             RestTemplate restTemplate,
-            @Value("${llm.service.url:http://localhost:8000}") String llmServiceUrl,
-            @Value("${llm.service.max-tokens:1024}") int maxTokens) {
+            @Value("${llm.service.url}") String llmServiceUrl,
+            @Value("${llm.service.max-tokens:256}") int maxTokens,
+            @Value("${llm.system.prompt}") String systemPrompt) {
         this.restTemplate = restTemplate;
         this.llmServiceUrl = llmServiceUrl;
         this.defaultMaxTokens = maxTokens;
+        this.systemPrompt = systemPrompt;
         
-        System.out.println("Инициализация LLM Service...");
-        System.out.println("URL: " + llmServiceUrl);
+        logger.info("Инициализация LLM Service... URL: {}", llmServiceUrl);
     }
 
-    public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String prompt, String apiKey, String remoteModel, Integer maxTokensOverride) {
-        System.out.println("\n========== ЗАПРОС К LLM СЕРВИСУ ==========");
+    public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String apiKey, String remoteModel, Integer maxTokensOverride) {
+        logger.debug("Запрос к LLM сервису");
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Accept-Charset", "UTF-8");
 
-        // Формируем запрос к Python LLM сервису
-        List<Map<String, String>> messages = new ArrayList<>();
+        List<Map<String, String>> messages;
         
-        // Если клиент отправил историю, используем её
         if (clientMessages != null && !clientMessages.isEmpty()) {
-            messages.addAll(clientMessages);
-            System.out.println("Получена история от клиента: " + clientMessages.size() + " сообщений");
-        } else if (prompt != null) {
-            String systemPrompt = "Ты — HalalAI, умный исламский ассистент, специализирующийся на вопросах об Исламе и религии, исламских принципах, Коране и исламском образе жизни. Твоя задача — давать точные, полезные и основанные на исламских источниках ответы. Всегда отвечай на русском языке, используй исламские термины (халяль, харам, сунна и т.д.) и будь уважительным и терпеливым. Если вопрос не связан с исламом, вежливо направь разговор в нужное русло. Отвечай кратко, но информативно!!!";;
-            messages.add(Map.of("role", "system", "content", systemPrompt));
-            messages.add(Map.of("role", "user", "content", prompt));
-            System.out.println("Используется простой prompt (обратная совместимость)");
+            messages = new ArrayList<>(clientMessages);
+            logger.debug("Получена история от клиента: {} сообщений", clientMessages.size());
+            messages.add(0, Map.of("role", "system", "content", systemPrompt));
+            logger.debug("Добавлен системный промпт из конфигурации");
         } else {
-            throw new RuntimeException("Не указаны ни messages, ни prompt");
-        }
-        
-        // Системный промпт должен приходить от клиента в первом сообщении
-        // Если его нет - это ошибка конфигурации клиента, но не критично
-        boolean hasSystem = messages.stream().anyMatch(msg -> "system".equals(msg.get("role")));
-        if (!hasSystem) {
-            System.out.println("⚠️  Внимание: системный промпт отсутствует в истории от клиента");
+            throw new IllegalArgumentException("Не указаны ни messages, ни prompt");
         }
         
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("messages", messages);
-        // используем max_tokens из клиента, если передан, иначе дефолт из настроек
+
         int effectiveMaxTokens = maxTokensOverride != null ? maxTokensOverride : defaultMaxTokens;
         requestBody.put("max_tokens", effectiveMaxTokens);
         if (apiKey != null && !apiKey.isBlank()) {
@@ -84,20 +78,12 @@ public class LLMService {
         String chatUrl = llmServiceUrl + "/chat";
 
         try {
-            System.out.println("Отправка запроса к LLM сервису: " + chatUrl);
-            System.out.println("Тело запроса: messages=" + messages.size() + ", max_tokens=" + effectiveMaxTokens
-                    + (requestBody.containsKey("api_key") ? ", api_key=***" : "")
-                    + (requestBody.containsKey("remote_model") ? ", remote_model=" + requestBody.get("remote_model") : ""));
-            for (int i = 0; i < messages.size(); i++) {
-                Map<String, String> msg = messages.get(i);
-                String content = msg.get("content");
-                String preview = content != null && content.length() > 100 ? content.substring(0, 100) + "..." : content;
-                // Выводим только первые 50 символов для системного промпта, чтобы не засорять логи
-                if ("system".equals(msg.get("role")) && content != null && content.length() > 50) {
-                    preview = content.substring(0, 50) + "... (системный промпт, обрезан)";
-                }
-                System.out.println("  Message " + i + ": role=" + msg.get("role") + ", content=" + preview);
-            }
+            logger.debug("Отправка запроса к LLM сервису: {}", chatUrl);
+            logger.debug("Тело запроса: messages={}, max_tokens={}{}{}", 
+                    messages.size(), 
+                    effectiveMaxTokens,
+                    requestBody.containsKey("api_key") ? ", api_key=***" : "",
+                    requestBody.containsKey("remote_model") ? ", remote_model=" + requestBody.get("remote_model") : "");
             
             ResponseEntity<JsonNode> responseEntity = restTemplate.exchange(
                     chatUrl,
@@ -106,45 +92,29 @@ public class LLMService {
                     JsonNode.class
             );
             
-            System.out.println("Получен ответ от LLM сервиса. Статус: " + responseEntity.getStatusCode());
+            logger.debug("Получен ответ от LLM сервиса. Статус: {}", responseEntity.getStatusCode());
 
             JsonNode responseBody = responseEntity.getBody();
-            
             if (responseBody == null) {
                 throw new RuntimeException("LLM сервис вернул пустой ответ");
             }
-            
-            // Извлекаем ответ из поля "reply"
             String reply = responseBody.has("reply") ? responseBody.get("reply").asText("") : "";
-            if (reply == null) reply = "";
             String model = responseBody.has("model") ? responseBody.get("model").asText("") : "";
             Boolean usedRemote = responseBody.has("used_remote") ? responseBody.get("used_remote").asBoolean(false) : Boolean.FALSE;
-            String remoteError = responseBody.has("remote_error") ? responseBody.get("remote_error").asText("") : "";
+            String remoteError = responseBody.has("remote_error") ? responseBody.get("remote_error").asText("") : null;
+            
             if (reply.isEmpty()) {
-                throw new RuntimeException("Ответ не содержит поле 'reply' или оно пустое. Структура: " + responseBody.toString());
+                throw new RuntimeException("Ответ не содержит поле 'reply' или оно пустое. Структура: " + responseBody);
             }
             
-            System.out.println("========== ОТВЕТ ОТ LLM ==========");
-            System.out.println("Длина ответа: " + reply.length() + " символов");
-            if (!reply.isEmpty()) {
-                System.out.println("Первые 300 символов ответа:");
-                System.out.println(reply.substring(0, Math.min(300, reply.length())));
-                if (reply.length() > 300) {
-                    System.out.println("... (ответ обрезан для логов)");
-                }
-            } else {
-                System.out.println("⚠️  Ответ пустой!");
-            }
-            System.out.println("========== КОНЕЦ ОТВЕТА ==========\n");
+            logger.info("Ответ от LLM получен: длина={} символов, модель={}, remote={}", 
+                    reply.length(), model, usedRemote);
 
             return new ChatResponse(reply, model, usedRemote, remoteError);
             
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            System.err.println("========== ОШИБКА HTTP ==========");
-            System.err.println("Статус: " + e.getStatusCode());
-            System.err.println("Тело ответа: " + e.getResponseBodyAsString());
-            System.err.println("URL: " + chatUrl);
-            e.printStackTrace();
+            logger.error("Ошибка HTTP при обращении к LLM сервису: статус={}, URL={}, тело={}", 
+                    e.getStatusCode(), chatUrl, e.getResponseBodyAsString());
             
             if (e.getStatusCode().value() == 503) {
                 throw new RuntimeException("LLM сервис не готов. Убедитесь, что Python сервис запущен и модель загружена.", e);
@@ -153,25 +123,16 @@ public class LLMService {
             throw new ResponseStatusException(e.getStatusCode(), "Ошибка LLM сервиса: " + e.getResponseBodyAsString(), e);
             
         } catch (org.springframework.web.client.ResourceAccessException e) {
-            System.err.println("========== ОШИБКА ПОДКЛЮЧЕНИЯ ==========");
-            System.err.println("Не удалось подключиться к LLM сервису: " + e.getMessage());
-            System.err.println("URL: " + chatUrl);
-            System.err.println("Проверьте, что Python сервис запущен на " + llmServiceUrl);
-            e.printStackTrace();
+            logger.error("Ошибка подключения к LLM сервису: URL={}, сообщение={}", chatUrl, e.getMessage());
             throw new RuntimeException("Не удалось подключиться к LLM сервису по адресу " + chatUrl + ". " +
                     "Убедитесь, что Python сервис запущен на " + llmServiceUrl, e);
             
         } catch (RestClientException e) {
-            System.err.println("========== ОШИБКА REST CLIENT ==========");
-            System.err.println("Ошибка: " + e.getMessage());
-            System.err.println("URL: " + chatUrl);
-            e.printStackTrace();
+            logger.error("Ошибка REST клиента при обращении к LLM сервису: URL={}, сообщение={}", chatUrl, e.getMessage());
             throw new RuntimeException("Не удалось подключиться к LLM сервису по адресу " + chatUrl + ". " +
                     "Убедитесь, что Python сервис запущен на " + llmServiceUrl, e);
         } catch (Exception e) {
-            System.err.println("========== НЕИЗВЕСТНАЯ ОШИБКА ==========");
-            System.err.println("Ошибка при генерации ответа: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Неизвестная ошибка при генерации ответа: {}", e.getMessage(), e);
             throw new RuntimeException("Ошибка при генерации ответа: " + e.getMessage(), e);
         }
     }

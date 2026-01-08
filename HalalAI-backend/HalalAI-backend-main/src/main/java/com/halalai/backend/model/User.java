@@ -27,7 +27,7 @@ public class User {
     @NotBlank
     @Size(min = 8)
     @Column(nullable = false)
-    private String password; // Будет храниться в захешированном виде
+    private String password;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -59,7 +59,6 @@ public class User {
         this.password = password;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

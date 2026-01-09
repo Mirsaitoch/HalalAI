@@ -68,4 +68,3 @@ enum AuthError: LocalizedError {
         }
     }
 }
-

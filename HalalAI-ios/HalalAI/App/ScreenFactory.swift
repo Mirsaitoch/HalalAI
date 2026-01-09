@@ -60,7 +60,7 @@ final class ScreenFactoryImpl {
     }
     
     func makeHomeView() -> HomeView {
-        return HomeView()
+        return HomeView(verseService: dc.verseService)
     }
 }
 
@@ -70,11 +70,13 @@ final class DependencyContainer {
     fileprivate var authService: any AuthService
     fileprivate var chatService: any ChatService
     fileprivate var ingredientService: any IngredientService
+    fileprivate var verseService: any VerseService
     
     init() {
         self.authManager = AuthManagerImpl()
         self.authService = AuthServiceImpl()
         self.chatService = ChatServiceImpl(authManager: authManager)
         self.ingredientService = IngredientServiceImpl()
+        self.verseService = VerseServiceImpl()
     }
 }

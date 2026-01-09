@@ -9,10 +9,13 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(Coordinator.self) var coordinator
-
+    var verseService: VerseService
+    
     var body: some View {
         VStack {
             ScrollView(.vertical, showsIndicators: false) {
+                VerseView(verseService: verseService)
+                    .padding()
                 ImageTextComponent(
                     componentSize: .large,
                     image: .scan,
@@ -59,8 +62,4 @@ struct HomeView: View {
             Color.greenBackground.ignoresSafeArea()
         }
     }
-}
-
-#Preview {
-    HomeView()
 }

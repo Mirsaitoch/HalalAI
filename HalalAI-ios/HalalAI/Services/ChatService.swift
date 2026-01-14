@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @MainActor
-protocol ChatService: ObservableObject {
+protocol ChatService {
     var messages: [ChatMessage] { get set }
     var chatState: ChatState { get set }
     var connectionState: ConnectionState { get set }
@@ -69,7 +69,7 @@ class ChatServiceImpl: ChatService {
         #endif
     }()
     
-    private var authManager: any AuthManager
+    private var authManager: AuthManager
     private var urlSession: URLSession = {
         let configuration = URLSessionConfiguration.default
         return URLSession(configuration: configuration)
@@ -78,7 +78,7 @@ class ChatServiceImpl: ChatService {
     private let remoteModelDefaultsKey = "HalalAI.remoteModel"
     private let maxTokensDefaultsKey = "HalalAI.maxTokens"
     
-    init(authManager: any AuthManager) {
+    init(authManager: AuthManager) {
         print("Создаем ChatServiceImpl")
         self.authManager = authManager
         self.userApiKey = UserDefaults.standard.string(forKey: apiKeyDefaultsKey) ?? ""

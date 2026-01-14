@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RootView: View {
-    var authManager: any AuthManager
+    var authManager: AuthManager
     
     var body: some View {
         Group {

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct EmptyChatView: View {
     @State private var isAnimating = false
-    var chatService: any ChatService
+    var chatService: ChatService
     
     var body: some View {
         VStack(spacing: 24) {

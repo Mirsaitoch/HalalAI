@@ -10,10 +10,10 @@ import Foundation
 extension SettingsView {
     @MainActor
     final class ViewModel: ObservableObject {
-        var chatService: any ChatService
-        var authManager: any AuthManager
+        var chatService: ChatService
+        var authManager: AuthManager
         
-        init(chatService: any ChatService, authManager: any AuthManager) {
+        init(chatService: ChatService, authManager: AuthManager) {
             self.chatService = chatService
             self.authManager = authManager
         }

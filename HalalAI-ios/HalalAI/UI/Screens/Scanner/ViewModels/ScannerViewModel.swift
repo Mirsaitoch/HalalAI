@@ -21,9 +21,9 @@ extension ScannerView {
         var isLoading = false
         var cameraSource: ImageSource = .camera
         
-        private let ingredientService: any IngredientService
+        private let ingredientService: IngredientService
         
-        init(ingredientService: any IngredientService) {
+        init(ingredientService: IngredientService) {
             self.ingredientService = ingredientService
             Task {
                 try? await ingredientService.loadIngredients()

@@ -11,10 +11,10 @@ extension LoginView {
     @MainActor
     @Observable
     final class ViewModel: ObservableObject {
-        var authManager: any AuthManager
-        var authService: any AuthService
+        var authManager: AuthManager
+        var authService: AuthService
         
-        init(authManager: any AuthManager, authService: any AuthService) {
+        init(authManager: AuthManager, authService: AuthService) {
             self.authManager = authManager
             self.authService = authService
         }

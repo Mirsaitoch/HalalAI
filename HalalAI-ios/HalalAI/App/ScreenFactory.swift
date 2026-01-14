@@ -66,11 +66,11 @@ final class ScreenFactoryImpl {
 
 @MainActor
 final class DependencyContainer {
-    fileprivate var authManager: any AuthManager
-    fileprivate var authService: any AuthService
-    fileprivate var chatService: any ChatService
-    fileprivate var ingredientService: any IngredientService
-    fileprivate var verseService: any VerseService
+    fileprivate var authManager: AuthManager
+    fileprivate var authService: AuthService
+    fileprivate var chatService: ChatService
+    fileprivate var ingredientService: IngredientService
+    fileprivate var verseService: VerseService
     
     init() {
         self.authManager = AuthManagerImpl()

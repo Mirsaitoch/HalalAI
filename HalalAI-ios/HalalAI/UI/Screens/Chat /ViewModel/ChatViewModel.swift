@@ -11,9 +11,9 @@ extension ChatView {
     @Observable
     final class ViewModel {
         var messageText = ""
-        let chatService: any ChatService
+        let chatService: ChatService
         
-        init(chatService: any ChatService) {
+        init(chatService: ChatService) {
             self.chatService = chatService
         }
         

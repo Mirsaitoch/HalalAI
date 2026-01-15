@@ -97,7 +97,7 @@ class ChatServiceImpl: ChatService {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.timeoutInterval = 15
-        request.setValue("application", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
         do {
             let (data, response) = try await urlSession.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
@@ -205,9 +205,7 @@ class ChatServiceImpl: ChatService {
         
         let trimmedKey = userApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedModel = remoteModel.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedKey.isEmpty, !trimmedModel.isEmpty else {
-            return
-        }
+
         requestBody["api_key"] = trimmedKey
         requestBody["remote_model"] = trimmedModel
 

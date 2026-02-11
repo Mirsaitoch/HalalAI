@@ -18,6 +18,7 @@ from halal_ai.services.llm import (
     select_remote_model,
     should_use_remote_llm,
 )
+from halal_ai.services.monitoring import quality_checker
 from halal_ai.services.prompts import (
     ensure_system_prompt,
     inject_halal_guardrail,
@@ -29,6 +30,7 @@ from halal_ai.utils import (
     build_rag_filters,
     extract_last_user_query,
     generate_query_variants,
+    get_rag_relevance_keywords,
     normalize_food_query,
     serialize_sources,
 )
@@ -47,6 +49,48 @@ async def execute_with_timeout(coro, stage: str):
             status_code=504,
             detail=f"{stage} timed out after {llm_config.REQUEST_TIMEOUT_SECONDS} seconds",
         )
+
+
+def check_response_quality(content: str, rag_sources: List[Dict[str, Any]]) -> None:
+    """
+    Проверяет качество ответа и логирует проблемы.
+    
+    Args:
+        content: Текст ответа модели
+        rag_sources: Источники из RAG
+    """
+    if not rag_sources:
+        # Если нет источников, проверка цитирований бессмысленна
+        return
+    
+    quality_report = quality_checker.check_response(content, rag_sources)
+    
+    # Логируем результаты проверки
+    if quality_report["quality"] in ["poor", "critical"]:
+        logger.warning(
+            "🚨 Низкое качество ответа! Quality: %s, Risk score: %d",
+            quality_report["quality"],
+            quality_report["risk_score"],
+        )
+        
+        if quality_report["issues"]:
+            for issue in quality_report["issues"]:
+                logger.warning("  ⚠️  %s", issue)
+    
+    # Подробная информация о цитировании
+    citation_info = quality_report["citation_validation"]
+    if not citation_info["all_valid"]:
+        logger.warning(
+            "❌ Обнаружены невалидные цитаты: %d из %d",
+            len(citation_info["invalid_citations"]),
+            citation_info["total_citations"],
+        )
+        for invalid_cite in citation_info["invalid_citations"]:
+            logger.warning(
+                "   📖 Невалидная цитата: сура %d, аят %d",
+                invalid_cite["surah"],
+                invalid_cite["ayah"],
+            )
 
 
 def sanitize_max_tokens(value: Optional[int]) -> int:
@@ -154,10 +198,30 @@ async def retrieve_rag_context(
             logger.info("Собрано достаточно источников (%d), останавливаем поиск", len(all_sources))
             break
     
-    # Сортируем по score и берем top_k
-    all_sources.sort(key=lambda x: x.get("score", 0), reverse=True)
+    # Переранжирование: приоритет у чанков, где есть ключевые слова запроса
+    relevance_keywords = get_rag_relevance_keywords(query_text)
+    if relevance_keywords:
+        with_keyword = []
+        without_keyword = []
+        for src in all_sources:
+            text = (src.get("text") or "").lower()
+            if any(kw in text for kw in relevance_keywords):
+                with_keyword.append(src)
+            else:
+                without_keyword.append(src)
+        with_keyword.sort(key=lambda x: x.get("score", 0), reverse=True)
+        without_keyword.sort(key=lambda x: x.get("score", 0), reverse=True)
+        all_sources = with_keyword + without_keyword
+        if with_keyword:
+            logger.info(
+                "RAG: %d из %d контекстов содержат ключевые слова запроса (приоритет)",
+                len(with_keyword),
+                len(all_sources),
+            )
+    else:
+        all_sources.sort(key=lambda x: x.get("score", 0), reverse=True)
+
     rag_sources = all_sources[:rag_top_k]
-    
     logger.info("RAG вернул %d уникальных контекстов из %d найденных", len(rag_sources), len(all_sources))
     return rag_sources
 
@@ -217,6 +281,10 @@ async def handle_chat_request(
                     remote_model,
                 )
                 logger.info("Ответ модели [remote:%s]: %s символов", remote_model, len(content))
+                
+                # Проверка качества ответа
+                check_response_quality(content, rag_sources)
+                
                 return ChatResponse(
                     reply=content,
                     sources=serialize_sources(rag_sources) or None,
@@ -240,6 +308,9 @@ async def handle_chat_request(
         if not content:
             logger.info("Ответ локальной модели пустой.")
         logger.info("Ответ модели [local:%s]: %s символов", llm.model_name, len(content))
+        
+        # Проверка качества ответа
+        check_response_quality(content, rag_sources)
         
         return ChatResponse(
             reply=content,

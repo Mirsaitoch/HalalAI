@@ -10,6 +10,7 @@ from .helpers import (
 from .query_expander import (
     expand_query,
     generate_query_variants,
+    get_rag_relevance_keywords,
     normalize_food_query,
 )
 from .surah_catalog import describe_surah, get_surah_info, get_surah_name, match_surah_numbers
@@ -24,6 +25,7 @@ __all__ = [
     # Query expansion
     "expand_query",
     "generate_query_variants",
+    "get_rag_relevance_keywords",
     "normalize_food_query",
     # Surah catalog
     "match_surah_numbers",

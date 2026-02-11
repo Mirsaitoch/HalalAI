@@ -1,10 +1,12 @@
 """RAG Pipeline для работы с векторным поиском."""
 
 import logging
+import warnings
 from typing import Any, Dict, List, Optional
 
 from sentence_transformers import SentenceTransformer
 
+from halal_ai.services.monitoring import track_rag_search
 from halal_ai.services.rag.store import SimpleVectorStore
 
 logger = logging.getLogger(__name__)
@@ -29,13 +31,35 @@ class RAGPipeline:
         """
         self.embedding_model_name = embedding_model_name
         self.device = device
-        self.embedder = SentenceTransformer(embedding_model_name, device=device)
+        
+        # Загружаем модель с подавлением некритичных warnings
+        logger.info("Загрузка модели эмбеддингов: %s (device=%s)...", embedding_model_name, device)
+        
+        # Фильтруем warnings о position_ids и других некритичных ключах
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=".*position_ids.*",
+                category=UserWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
+                message=".*UNEXPECTED.*",
+                category=UserWarning,
+            )
+            self.embedder = SentenceTransformer(embedding_model_name, device=device)
+        
+        logger.info("✅ Модель эмбеддингов загружена успешно")
+        
+        # Загружаем векторное хранилище
         self.store = SimpleVectorStore(store_path)
         self.store.load()
+        
         logger.info(
-            "Инициализирован RAG pipeline (модель эмбеддингов=%s, документов=%s).",
+            "✅ RAG pipeline инициализирован (модель=%s, документов=%s, device=%s)",
             embedding_model_name,
             self.store.document_count,
+            device,
         )
 
     @property
@@ -77,6 +101,7 @@ class RAGPipeline:
         self.store.reset()
         return self.add_texts(docs)
 
+    @track_rag_search
     def retrieve(
         self,
         query: str,
@@ -86,6 +111,8 @@ class RAGPipeline:
     ) -> List[Dict[str, Any]]:
         """
         Ищет релевантные документы для запроса.
+        
+        Метрики поиска автоматически отслеживаются через декоратор @track_rag_search.
         
         Args:
             query: Поисковый запрос

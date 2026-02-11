@@ -116,26 +116,55 @@ def inject_surah_guardrail(messages: List[Dict[str, str]], surah_numbers: List[i
 
 
 def inject_rag_context(messages: List[Dict[str, str]], contexts: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-    """Добавляет контекст из RAG в начало истории."""
+    """
+    Добавляет контекст из RAG в начало истории.
+    
+    Улучшено: явно указывает доступные суры и аяты для предотвращения галлюцинаций.
+    """
     if not contexts:
         return messages
 
     context_blocks = []
-    for ctx in contexts:
+    available_citations = []  # Список доступных цитат
+    
+    for idx, ctx in enumerate(contexts, 1):
         text = (ctx.get("text") or "").strip()
         if not text:
             continue
+        
         metadata = ctx.get("metadata") or {}
         heading = format_source_heading(metadata)
-        block = f"{heading}\n{text}"
+        
+        # Добавляем явное указание номера источника
+        block = f"[ИСТОЧНИК {idx}] {heading}\n{text}"
         context_blocks.append(block)
+        
+        # Собираем доступные цитаты
+        surah = metadata.get("surah")
+        if surah:
+            ayah_range = metadata.get("ayah_range", "")
+            if ayah_range:
+                available_citations.append(f"сура {surah}, аяты {ayah_range}")
 
     if not context_blocks:
         return messages
-
+    
+    # Формируем список доступных цитат
+    citations_list = ""
+    if available_citations:
+        citations_list = (
+            "\n\nДОСТУПНЫЕ ЦИТАТЫ (используй ТОЛЬКО эти):\n" +
+            "\n".join(f"• {cite}" for cite in available_citations)
+        )
+    
     rag_message = {
         "role": "system",
-        "content": f"{RAG_INSTRUCTION_PROMPT}\n\n" + "\n\n".join(context_blocks),
+        "content": (
+            f"{RAG_INSTRUCTION_PROMPT}"
+            f"{citations_list}\n\n"
+            "=== ИСТОЧНИКИ ===\n\n" +
+            "\n\n".join(context_blocks)
+        ),
     }
 
     augmented = messages[:]

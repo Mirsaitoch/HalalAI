@@ -1,6 +1,7 @@
 """Сервис для работы с локальной LLM моделью."""
 
 import logging
+import warnings
 from typing import Dict, List, Optional
 
 import torch
@@ -38,21 +39,34 @@ class LocalLLM:
             dtype = torch.float16
             device_map = "auto"
 
-        logger.info("Загружаем токенизатор: %s", self.model_name)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
-        
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
-            logger.info("Установлен pad_token = eos_token (ID: %s)", self.tokenizer.pad_token_id)
+        # Фильтруем некритичные warnings при загрузке моделей
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=".*position_ids.*",
+                category=UserWarning,
+            )
+            warnings.filterwarnings(
+                "ignore", 
+                message=".*UNEXPECTED.*",
+                category=UserWarning,
+            )
+            
+            logger.info("Загружаем токенизатор: %s", self.model_name)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
+            
+            if self.tokenizer.pad_token is None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+                self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+                logger.info("Установлен pad_token = eos_token (ID: %s)", self.tokenizer.pad_token_id)
 
-        logger.info("Загружаем модель: %s", self.model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_name,
-            torch_dtype=dtype,
-            device_map=device_map,
-            low_cpu_mem_usage=True,
-        )
+            logger.info("Загружаем модель: %s", self.model_name)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                torch_dtype=dtype,
+                device_map=device_map,
+                low_cpu_mem_usage=True,
+            )
         
         if device_map is None:
             self.model.to(self.device)

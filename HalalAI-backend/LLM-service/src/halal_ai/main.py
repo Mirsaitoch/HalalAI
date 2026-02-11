@@ -6,7 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from halal_ai.api.dependencies import set_local_llm, set_rag_pipeline
-from halal_ai.api.routes import chat_router, health_router, rag_router
+from halal_ai.api.middleware import RateLimitMiddleware, rate_limiter
+from halal_ai.api.routes import chat_router, health_router, metrics_router, rag_router
 from halal_ai.core import rag_config
 from halal_ai.services.llm import LocalLLM
 from halal_ai.services.rag import RAGPipeline
@@ -62,10 +63,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Добавляем middleware (порядок важен - middleware применяются в обратном порядке)
+app.add_middleware(
+    RateLimitMiddleware,
+    rate_limiter=rate_limiter,
+    enabled=True,  # Можно отключить через переменную окружения
+)
+
 # Регистрируем роуты
 app.include_router(health_router)
 app.include_router(chat_router)
 app.include_router(rag_router)
+app.include_router(metrics_router)
 
 
 if __name__ == "__main__":

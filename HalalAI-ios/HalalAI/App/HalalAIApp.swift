@@ -9,7 +9,7 @@ import SwiftUI
 
 @main
 struct HalalAIApp: App {
-    // нужно для тестирования камеры
+    // Нужно для тестирования камеры (RocketSim)
     private func loadRocketSimConnect() {
         #if DEBUG
         guard (Bundle(path: "/Applications/RocketSim.app/Contents/Frameworks/RocketSimConnectLinker.nocache.framework")?.load() == true) else {

@@ -308,6 +308,9 @@ pyrightconfig.json
 # VS Code
 .vscode/
 
+# Cursor IDE
+.cursor/
+
 ### Java / Maven / Spring Boot ###
 HELP.md
 target/
@@ -337,11 +340,8 @@ target/
 /nbdist/
 /.nb-gradle/
 !**/src/main/**/build/
-!**/src/test/**/build/
-
-### Database files ###
+!**/src/test/**/build/### Database files ###
 data/
 *.db
 *.mv.db
 *.trace.db
-

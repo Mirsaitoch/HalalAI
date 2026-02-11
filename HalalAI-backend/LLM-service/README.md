@@ -92,9 +92,7 @@ python main.py
 }
 ```
 
-## Переменные окружения
-
-- `LLM_MODEL_NAME` — локальная модель (по умолчанию `Qwen/Qwen3-1.7B`).
+## Переменные окружения- `LLM_MODEL_NAME` — локальная модель (по умолчанию `Qwen/Qwen3-1.7B`).
 - `LLM_DEFAULT_MAX_TOKENS` / `LLM_MAX_TOKENS` — ограничения по длине генерации.
 - `RAG_*` — параметры векторного поиска (см. `main.py`).
 - `REMOTE_LLM_ENABLED` — разрешить использование внешнего API (по умолчанию `true`).
@@ -102,4 +100,3 @@ python main.py
 - `REMOTE_LLM_BASE_URL` — кастомный endpoint. По умолчанию `https://openrouter.ai/api/v1`.
 - `REMOTE_LLM_REFERER`, `REMOTE_LLM_APP_TITLE` — заголовки для OpenRouter (`HTTP-Referer`, `X-Title`).
 - `LLM_LOG_PROMPT` и `LLM_LOG_PROMPT_MAX_CHARS` — логирование итогового промпта.
-

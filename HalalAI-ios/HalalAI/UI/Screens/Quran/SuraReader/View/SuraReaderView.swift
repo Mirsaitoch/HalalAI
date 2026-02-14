@@ -19,6 +19,14 @@ struct SuraReaderView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Image(systemName: "arrow.left")
+                    .onTapGesture {
+                        coordinator.dismiss()
+                    }
+            }
+        }
         .navigationTitle(viewModel.sura?.displayTitle ?? "Сура")
         .navigationBarTitleDisplayMode(.inline)
         .background(Color.greenBackground.ignoresSafeArea())

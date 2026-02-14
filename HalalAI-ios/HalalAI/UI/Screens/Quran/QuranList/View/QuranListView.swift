@@ -22,6 +22,14 @@ struct QuranListView: View {
         }
         .navigationTitle("Коран")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Image(systemName: "arrow.left")
+                    .onTapGesture {
+                        coordinator.dismiss()
+                    }
+            }
+        }
         .onAppear { viewModel.loadQuran() }
     }
 

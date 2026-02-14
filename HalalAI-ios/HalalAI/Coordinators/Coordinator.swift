@@ -27,7 +27,7 @@ enum Step: Hashable, Equatable {
 @MainActor
 @Observable
 final class Coordinator {
-    var path: [Step] = []
+    var path: [Step] = [.Home(.home)]
     var currentSelectedTab: TabBarItem = .home
     
     private var homeTabPath: [Step] = []
@@ -36,14 +36,21 @@ final class Coordinator {
     
     var currentStep: Step?
     
-    init() {
-    }
+    init() {}
         
     func nextStep(step: Step) {
-        Task { @MainActor in
-            currentStep = step
-            path.append(step)
-            print("nextStep актуальный path: \(path)")
+        currentStep = step
+        path.append(step)
+        print("nextStep актуальный path: \(path)")
+    }
+    
+    func dismiss() {
+        if path.count > 1 {
+            path.removeLast()
+            currentStep = path.last
+            print("dismiss актуальный path: \(path)")
+        } else {
+            print("dismiss невозможно вернуться назад, тк path(количество <= 1): \(path)")
         }
     }
     
@@ -70,31 +77,25 @@ final class Coordinator {
         case .Home(let value): value.view
         }
     }
-    
     func selectTab(item: TabBarItem) {
-        Task { @MainActor in
-            if item == currentSelectedTab {
-                // Повторное нажатие на вкладку — возврат к корню стека этой вкладки
-                path = []
-                savePath([], for: item)
-                return
-            }
-            
-            savePreviousTabPath()
-            currentSelectedTab = item
-            path = restorePath(for: item)
+        // Повторное нажатие на вкладку - возврат к корню стека этой вкладки
+        if item == currentSelectedTab {
+            path = rootPathForItem(item)
+            savePath(path, for: item)
+            return
         }
+        
+        savePreviousTabPath()
+        currentSelectedTab = item
+        path = restorePath(for: item)
     }
     
     func toRoot() {
-        Task { @MainActor in
-            currentStep = nil
-            path = []
-        }
+        currentStep = nil
+        path = []
     }
     
     // MARK: - Private
-    private init(forTesting: Bool) {}
 
     private func savePreviousTabPath() {
         switch currentSelectedTab {
@@ -126,6 +127,17 @@ final class Coordinator {
             settingsTabPath = newPath
         case .home:
             homeTabPath = newPath
+        }
+    }
+    
+    private func rootPathForItem(_ item: TabBarItem) -> [Step] {
+        switch item {
+        case .chat:
+            return [.Chat(.chat)]
+        case .settings:
+            return [.Settings(.settings)]
+        case .home:
+            return [.Home(.home)]
         }
     }
 }

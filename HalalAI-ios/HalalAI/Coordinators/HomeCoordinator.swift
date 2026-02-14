@@ -7,10 +7,12 @@
 
 import SwiftUI
 
-enum HomeCoordinator {
+enum HomeCoordinator: Hashable {
     case home
     case scanner
-    
+    case quran
+    case sura(suraIndex: Int)
+
     @MainActor
     @ViewBuilder
     var view: some View {
@@ -19,6 +21,10 @@ enum HomeCoordinator {
             screenFactory.makeHomeView()
         case .scanner:
             screenFactory.makeScannerView()
+        case .quran:
+            screenFactory.makeQuranListView()
+        case .sura(let suraIndex):
+            screenFactory.makeSuraReaderView(suraIndex: suraIndex)
         }
     }
 }

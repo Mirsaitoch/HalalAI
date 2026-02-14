@@ -26,7 +26,7 @@ protocol ChatService {
 
 @MainActor
 @Observable
-class ChatServiceImpl: ChatService {
+final class ChatServiceImpl: ChatService {
     var messages: [ChatMessage] = []
     var chatState: ChatState = .idle
     var connectionState: ConnectionState = .connected

@@ -16,6 +16,8 @@ protocol ScreenFactory {
     func makeChatView() -> ChatView
     func makeScannerView() -> ScannerView
     func makeHomeView() -> HomeView
+    func makeQuranListView() -> QuranListView
+    func makeSuraReaderView(suraIndex: Int) -> SuraReaderView
 }
 
 @MainActor
@@ -60,7 +62,18 @@ final class ScreenFactoryImpl {
     }
     
     func makeHomeView() -> HomeView {
-        return HomeView(verseService: dc.verseService)
+        let viewModel = HomeView.ViewModel(verseService: dc.verseService)
+        return HomeView(viewModel: viewModel)
+    }
+
+    func makeQuranListView() -> QuranListView {
+        let viewModel = QuranListView.ViewModel(quranStorage: dc.quranStorage)
+        return QuranListView(viewModel: viewModel)
+    }
+
+    func makeSuraReaderView(suraIndex: Int) -> SuraReaderView {
+        let viewModel = SuraReaderView.ViewModel(suraIndex: suraIndex, quranStorage: dc.quranStorage)
+        return SuraReaderView(viewModel: viewModel)
     }
 }
 
@@ -71,12 +84,14 @@ final class DependencyContainer {
     fileprivate var chatService: ChatService
     fileprivate var ingredientService: IngredientService
     fileprivate var verseService: VerseService
-    
+    fileprivate var quranStorage: QuranStorageService
+
     init() {
         self.authManager = AuthManagerImpl()
         self.authService = AuthServiceImpl()
         self.chatService = ChatServiceImpl(authManager: authManager)
         self.ingredientService = IngredientServiceImpl()
         self.verseService = VerseServiceImpl()
+        self.quranStorage = QuranStorageServiceImpl()
     }
 }

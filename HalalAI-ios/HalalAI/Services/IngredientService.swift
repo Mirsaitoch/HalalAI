@@ -13,7 +13,7 @@ protocol IngredientService {
 }
 
 @MainActor
-class IngredientServiceImpl: IngredientService {
+final class IngredientServiceImpl: IngredientService {
     private var ingredients: [Ingredient] = []
     private var ingredientsLoaded = false
     

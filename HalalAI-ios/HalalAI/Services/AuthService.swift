@@ -18,7 +18,7 @@ protocol AuthService {
 
 @MainActor
 @Observable
-class AuthServiceImpl: AuthService {
+final class AuthServiceImpl: AuthService {
     var isLoading = false
     var errorMessage: String?
     

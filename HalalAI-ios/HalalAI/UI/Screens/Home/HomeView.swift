@@ -9,12 +9,12 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(Coordinator.self) var coordinator
-    var verseService: VerseService
+    var viewModel: ViewModel
     
     var body: some View {
         VStack {
             ScrollView(.vertical, showsIndicators: false) {
-                VerseView(verseService: verseService)
+                VerseView(verseService: viewModel.verseService)
                     .padding()
                 ImageTextComponent(
                     componentSize: .large,
@@ -55,6 +55,11 @@ struct HomeView: View {
                     title: "Изучай Ислам",
                     description: "Суры и Аяты из Корана"
                 )
+                .onTapGesture {
+                    withAnimation {
+                        coordinator.nextStep(step: .Home(.quran))
+                    }
+                }
             }
         }
         .padding(.horizontal, 15)

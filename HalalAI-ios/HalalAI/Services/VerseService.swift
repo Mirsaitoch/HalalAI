@@ -13,7 +13,7 @@ protocol VerseService {
 }
 
 @Observable
-class VerseServiceImpl: VerseService {
+final class VerseServiceImpl: VerseService {
     var verseOfTheDay: Verse?
     
     private let backendURL: String = {

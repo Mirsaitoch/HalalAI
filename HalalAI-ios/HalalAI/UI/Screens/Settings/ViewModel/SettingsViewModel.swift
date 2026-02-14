@@ -9,7 +9,8 @@ import Foundation
 
 extension SettingsView {
     @MainActor
-    final class ViewModel: ObservableObject {
+    @Observable
+    final class ViewModel {
         var chatService: ChatService
         var authManager: AuthManager
         
@@ -18,7 +19,7 @@ extension SettingsView {
             self.authManager = authManager
         }
 
-        @Published var isApiKeyVisible = false
-        @Published var maxTokensSlider: Double = 2048
+        var isApiKeyVisible = false
+        var maxTokensSlider: Double = 2048
     }
 }

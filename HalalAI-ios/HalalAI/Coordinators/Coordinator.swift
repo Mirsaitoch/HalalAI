@@ -43,6 +43,7 @@ final class Coordinator {
         Task { @MainActor in
             currentStep = step
             path.append(step)
+            print("nextStep актуальный path: \(path)")
         }
     }
     

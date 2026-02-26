@@ -105,9 +105,9 @@ enum PrayerCalculationMethod: String, CaseIterable, Codable {
     var localizedName: String {
         switch self {
         case .russia:
-            return "Духовного управления мусульман России"
+            return "ДУМ России"
         case .tatarstan:
-            return "Духовного управления мусульман Республики Татарстан"
+            return "ДУМ Республики Татарстан"
         case .muslimWorldLeague:
             return "Мировая Исламская Лига"
         case .isna:

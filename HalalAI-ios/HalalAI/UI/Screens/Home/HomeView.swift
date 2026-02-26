@@ -16,6 +16,8 @@ struct HomeView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VerseView(verseService: viewModel.verseService)
                     .padding()
+                PrayerTimesCardView(viewModel: viewModel.prayerCardViewModel)
+                    .padding(.horizontal)
                 ImageTextComponent(
                     componentSize: .large,
                     image: .scan,

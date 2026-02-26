@@ -11,8 +11,14 @@ extension HomeView {
     @Observable
     final class ViewModel {
         var verseService: VerseService
-        init(verseService: VerseService) {
+        var prayerCardViewModel: PrayerTimesCardView.ViewModel
+
+        init(
+            verseService: VerseService,
+            prayerCardViewModel: PrayerTimesCardView.ViewModel
+        ) {
             self.verseService = verseService
+            self.prayerCardViewModel = prayerCardViewModel
         }
     }
 }

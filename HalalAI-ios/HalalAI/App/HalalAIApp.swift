@@ -29,6 +29,7 @@ struct HalalAIApp: App {
             ZStack {
                 Color.greenBackground.ignoresSafeArea()
                 screenFactory.makeRootView()
+                    .preferredColorScheme(.light)
             }
         }
     }

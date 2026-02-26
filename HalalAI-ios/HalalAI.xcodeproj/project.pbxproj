@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3BAD00032F000003007D84F8 /* Adhan in Frameworks */ = {isa = PBXBuildFile; productRef = 3BAD00022F000002007D84F8 /* Adhan */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		3B35683C2EEEAC7500FD1CBE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -72,6 +76,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3BAD00032F000003007D84F8 /* Adhan in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -148,6 +153,7 @@
 			);
 			name = HalalAI;
 			packageProductDependencies = (
+				3BAD00022F000002007D84F8 /* Adhan */,
 			);
 			productName = HalalAI;
 			productReference = 3B925A3F2E92A983007D84F8 /* HalalAI.app */;
@@ -212,6 +218,9 @@
 			productRefGroup = 3B925A402E92A983007D84F8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */,
+			);
 			targets = (
 				3B925A3E2E92A983007D84F8 /* HalalAI */,
 				3BD402082E9C2B4700BE53FE /* HalalAITests */,
@@ -280,6 +289,25 @@
 			targetProxy = 3BD4020D2E9C2B4700BE53FE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/batoulapps/adhan-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3BAD00022F000002007D84F8 /* Adhan */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */;
+			productName = Adhan;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		3B35683F2EEEAC7500FD1CBE /* Debug */ = {

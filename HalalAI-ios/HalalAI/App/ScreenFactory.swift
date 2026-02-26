@@ -18,6 +18,7 @@ protocol ScreenFactory {
     func makeHomeView() -> HomeView
     func makeQuranListView() -> QuranListView
     func makeSuraReaderView(suraIndex: Int) -> SuraReaderView
+    func makePrayerNotificationSettingsView() -> PrayerNotificationSettingsView
 }
 
 @MainActor
@@ -62,8 +63,25 @@ final class ScreenFactoryImpl {
     }
     
     func makeHomeView() -> HomeView {
-        let viewModel = HomeView.ViewModel(verseService: dc.verseService)
+        let prayerCardVM = PrayerTimesCardView.ViewModel(
+            locationService: dc.locationService,
+            prayerTimeService: dc.prayerTimeService,
+            settingsStore: dc.prayerSettingsStore
+        )
+        let viewModel = HomeView.ViewModel(
+            verseService: dc.verseService,
+            prayerCardViewModel: prayerCardVM
+        )
         return HomeView(viewModel: viewModel)
+    }
+
+    func makePrayerNotificationSettingsView() -> PrayerNotificationSettingsView {
+        let viewModel = PrayerNotificationSettingsView.ViewModel(
+            settingsStore: dc.prayerSettingsStore,
+            notificationService: dc.prayerNotificationService,
+            locationService: dc.locationService
+        )
+        return PrayerNotificationSettingsView(viewModel: viewModel)
     }
 
     func makeQuranListView() -> QuranListView {
@@ -85,6 +103,10 @@ final class DependencyContainer {
     fileprivate var ingredientService: IngredientService
     fileprivate var verseService: VerseService
     fileprivate var quranStorage: QuranStorageService
+    fileprivate var locationService: LocationService
+    fileprivate var prayerTimeService: PrayerTimeService
+    fileprivate var prayerSettingsStore: PrayerSettingsStore
+    fileprivate var prayerNotificationService: PrayerNotificationService
 
     init() {
         self.authManager = AuthManagerImpl()
@@ -93,5 +115,9 @@ final class DependencyContainer {
         self.ingredientService = IngredientServiceImpl()
         self.verseService = VerseServiceImpl()
         self.quranStorage = QuranStorageServiceImpl()
+        self.locationService = LocationServiceImpl()
+        self.prayerTimeService = PrayerTimeServiceImpl()
+        self.prayerSettingsStore = PrayerSettingsStore()
+        self.prayerNotificationService = PrayerNotificationServiceImpl(prayerTimeService: prayerTimeService)
     }
 }

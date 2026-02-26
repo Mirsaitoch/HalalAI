@@ -12,6 +12,7 @@ enum HomeCoordinator: Hashable {
     case scanner
     case quran
     case sura(suraIndex: Int)
+    case prayerSettings
 
     @MainActor
     @ViewBuilder
@@ -25,6 +26,8 @@ enum HomeCoordinator: Hashable {
             screenFactory.makeQuranListView()
         case .sura(let suraIndex):
             screenFactory.makeSuraReaderView(suraIndex: suraIndex)
+        case .prayerSettings:
+            screenFactory.makePrayerNotificationSettingsView()
         }
     }
 }

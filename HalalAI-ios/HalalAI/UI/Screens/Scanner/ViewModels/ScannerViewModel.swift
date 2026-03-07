@@ -22,9 +22,11 @@ extension ScannerView {
         var cameraSource: ImageSource = .camera
         
         private let ingredientService: IngredientService
-        
-        init(ingredientService: IngredientService) {
+        let authManager: AuthManager
+
+        init(ingredientService: IngredientService, authManager: AuthManager) {
             self.ingredientService = ingredientService
+            self.authManager = authManager
             Task {
                 try? await ingredientService.loadIngredients()
             }

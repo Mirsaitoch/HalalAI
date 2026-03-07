@@ -53,6 +53,11 @@ struct ScannerView: View {
             IngredientResultsView(analysis: viewModel.analysis)
         }
         .overlay {
+            if viewModel.authManager.isGuest {
+                GuestAuthPromptView(featureName: "сканирование продуктов", authManager: viewModel.authManager)
+            }
+        }
+        .overlay {
             if viewModel.isLoading {
                 ZStack {
                     Color.black.opacity(0.3)

@@ -12,10 +12,11 @@ struct RouterView: View {
     @State var coordinator = Coordinator()
     @State private var isKeyboardVisible = false
     private var tabBarHeight = 80
+
     var body: some View {
         ZStack(alignment: .bottom) {
             NavigationStack(path: $coordinator.path) {
-                coordinator.rootView
+                tabRootView
                     .additionalPaddingIfNeeded(shouldShowTabBar, tabBarHeight)
                     .navigationDestination(for: Step.self) { step in
                         coordinator.build(step: step)
@@ -23,7 +24,7 @@ struct RouterView: View {
                             .additionalPaddingIfNeeded(shouldShowTabBar, tabBarHeight)
                     }
             }
-            
+
             if shouldShowTabBar {
                 TabBarView()
                     .edgesIgnoringSafeArea(.bottom)
@@ -32,9 +33,6 @@ struct RouterView: View {
         }
         .environment(coordinator)
         .ignoresSafeArea(.keyboard, edges: .bottom)
-        .onAppear {
-            coordinator.selectTab(item: .home)
-        }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             withAnimation(.easeInOut(duration: 0.25)) {
                 isKeyboardVisible = true
@@ -46,9 +44,20 @@ struct RouterView: View {
             }
         }
     }
-    
+
+    @ViewBuilder
+    private var tabRootView: some View {
+        switch coordinator.currentSelectedTab {
+        case .home:
+            coordinator.build(step: .Home(.home))
+        case .chat:
+            coordinator.build(step: .Chat(.chat))
+        case .settings:
+            coordinator.build(step: .Settings(.settings))
+        }
+    }
+
     private var shouldShowTabBar: Bool {
         !isKeyboardVisible
     }
 }
-

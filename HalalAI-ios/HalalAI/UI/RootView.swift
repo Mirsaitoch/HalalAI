@@ -12,7 +12,7 @@ struct RootView: View {
     
     var body: some View {
         Group {
-            if authManager.isAuthenticated {
+            if authManager.isAuthenticated || authManager.isGuest {
                RouterView()
            } else {
                AuthFlowView()

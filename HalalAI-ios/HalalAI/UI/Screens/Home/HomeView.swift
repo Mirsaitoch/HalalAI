@@ -15,34 +15,39 @@ struct HomeView: View {
         VStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VerseView(verseService: viewModel.verseService)
-                    .padding()
+                
+                if viewModel.authManager.isGuest {
+                    GuestBannerView {
+                        viewModel.authManager.logout()
+                    }
+                }
+                
                 PrayerTimesCardView(viewModel: viewModel.prayerCardViewModel)
-                    .padding(.horizontal)
+
                 ImageTextComponent(
                     componentSize: .large,
                     image: .scan,
                     title: "Сканировать состав",
-                    description: "Проверь ингредиенты на халяльность"
+                    description: "Проверь ингредиенты на халяльность",
+                    locked: viewModel.authManager.isGuest
                 )
                 .onTapGesture {
-                    withAnimation {
-                        coordinator.nextStep(step: .Home(.scanner))
-                    }
+                    guard !viewModel.authManager.isGuest else { return }
+                    coordinator.nextStep(step: .Home(.scanner))
                 }
-                
-                HStack {
+
+                HStack(spacing: 8) {
                     ImageTextComponent(
                         componentSize: .medium,
                         image: .quran,
                         title: "Чат с AI",
-                        description: "Задай вопрос"
+                        description: "Задай вопрос",
+                        locked: viewModel.authManager.isGuest
                     )
                     .onTapGesture {
-                        withAnimation {
-                            coordinator.selectTab(item: .chat)
-                        }
+                        guard !viewModel.authManager.isGuest else { return }
+                        coordinator.selectTab(item: .chat)
                     }
-                    Spacer()
                     ImageTextComponent(
                         componentSize: .medium,
                         image: .map,

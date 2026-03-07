@@ -27,117 +27,44 @@ enum Step: Hashable, Equatable {
 @MainActor
 @Observable
 final class Coordinator {
-    var path: [Step] = [.Home(.home)]
+    var path: [Step] = []
     var currentSelectedTab: TabBarItem = .home
-    
-    private var homeTabPath: [Step] = []
-    private var chatTabPath: [Step] = []
-    private var settingsTabPath: [Step] = []
-    
-    var currentStep: Step?
-    
+
     init() {}
-        
+
     func nextStep(step: Step) {
-        currentStep = step
         path.append(step)
-        print("nextStep актуальный path: \(path)")
     }
-    
+
     func dismiss() {
-        if path.count > 1 {
+        if !path.isEmpty {
             path.removeLast()
-            currentStep = path.last
-            print("dismiss актуальный path: \(path)")
-        } else {
-            print("dismiss невозможно вернуться назад, тк path(количество <= 1): \(path)")
         }
     }
-    
-    var rootStep: Step {
-        switch currentSelectedTab {
-        case .chat:
-            return .Chat(.chat)
-        case .settings:
-            return .Settings(.settings)
-        case .home:
-            return .Home(.home)
+
+    func toRoot() {
+        path = []
+    }
+
+    func selectTab(item: TabBarItem) {
+        if item == currentSelectedTab {
+            path = []
+            return
+        }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            path = []
+            currentSelectedTab = item
         }
     }
-    
-    var rootView: AnyView {
-        AnyView(build(step: rootStep))
-    }
-    
+
     @ViewBuilder
     func build(step: Step) -> some View {
         switch step {
         case .Chat(let value): value.view
         case .Settings(let value): value.view
         case .Home(let value): value.view
-        }
-    }
-    func selectTab(item: TabBarItem) {
-        // Повторное нажатие на вкладку - возврат к корню стека этой вкладки
-        if item == currentSelectedTab {
-            path = rootPathForItem(item)
-            savePath(path, for: item)
-            return
-        }
-        
-        savePreviousTabPath()
-        currentSelectedTab = item
-        path = restorePath(for: item)
-    }
-    
-    func toRoot() {
-        currentStep = nil
-        path = []
-    }
-    
-    // MARK: - Private
-
-    private func savePreviousTabPath() {
-        switch currentSelectedTab {
-        case .chat:
-            chatTabPath = path
-        case .settings:
-            settingsTabPath = path
-        case .home:
-            homeTabPath = path
-        }
-    }
-    
-    private func restorePath(for tab: TabBarItem) -> [Step] {
-        switch tab {
-        case .chat:
-            return chatTabPath
-        case .settings:
-            return settingsTabPath
-        case .home:
-            return homeTabPath
-        }
-    }
-    
-    private func savePath(_ newPath: [Step], for tab: TabBarItem) {
-        switch tab {
-        case .chat:
-            chatTabPath = newPath
-        case .settings:
-            settingsTabPath = newPath
-        case .home:
-            homeTabPath = newPath
-        }
-    }
-    
-    private func rootPathForItem(_ item: TabBarItem) -> [Step] {
-        switch item {
-        case .chat:
-            return [.Chat(.chat)]
-        case .settings:
-            return [.Settings(.settings)]
-        case .home:
-            return [.Home(.home)]
         }
     }
 }

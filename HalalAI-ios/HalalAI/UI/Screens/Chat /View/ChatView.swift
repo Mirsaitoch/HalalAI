@@ -86,6 +86,11 @@ struct ChatView: View {
         .background {
             Color.greenBackground.ignoresSafeArea()
         }
+        .overlay {
+            if viewModel.authManager.isGuest {
+                GuestAuthPromptView(featureName: "ИИ-чат", authManager: viewModel.authManager)
+            }
+        }
     }
 }
 

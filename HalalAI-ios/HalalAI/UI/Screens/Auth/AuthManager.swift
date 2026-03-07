@@ -14,9 +14,11 @@ protocol AuthManager {
     var currentUser: AuthResponse? { get set }
     var errorMessage: String? { get set }
     var isAuthenticated: Bool { get }
+    var isGuest: Bool { get }
     var authToken: String? { get }
     func saveAuth(_ response: AuthResponse)
     func logout()
+    func continueAsGuest()
     func refreshToken() async throws
 }
 
@@ -29,6 +31,7 @@ final class AuthManagerImpl: AuthManager {
     
     private let tokenKey = "HalalAI.authToken"
     private let userKey = "HalalAI.currentUser"
+    private let guestKey = "HalalAI.isGuest"
     
     init() {
         loadStoredAuth()
@@ -39,6 +42,10 @@ final class AuthManagerImpl: AuthManager {
     var isAuthenticated: Bool {
         return authState == .authenticated && currentUser != nil
     }
+
+    var isGuest: Bool {
+        return authState == .guest
+    }
     
     var authToken: String? {
         return UserDefaults.standard.string(forKey: tokenKey)
@@ -47,13 +54,19 @@ final class AuthManagerImpl: AuthManager {
     func saveAuth(_ response: AuthResponse) {
         currentUser = response
         UserDefaults.standard.set(response.token, forKey: tokenKey)
-        
+        UserDefaults.standard.removeObject(forKey: guestKey)
+
         if let userData = try? JSONEncoder().encode(response) {
             UserDefaults.standard.set(userData, forKey: userKey)
         }
-        
+
         authState = .authenticated
         errorMessage = nil
+    }
+
+    func continueAsGuest() {
+        authState = .guest
+        UserDefaults.standard.set(true, forKey: guestKey)
     }
     
     func logout() {
@@ -83,10 +96,10 @@ final class AuthManagerImpl: AuthManager {
               !token.isEmpty,
               let userData = UserDefaults.standard.data(forKey: userKey),
               let user = try? JSONDecoder().decode(AuthResponse.self, from: userData) else {
-            authState = .unauthenticated
+            authState = UserDefaults.standard.bool(forKey: guestKey) ? .guest : .unauthenticated
             return
         }
-        
+
         currentUser = user
         authState = .authenticated
     }

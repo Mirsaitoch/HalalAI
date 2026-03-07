@@ -12,105 +12,108 @@ struct LoginView: View {
     var onShowRegister: (() -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Заголовок
-            VStack(spacing: 8) {
-                Text("Добро пожаловать")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.greenForeground)
-                
-                Text("Войдите в свой аккаунт")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+        ZStack(alignment: .bottom) {
+            Color.greenForeground.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "moon.stars.fill")
+                        .font(.system(size: 48))
+                        .foregroundColor(.white)
+
+                    Text("Halal AI")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text("Войдите в свой аккаунт")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 70)
+                .padding(.bottom, 40)
+
+                // White card
+                ZStack(alignment: .top) {
+                    // Background extends to bottom edge
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 32,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 32
+                    )
+                    .fill(Color(.systemBackground))
+                    .ignoresSafeArea(edges: .bottom)
+
+                    // ScrollView moves with keyboard
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            VStack(spacing: 14) {
+                                AuthTextField(
+                                    icon: "person.fill",
+                                    placeholder: "Имя пользователя или Email",
+                                    text: $viewModel.usernameOrEmail
+                                )
+
+                                AuthTextField(
+                                    icon: "lock.fill",
+                                    placeholder: "Пароль",
+                                    text: $viewModel.password,
+                                    isSecure: true
+                                )
+                            }
+
+                            // Login button
+                            Button(action: {
+                                Task { await viewModel.login() }
+                            }) {
+                                HStack {
+                                    if viewModel.authService.isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    } else {
+                                        Text("Войти")
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(viewModel.isDisable ? Color.gray : Color.greenForeground)
+                                .foregroundColor(.white)
+                                .cornerRadius(14)
+                            }
+                            .disabled(viewModel.isDisable)
+                            .opacity(viewModel.isDisable ? 0.6 : 1.0)
+
+                            // Register link
+                            HStack(spacing: 4) {
+                                Text("Нет аккаунта?")
+                                    .foregroundColor(.secondary)
+                                Button(action: { onShowRegister?() }) {
+                                    Text("Зарегистрироваться")
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.greenForeground)
+                                }
+                            }
+
+                            // Guest login
+                            Button(action: {
+                                viewModel.authManager.continueAsGuest()
+                            }) {
+                                Text("Продолжить без регистрации")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.horizontal, 28)
+                        .padding(.top, 36)
+                        .padding(.bottom, 40)
+                    }
+                    .scrollDismissesKeyboard(.interactively)
+                }
             }
-            .padding(.top, 40)
-            .padding(.bottom, 30)
-            
-            // Форма входа
-            VStack(spacing: 16) {
-                // Поле имени пользователя или email
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Имя пользователя или Email")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    TextField("Введите имя пользователя или email", text: $viewModel.usernameOrEmail)
-                        .textFieldStyle(.roundedBorder)
-                        .textInputAutocapitalization(.never)
-                        .disableAutocorrection(true)
-                        .autocapitalization(.none)
-                }
-                
-                // Поле пароля
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Пароль")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    HStack {
-                        if viewModel.showPassword {
-                            TextField("Введите пароль", text: $viewModel.password)
-                                .textInputAutocapitalization(.never)
-                                .disableAutocorrection(true)
-                        } else {
-                            SecureField("Введите пароль", text: $viewModel.password)
-                        }
-                        
-                        Button(action: { viewModel.showPassword.toggle() }) {
-                            Image(systemName: viewModel.showPassword ? "eye.slash.fill" : "eye.fill")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                }
-                
-                // Кнопка входа
-                Button(action: {
-                    Task {
-                        await viewModel.login()
-                    }
-                }) {
-                    HStack {
-                        if viewModel.authService.isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Text("Войти")
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.greenForeground)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                }
-                .disabled(viewModel.isDisable)
-                .opacity((viewModel.isDisable) ? 0.6 : 1.0)
-                
-                // Кнопка регистрации
-                HStack {
-                    Text("Нет аккаунта?")
-                        .foregroundColor(.secondary)
-                    Button(action: {
-                        onShowRegister?()
-                    }) {
-                        Text("Зарегистрироваться")
-                            .fontWeight(.semibold)
-                            .foregroundColor(.greenForeground)
-                    }
-                }
-                .padding(.top, 8)
-            }
-            .padding(.horizontal, 24)
-            
-            Spacer()
         }
-        .background(Color.greenBackground.ignoresSafeArea())
         .alert("Ошибка", isPresented: $viewModel.showError) {
             Button("OK", role: .cancel) { }
         } message: {

@@ -214,13 +214,13 @@
 			);
 			mainGroup = 3B925A362E92A983007D84F8;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3B925A402E92A983007D84F8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			packageReferences = (
-				3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */,
-			);
 			targets = (
 				3B925A3E2E92A983007D84F8 /* HalalAI */,
 				3BD402082E9C2B4700BE53FE /* HalalAITests */,
@@ -289,25 +289,6 @@
 			targetProxy = 3BD4020D2E9C2B4700BE53FE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/batoulapps/adhan-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		3BAD00022F000002007D84F8 /* Adhan */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */;
-			productName = Adhan;
-		};
-/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		3B35683F2EEEAC7500FD1CBE /* Debug */ = {
@@ -617,6 +598,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/batoulapps/adhan-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3BAD00022F000002007D84F8 /* Adhan */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3BAD00012F000001007D84F8 /* XCRemoteSwiftPackageReference "adhan-swift" */;
+			productName = Adhan;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3B925A372E92A983007D84F8 /* Project object */;
 }

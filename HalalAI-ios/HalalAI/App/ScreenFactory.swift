@@ -53,12 +53,12 @@ final class ScreenFactoryImpl {
     }
     
     func makeChatView() -> ChatView {
-        let viewModel = ChatView.ViewModel(chatService: dc.chatService)
+        let viewModel = ChatView.ViewModel(chatService: dc.chatService, authManager: dc.authManager)
         return ChatView(viewModel: viewModel)
     }
-    
+
     func makeScannerView() -> ScannerView {
-        let viewModel = ScannerView.ViewModel(ingredientService: dc.ingredientService)
+        let viewModel = ScannerView.ViewModel(ingredientService: dc.ingredientService, authManager: dc.authManager)
         return ScannerView(viewModel: viewModel)
     }
     
@@ -70,7 +70,8 @@ final class ScreenFactoryImpl {
         )
         let viewModel = HomeView.ViewModel(
             verseService: dc.verseService,
-            prayerCardViewModel: prayerCardVM
+            prayerCardViewModel: prayerCardVM,
+            authManager: dc.authManager
         )
         return HomeView(viewModel: viewModel)
     }

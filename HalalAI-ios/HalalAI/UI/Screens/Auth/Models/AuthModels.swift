@@ -44,6 +44,7 @@ enum AuthState: Equatable {
     case authenticated
     case unauthenticated
     case loading
+    case guest
 }
 
 enum AuthError: LocalizedError {

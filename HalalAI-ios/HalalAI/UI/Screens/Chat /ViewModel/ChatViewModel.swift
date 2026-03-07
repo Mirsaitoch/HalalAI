@@ -12,9 +12,11 @@ extension ChatView {
     final class ViewModel {
         var messageText = ""
         let chatService: ChatService
-        
-        init(chatService: ChatService) {
+        let authManager: AuthManager
+
+        init(chatService: ChatService, authManager: AuthManager) {
             self.chatService = chatService
+            self.authManager = authManager
         }
         
         @MainActor

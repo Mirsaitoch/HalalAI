@@ -22,8 +22,7 @@ struct PrayerTimesCardView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.tabBar)
-                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                .fill(.greenForeground)
         )
         .onAppear {
             viewModel.refresh()
@@ -41,7 +40,7 @@ struct PrayerTimesCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Время намаза")
                     .font(.headline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.darkGreen)
 
                 switch viewModel.locationService.authorizationStatus {
                 case .notDetermined:
@@ -50,12 +49,12 @@ struct PrayerTimesCardView: View {
                     } label: {
                         Label("Разрешить геолокацию", systemImage: "location")
                             .font(.subheadline)
-                            .foregroundStyle(Color.greenForeground)
+                            .foregroundStyle(.darkGreen)
                     }
                 case .denied, .restricted:
                     Text("Нет доступа к геолокации")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.darkGreen)
                 case .authorizedWhenInUse, .authorizedAlways:
                     if let (prayer, time) = viewModel.nextPrayer {
                         VStack(alignment: .leading, spacing: 2) {
@@ -65,11 +64,11 @@ struct PrayerTimesCardView: View {
                             HStack(spacing: 6) {
                                 Text(time, format: .dateTime.hour().minute())
                                     .font(.title2.bold())
-                                    .foregroundStyle(Color.greenForeground)
+                                    .foregroundStyle(.darkGreen)
                                 TimelineView(.periodic(from: .now, by: 60)) { _ in
                                     Text(countdown(to: time))
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.darkGreen)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 3)
                                         .background(Capsule().fill(Color.secondary.opacity(0.15)))
@@ -79,11 +78,11 @@ struct PrayerTimesCardView: View {
                     } else if viewModel.todayTimes == nil {
                         Text("Определяем местоположение…")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.darkGreen)
                     } else {
-                        Text("Все намазы пройдены")
+                        Text("Все намазы прошли")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.darkGreen)
                     }
                 @unknown default:
                     EmptyView()
@@ -97,7 +96,7 @@ struct PrayerTimesCardView: View {
             } label: {
                 Image(systemName: "bell.badge")
                     .font(.title3)
-                    .foregroundStyle(Color.greenForeground)
+                    .foregroundStyle(.darkGreen)
                     .padding(8)
                     .background(Circle().fill(Color.greenForeground.opacity(0.12)))
             }
@@ -150,7 +149,7 @@ private struct PrayerRowView: View {
         HStack {
             Image(systemName: prayer.systemImage)
                 .frame(width: 24)
-                .foregroundStyle(isNext ? Color.greenForeground : .secondary)
+                .foregroundStyle(isNext ? .darkGreen : .secondary)
 
             Text(prayer.localizedName)
                 .foregroundStyle(isNext ? .primary : .secondary)

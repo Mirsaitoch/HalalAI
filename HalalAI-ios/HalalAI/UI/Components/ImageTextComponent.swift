@@ -12,7 +12,8 @@ struct ImageTextComponent: View {
     let image: ImageResource
     let title: String
     let description: String
-    
+    var locked: Bool = false
+
     private var imageSize: (CGFloat, CGFloat) {
         switch componentSize {
         case .small:
@@ -50,6 +51,23 @@ struct ImageTextComponent: View {
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.greenForeground)
         }
+        .overlay(alignment: .topTrailing) {
+            if locked {
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("Нужен аккаунт")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundColor(.darkGreen)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.white)
+                .clipShape(Capsule())
+                .padding(10)
+            }
+        }
+        .opacity(locked ? 0.6 : 1)
     }
 }
 
@@ -60,7 +78,6 @@ enum ImageTextComponentSize {
 }
 
 #Preview {
-    
     ScrollView(.vertical) {
         VStack {
             HStack {

@@ -13,16 +13,16 @@ struct SettingsView: View {
     var body: some View {
         VStack {
             Form {
-                // Раздел аккаунта
-                accountSection
-                // Раздел API ключа
-                apiKeySection
-                // Раздел удаленной модели
-                remoteModelSection
-                // Раздел источников данных
-                dataSourcesSection
-                // Выход из аккаунта
-                logoutSection
+                if viewModel.authManager.isGuest {
+                    guestLoginSection
+                } else {
+                    accountSection
+                    apiKeySection
+                    remoteModelSection
+                    remoteModelSection
+                    dataSourcesSection
+                    logoutSection
+                }
             }
             .scrollContentBackground(.hidden)
             .navigationTitle("Настройки")
@@ -31,15 +31,12 @@ struct SettingsView: View {
         }
         .background(Color.greenBackground.ignoresSafeArea())
         .onAppear {
-            // Инициализация слайдера
             viewModel.maxTokensSlider = Double(viewModel.chatService.maxTokens)
-            // Загрузка моделей при появлении
             Task {
                 await viewModel.chatService.loadModels()
             }
         }
         .onChange(of: viewModel.maxTokensSlider) { newValue in
-            // Обновление значения в сервисе при изменении слайдера
             viewModel.chatService.maxTokens = Int(newValue)
         }
     }
@@ -197,6 +194,20 @@ struct SettingsView: View {
                     Spacer()
                 }
             }
+        }
+    }
+
+    private var guestLoginSection: some View {
+        Section {
+            Button {
+                viewModel.authManager.logout()
+            } label: {
+                Label("Войти или зарегистрироваться ❤️", systemImage: "person.crop.circle")
+                    .frame(alignment: .leading)
+            }
+            .foregroundColor(.darkGreen)
+        } header: {
+            Text("Аккаунт")
         }
     }
 }

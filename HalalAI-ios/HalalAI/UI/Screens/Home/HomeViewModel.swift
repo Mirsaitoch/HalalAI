@@ -12,13 +12,16 @@ extension HomeView {
     final class ViewModel {
         var verseService: VerseService
         var prayerCardViewModel: PrayerTimesCardView.ViewModel
+        var authManager: AuthManager
 
         init(
             verseService: VerseService,
-            prayerCardViewModel: PrayerTimesCardView.ViewModel
+            prayerCardViewModel: PrayerTimesCardView.ViewModel,
+            authManager: AuthManager
         ) {
             self.verseService = verseService
             self.prayerCardViewModel = prayerCardViewModel
+            self.authManager = authManager
         }
     }
 }

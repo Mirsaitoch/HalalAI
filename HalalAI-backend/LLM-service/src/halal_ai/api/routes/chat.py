@@ -4,19 +4,17 @@ import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
-import torch
 from fastapi import APIRouter, Depends, HTTPException
 
-from halal_ai.api.dependencies import get_local_llm, get_rag_pipeline
-from halal_ai.core import ALLOWED_MESSAGE_ROLES, llm_config, rag_config
-from halal_ai.core.exceptions import RemoteLLMException, TimeoutException
+from halal_ai.api.dependencies import get_rag_pipeline
+from halal_ai.core import ALLOWED_MESSAGE_ROLES, llm_config, rag_config, remote_llm_config
+from halal_ai.core.exceptions import RemoteLLMException
 from halal_ai.models import ChatRequest, ChatResponse, RemoteTestRequest
 from halal_ai.services.llm import (
-    LocalLLM,
     call_remote_llm,
+    get_effective_api_key,
     get_remote_skip_reason,
     select_remote_model,
-    should_use_remote_llm,
 )
 from halal_ai.services.monitoring import quality_checker
 from halal_ai.services.prompts import (
@@ -31,7 +29,6 @@ from halal_ai.utils import (
     extract_last_user_query,
     generate_query_variants,
     get_rag_relevance_keywords,
-    normalize_food_query,
     serialize_sources,
 )
 
@@ -52,32 +49,21 @@ async def execute_with_timeout(coro, stage: str):
 
 
 def check_response_quality(content: str, rag_sources: List[Dict[str, Any]]) -> None:
-    """
-    Проверяет качество ответа и логирует проблемы.
-    
-    Args:
-        content: Текст ответа модели
-        rag_sources: Источники из RAG
-    """
+    """Проверяет качество ответа и логирует проблемы."""
     if not rag_sources:
-        # Если нет источников, проверка цитирований бессмысленна
         return
-    
+
     quality_report = quality_checker.check_response(content, rag_sources)
-    
-    # Логируем результаты проверки
+
     if quality_report["quality"] in ["poor", "critical"]:
         logger.warning(
             "🚨 Низкое качество ответа! Quality: %s, Risk score: %d",
             quality_report["quality"],
             quality_report["risk_score"],
         )
-        
-        if quality_report["issues"]:
-            for issue in quality_report["issues"]:
-                logger.warning("  ⚠️  %s", issue)
-    
-    # Подробная информация о цитировании
+        for issue in quality_report.get("issues", []):
+            logger.warning("  ⚠️  %s", issue)
+
     citation_info = quality_report["citation_validation"]
     if not citation_info["all_valid"]:
         logger.warning(
@@ -142,35 +128,31 @@ async def retrieve_rag_context(
     if not rag_config.ENABLED:
         logger.info("RAG отключен через конфиг, пропускаем поиск контекста.")
         return []
-    
+
     if pipeline is None:
         logger.info("RAG запрошен, но пайплайн не инициализирован.")
         return []
-    
+
     if pipeline.document_count == 0:
         logger.info("RAG включен, но индекс пуст. Требуются данные для наполнения.")
         return []
-    
+
     if not query_text:
         logger.info("Не удалось определить пользовательский запрос для RAG.")
         return []
 
-    # Генерируем множественные варианты запроса для улучшения поиска
     query_variants = generate_query_variants(query_text)
     logger.info("Сгенерировано %d вариантов запроса для RAG поиска", len(query_variants))
-    logger.info("Варианты: %s", query_variants[:3])  # Показываем первые 3
-    
+
     rag_filters = build_rag_filters(query_text)
-    
-    # Ищем по всем вариантам запроса и объединяем результаты
+
     all_sources = []
     seen_ids = set()
-    
+
     for idx, variant in enumerate(query_variants):
         logger.info("Ищем по варианту #%d: '%s'", idx + 1, variant[:60])
-        
-        if rag_filters and idx == 0:  # Фильтры только для первого (основного) варианта
-            logger.info("Попытка RAG с фильтрами: %s", rag_filters)
+
+        if rag_filters and idx == 0:
             sources = await asyncio.to_thread(
                 pipeline.retrieve,
                 variant,
@@ -185,20 +167,17 @@ async def retrieve_rag_context(
                 top_k=rag_top_k,
                 search_top_k=rag_config.SEARCH_TOP_K,
             )
-        
-        # Добавляем новые источники, избегая дубликатов
+
         for source in sources:
             source_id = source.get("id")
             if source_id and source_id not in seen_ids:
                 seen_ids.add(source_id)
                 all_sources.append(source)
-        
-        # Если нашли достаточно результатов, можем остановиться
+
         if len(all_sources) >= rag_top_k * 2:
             logger.info("Собрано достаточно источников (%d), останавливаем поиск", len(all_sources))
             break
-    
-    # Переранжирование: приоритет у чанков, где есть ключевые слова запроса
+
     relevance_keywords = get_rag_relevance_keywords(query_text)
     if relevance_keywords:
         with_keyword = []
@@ -212,12 +191,6 @@ async def retrieve_rag_context(
         with_keyword.sort(key=lambda x: x.get("score", 0), reverse=True)
         without_keyword.sort(key=lambda x: x.get("score", 0), reverse=True)
         all_sources = with_keyword + without_keyword
-        if with_keyword:
-            logger.info(
-                "RAG: %d из %d контекстов содержат ключевые слова запроса (приоритет)",
-                len(with_keyword),
-                len(all_sources),
-            )
     else:
         all_sources.sort(key=lambda x: x.get("score", 0), reverse=True)
 
@@ -228,10 +201,9 @@ async def retrieve_rag_context(
 
 async def handle_chat_request(
     request: ChatRequest,
-    llm: LocalLLM,
     pipeline: Optional[RAGPipeline],
 ) -> ChatResponse:
-    """Выполняет полноценный пайплайн генерации (подготовка, RAG, remote/local)."""
+    """Выполняет полноценный пайплайн генерации (подготовка, RAG, remote LLM)."""
     logger.info(
         "Получен запрос: prompt_provided=%s, messages=%s",
         bool(request.prompt),
@@ -240,11 +212,8 @@ async def handle_chat_request(
 
     try:
         messages = prepare_messages(request)
-        messages = llm.limit_history_length(messages)
-        logger.info("Используется история из %s сообщений (после нормализации)", len(messages))
 
         rag_sources: List[Dict[str, Any]] = []
-        remote_error: Optional[str] = None
 
         if request.use_rag:
             query_text = extract_last_user_query(messages)
@@ -264,73 +233,42 @@ async def handle_chat_request(
 
         max_new_tokens = sanitize_max_tokens(request.max_tokens)
 
-        # Пытаемся использовать удаленную LLM если есть API ключ
-        if should_use_remote_llm(request.api_key):
-            remote_model = select_remote_model(request.remote_model)
-            logger.info(
-                "Используем удаленную LLM по пользовательскому ключу (model=%s, max_tokens=%s).",
-                remote_model,
-                max_new_tokens,
+        # Используем пользовательский ключ или серверный
+        effective_api_key = get_effective_api_key(request.api_key)
+        if not effective_api_key:
+            raise HTTPException(
+                status_code=503,
+                detail="AI service unavailable: no API key configured (set REMOTE_LLM_API_KEY)",
             )
-            try:
-                content = await asyncio.to_thread(
-                    call_remote_llm,
-                    messages,
-                    max_new_tokens,
-                    request.api_key,
-                    remote_model,
-                )
-                logger.info("Ответ модели [remote:%s]: %s символов", remote_model, len(content))
-                
-                # Проверка качества ответа
-                check_response_quality(content, rag_sources)
-                
-                return ChatResponse(
-                    reply=content,
-                    sources=serialize_sources(rag_sources) or None,
-                    model=f"remote:{remote_model}",
-                    used_remote=True,
-                    remote_error="",
-                )
-            except RemoteLLMException as remote_exc:
-                logger.info(
-                    "Удаленная LLM недоступна или вернула ошибку (%s). Переходим на локальную модель.",
-                    remote_exc,
-                )
-                remote_error = str(remote_exc)
-        else:
-            reason = get_remote_skip_reason(request.api_key)
-            if reason:
-                logger.info("Remote LLM пропущен: %s", reason)
 
-        # Используем локальную модель
-        content = await asyncio.to_thread(llm.generate, messages, max_new_tokens)
-        if not content:
-            logger.info("Ответ локальной модели пустой.")
-        logger.info("Ответ модели [local:%s]: %s символов", llm.model_name, len(content))
-        
-        # Проверка качества ответа
+        remote_model = select_remote_model(request.remote_model)
+        logger.info("Используем remote LLM (model=%s, max_tokens=%s).", remote_model, max_new_tokens)
+
+        try:
+            content = await asyncio.to_thread(
+                call_remote_llm,
+                messages,
+                max_new_tokens,
+                effective_api_key,
+                remote_model,
+            )
+        except RemoteLLMException as exc:
+            logger.error("Remote LLM вернула ошибку: %s", exc)
+            raise HTTPException(status_code=503, detail=f"AI service error: {exc}")
+
+        logger.info("Ответ модели [remote:%s]: %s символов", remote_model, len(content))
         check_response_quality(content, rag_sources)
-        
+
         return ChatResponse(
             reply=content,
             sources=serialize_sources(rag_sources) or None,
-            model=f"local:{llm.model_name}",
-            used_remote=False,
-            remote_error=remote_error or "",
+            model=f"remote:{remote_model}",
+            used_remote=True,
+            remote_error="",
         )
 
     except HTTPException:
         raise
-    except RuntimeError as runtime_error:
-        error_message = str(runtime_error).lower()
-        if "out of memory" in error_message:
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            logger.error("CUDA out of memory во время генерации: %s", runtime_error)
-            raise HTTPException(status_code=500, detail="LLM ran out of memory during generation")
-        logger.error("RuntimeError во время генерации: %s", runtime_error)
-        raise HTTPException(status_code=500, detail=str(runtime_error))
     except Exception as exc:
         logger.error("Ошибка при генерации: %s", exc)
         raise HTTPException(status_code=500, detail=f"Generation error: {str(exc)}")
@@ -339,13 +277,12 @@ async def handle_chat_request(
 @router.post("/chat", response_model=ChatResponse, response_model_exclude_none=False)
 async def chat(
     request: ChatRequest,
-    llm: LocalLLM = Depends(get_local_llm),
     pipeline: Optional[RAGPipeline] = Depends(get_rag_pipeline),
 ):
     """Генерация ответа на основе промпта или истории сообщений."""
     try:
         return await execute_with_timeout(
-            handle_chat_request(request, llm, pipeline),
+            handle_chat_request(request, pipeline),
             "LLM generation",
         )
     except HTTPException:
@@ -361,18 +298,19 @@ async def remote_test(payload: RemoteTestRequest):
     reason = get_remote_skip_reason(payload.api_key)
     if reason:
         raise HTTPException(status_code=400, detail=f"Remote LLM skipped: {reason}")
-    
+
     try:
         remote_model = select_remote_model(payload.model)
         messages = [
             {"role": "system", "content": "Ты — HalalAI. Ответь кратко одним предложением."},
             {"role": "user", "content": payload.prompt.strip() or "Пинг"},
         ]
+        effective_key = get_effective_api_key(payload.api_key)
         content = await asyncio.to_thread(
             call_remote_llm,
             messages,
             sanitize_max_tokens(payload.max_tokens),
-            payload.api_key,
+            effective_key,
             remote_model,
         )
         return {"status": "ok", "reply": content, "model": remote_model}

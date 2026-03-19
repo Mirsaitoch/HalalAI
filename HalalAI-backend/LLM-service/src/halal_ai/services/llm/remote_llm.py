@@ -9,33 +9,35 @@ from halal_ai.core.exceptions import RemoteLLMException
 logger = logging.getLogger(__name__)
 
 
+def get_effective_api_key(user_api_key: Optional[str]) -> Optional[str]:
+    """Возвращает ключ: пользовательский если есть, иначе серверный."""
+    return user_api_key or remote_llm_config.API_KEY or None
+
+
 def should_use_remote_llm(api_key: Optional[str]) -> bool:
     """
     Проверяет, нужно ли использовать удаленную LLM.
-    
+
     Args:
-        api_key: API ключ пользователя
-        
+        api_key: API ключ пользователя (опционально — при отсутствии используется серверный)
+
     Returns:
         True если нужно использовать удаленную LLM
     """
-    return bool(api_key and remote_llm_config.ENABLED)
+    return bool(get_effective_api_key(api_key) and remote_llm_config.ENABLED)
 
 
 def get_remote_skip_reason(api_key: Optional[str]) -> Optional[str]:
     """
     Возвращает причину, по которой remote LLM не будет вызвана.
-    
-    Args:
-        api_key: API ключ пользователя
-        
+
     Returns:
         Строка с причиной или None если можно использовать
     """
-    if not api_key:
-        return "api_key не передан"
     if not remote_llm_config.ENABLED:
         return "REMOTE_LLM_ENABLED=false"
+    if not get_effective_api_key(api_key):
+        return "нет api_key (ни пользовательского, ни серверного REMOTE_LLM_API_KEY)"
     return None
 
 

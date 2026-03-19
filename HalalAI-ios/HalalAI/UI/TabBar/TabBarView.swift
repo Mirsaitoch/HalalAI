@@ -24,26 +24,26 @@ struct TabBarView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 5)
         .background(
             RoundedRectangle(cornerRadius: 100)
                 .fill(Color.tabBar)
                 .opacity(0.9)
                 .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         )
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 75)
     }
 }
 
 struct SelectedCapsule: View {
     var selectedTab: TabBarItem
-    private let positions: [CGFloat] = [-100.0, 0, 100.0]
+    private let positions: [CGFloat] = [-85.0, 0, 85.0]
     var body: some View {
         RoundedRectangle(cornerRadius: 100)
-            .fill(Color.greenForeground)
-            .frame(width: 70, height: 50)
+            .fill(Color.greenForeground.opacity(0.5))
+            .frame(width: 60, height: 50)
+            .animation(.bouncy(extraBounce: 0.05), value: selectedTab.model.indexInTab)
             .offset(x: positions[selectedTab.model.indexInTab])
-            .animation(.bouncy(extraBounce: 0.1), value: selectedTab.model.indexInTab)
     }
 }
 
@@ -54,8 +54,7 @@ struct TabBarIcon: View {
         Image(uiImage: tab.model.image)
             .resizable()
             .scaledToFit()
-            .frame(width: 30, height: 30)
-            .padding(10)
+            .frame(width: 27, height: 27)
             .scaleEffect(coordinator.currentSelectedTab == tab ? 1.2 : 1.0)
             .animation(.easeInOut(duration: 0.2), value: coordinator.currentSelectedTab)
             .onTapGesture {

@@ -13,6 +13,7 @@ enum HomeCoordinator: Hashable {
     case quran
     case sura(suraIndex: Int)
     case prayerSettings
+    case halalMap
 
     @MainActor
     @ViewBuilder
@@ -28,6 +29,8 @@ enum HomeCoordinator: Hashable {
             screenFactory.makeSuraReaderView(suraIndex: suraIndex)
         case .prayerSettings:
             screenFactory.makePrayerNotificationSettingsView()
+        case .halalMap:
+            screenFactory.makeHalalMapView()
         }
     }
 }

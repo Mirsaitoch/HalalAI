@@ -346,3 +346,9 @@ data/
 *.db
 *.mv.db
 *.trace.db
+
+### ML artifacts ###
+*.pt
+*.bin
+*.gguf
+*.onnx

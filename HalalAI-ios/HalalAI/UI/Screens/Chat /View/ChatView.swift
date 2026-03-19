@@ -111,18 +111,27 @@ struct ErrorMessageView: View {
                 
                 Text(message)
                     .font(.body)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
                 
-                Button(action: onRetry) {
-                    Text("Повторить отправку")
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background {
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.blue.opacity(0.1))
-                        }
+                HStack {
+                    Button(action: onRetry) {
+                        Text("Повторить отправку")
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.blue.opacity(0.1))
+                            }
+                    }
+                    
+                    Button("Копировать", systemImage: "doc.on.doc") {
+                        UIPasteboard.general.string = message
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 }
             }
             .padding()

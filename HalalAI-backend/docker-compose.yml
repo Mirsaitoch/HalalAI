@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: halalai
+      POSTGRES_USER: ${DB_USERNAME:-halalai}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-halalai}
+      LOCAL_DB_USER: ${LOCAL_DB_USER:-mirsaitsabirzanov}
+      LOCAL_DB_NAME: ${LOCAL_DB_NAME:-halalai}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-halalai} -d halalai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  llm-service:
+    build:
+      context: ./LLM-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - REMOTE_LLM_ENABLED=${REMOTE_LLM_ENABLED:-true}
+      - REMOTE_LLM_MODEL=${REMOTE_LLM_MODEL:-xiaomi/mimo-v2-flash:free}
+      - REMOTE_LLM_BASE_URL=${REMOTE_LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      - REMOTE_LLM_API_KEY=${REMOTE_LLM_API_KEY:-}
+      - RAG_ENABLED=${RAG_ENABLED:-true}
+      - RAG_STORE_PATH=/app/data/vector_store.pt
+    volumes:
+      - llm_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  backend:
+    build:
+      context: ./HalalAI-backend-main
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/halalai
+      - DB_USERNAME=${DB_USERNAME:-halalai}
+      - DB_PASSWORD=${DB_PASSWORD:-halalai}
+      - LLM_SERVICE_URL=http://llm-service:8000
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey12345678901234567890change_in_prod}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-604800000}
+      - SPRING_AI_OPENAI_API_KEY=${REMOTE_LLM_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      llm-service:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  llm_data:

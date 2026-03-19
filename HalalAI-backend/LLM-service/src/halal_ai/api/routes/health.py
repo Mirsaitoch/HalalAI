@@ -1,20 +1,18 @@
 """Health check endpoints."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from halal_ai.api.dependencies import get_local_llm
 from halal_ai.core import remote_llm_config
-from halal_ai.services.llm import LocalLLM
 
 router = APIRouter(tags=["health"])
 
 
 @router.get("/health")
-async def health_check(llm: LocalLLM = Depends(get_local_llm)):
+async def health_check():
     """Проверка здоровья сервиса."""
     return {
         "status": "healthy",
-        "model": llm.model_name,
+        "model": f"remote:{remote_llm_config.MODEL}",
     }
 
 

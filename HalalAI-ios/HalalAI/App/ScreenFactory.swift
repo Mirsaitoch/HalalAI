@@ -94,6 +94,14 @@ final class ScreenFactoryImpl {
         let viewModel = SuraReaderView.ViewModel(suraIndex: suraIndex, quranStorage: dc.quranStorage)
         return SuraReaderView(viewModel: viewModel)
     }
+
+    func makeHalalMapView() -> HalalMapView {
+        let viewModel = HalalMapView.ViewModel(
+            placesService: dc.halalPlacesService,
+            locationService: dc.locationService
+        )
+        return HalalMapView(viewModel: viewModel)
+    }
 }
 
 @MainActor
@@ -108,6 +116,7 @@ final class DependencyContainer {
     fileprivate var prayerTimeService: PrayerTimeService
     fileprivate var prayerSettingsStore: PrayerSettingsStore
     fileprivate var prayerNotificationService: PrayerNotificationService
+    fileprivate var halalPlacesService: HalalPlacesService
 
     init() {
         self.authManager = AuthManagerImpl()
@@ -120,5 +129,6 @@ final class DependencyContainer {
         self.prayerTimeService = PrayerTimeServiceImpl()
         self.prayerSettingsStore = PrayerSettingsStore()
         self.prayerNotificationService = PrayerNotificationServiceImpl(prayerTimeService: prayerTimeService)
+        self.halalPlacesService = HalalPlacesServiceImpl()
     }
 }

@@ -54,6 +54,9 @@ struct HomeView: View {
                         title: "Найти заведение",
                         description: "Халяль места рядом"
                     )
+                    .onTapGesture {
+                        coordinator.nextStep(step: .Home(.halalMap))
+                    }
                 }
                 
                 ImageTextComponent(
@@ -69,7 +72,7 @@ struct HomeView: View {
                 }
             }
         }
-        .padding(.horizontal, 15)
+        .padding(.horizontal, 24)
         .background {
             Color.greenBackground.ignoresSafeArea()
         }

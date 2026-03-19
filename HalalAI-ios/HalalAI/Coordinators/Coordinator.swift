@@ -51,12 +51,8 @@ final class Coordinator {
             path = []
             return
         }
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            path = []
-            currentSelectedTab = item
-        }
+        path = []
+        currentSelectedTab = item
     }
 
     @ViewBuilder

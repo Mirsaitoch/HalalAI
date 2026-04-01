@@ -31,18 +31,18 @@ struct TabBarView: View {
                 .opacity(0.9)
                 .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         )
-        .padding(.horizontal, 75)
+        .padding(.horizontal, 85)
     }
 }
 
 struct SelectedCapsule: View {
     var selectedTab: TabBarItem
-    private let positions: [CGFloat] = [-85.0, 0, 85.0]
+    private let positions: [CGFloat] = [-77.0, 0, 77.0]
     var body: some View {
         RoundedRectangle(cornerRadius: 100)
             .fill(Color.greenForeground.opacity(0.5))
             .frame(width: 60, height: 50)
-            .animation(.bouncy(extraBounce: 0.05), value: selectedTab.model.indexInTab)
+            .animation(.bouncy(extraBounce: 0.017), value: selectedTab.model.indexInTab)
             .offset(x: positions[selectedTab.model.indexInTab])
     }
 }

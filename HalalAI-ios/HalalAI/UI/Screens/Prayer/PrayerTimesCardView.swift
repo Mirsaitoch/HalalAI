@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import CoreLocation
+import Combine
 
 struct PrayerTimesCardView: View {
     @Environment(Coordinator.self) var coordinator
@@ -15,8 +15,9 @@ struct PrayerTimesCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader
+            dayPickerRow
             Divider().padding(.horizontal)
-            if let times = viewModel.todayTimes {
+            if let times = viewModel.displayedTimes {
                 prayerList(times: times)
             }
         }
@@ -29,6 +30,51 @@ struct PrayerTimesCardView: View {
         }
         .onChange(of: viewModel.locationService.currentLocation?.coordinate.latitude) { _, _ in
             viewModel.recalculate()
+        }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+            viewModel.recalculate()
+        }
+    }
+
+    @ViewBuilder
+    private var dayPickerRow: some View {
+        switch viewModel.locationService.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            if viewModel.displayedTimes != nil {
+                HStack {
+                    Button {
+                        viewModel.shiftDisplayedDay(by: -1)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.body.weight(.semibold))
+                            .frame(width: 36, height: 32)
+                    }
+                    .disabled(!viewModel.canShiftToPreviousDay)
+                    .opacity(viewModel.canShiftToPreviousDay ? 1 : 0.35)
+
+                    Spacer()
+
+                    Text(viewModel.displayedDayTitle)
+                        .font(.subheadline.weight(.medium))
+
+                    Spacer()
+
+                    Button {
+                        viewModel.shiftDisplayedDay(by: 1)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.body.weight(.semibold))
+                            .frame(width: 36, height: 32)
+                    }
+                    .disabled(!viewModel.canShiftToNextDay)
+                    .opacity(viewModel.canShiftToNextDay ? 1 : 0.35)
+                }
+                .foregroundStyle(.darkGreen)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+            }
+        default:
+            EmptyView()
         }
     }
 
@@ -75,7 +121,7 @@ struct PrayerTimesCardView: View {
                                 }
                             }
                         }
-                    } else if viewModel.todayTimes == nil {
+                    } else if viewModel.displayedTimes == nil {
                         Text("Определяем местоположение…")
                             .font(.subheadline)
                             .foregroundStyle(.darkGreen)
@@ -113,7 +159,7 @@ struct PrayerTimesCardView: View {
                 PrayerRowView(
                     prayer: prayer,
                     time: times.time(for: prayer),
-                    isNext: viewModel.nextPrayer?.0 == prayer
+                    isNext: viewModel.isNextPrayerRow(prayer: prayer, time: times.time(for: prayer))
                 )
                 if prayer != Prayer.allCases.last {
                     Divider().padding(.horizontal)
@@ -158,54 +204,11 @@ private struct PrayerRowView: View {
             Spacer()
 
             Text(time, format: .dateTime.hour().minute())
-                .foregroundStyle(isNext ? Color.greenForeground : .secondary)
+                .foregroundStyle(isNext ? .primary : .secondary)
                 .fontWeight(isNext ? .semibold : .regular)
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
         .background(isNext ? Color.greenForeground.opacity(0.08) : Color.clear)
-    }
-}
-
-// MARK: - ViewModel
-
-extension PrayerTimesCardView {
-    @Observable
-    @MainActor
-    final class ViewModel {
-        let locationService: LocationService
-        private let prayerTimeService: PrayerTimeService
-        private let settingsStore: PrayerSettingsStore
-
-        var todayTimes: DailyPrayerTimes?
-        var nextPrayer: (Prayer, Date)?
-
-        init(
-            locationService: LocationService,
-            prayerTimeService: PrayerTimeService,
-            settingsStore: PrayerSettingsStore
-        ) {
-            self.locationService = locationService
-            self.prayerTimeService = prayerTimeService
-            self.settingsStore = settingsStore
-        }
-
-        func refresh() {
-            locationService.requestLocation()
-            recalculate()
-        }
-
-        func recalculate() {
-            guard let loc = locationService.currentLocation else { return }
-            let settings = settingsStore.settings
-            todayTimes = prayerTimeService.calculateTimes(
-                for: Date(),
-                location: loc,
-                settings: settings
-            )
-            if let times = todayTimes {
-                nextPrayer = prayerTimeService.nextPrayer(from: times)
-            }
-        }
     }
 }

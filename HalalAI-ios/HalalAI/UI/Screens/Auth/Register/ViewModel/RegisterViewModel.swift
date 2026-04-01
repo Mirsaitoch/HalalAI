@@ -10,7 +10,7 @@ import Foundation
 extension RegisterView {
     @MainActor
     @Observable
-    final class ViewModel: ObservableObject {
+    final class ViewModel {
         var username: String = ""
         var email: String = ""
         var password: String = ""

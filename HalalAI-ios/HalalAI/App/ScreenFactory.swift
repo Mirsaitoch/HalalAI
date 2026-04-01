@@ -30,15 +30,13 @@ final class ScreenFactoryImpl {
     fileprivate let dc = DependencyContainer()
     
     func makeLoginView(path: Binding<[AuthCoordinator]>) -> LoginView {
-        let viewModel = LoginView.ViewModel(authManager: dc.authManager, authService: dc.authService)
-        return LoginView(viewModel: viewModel) {
+        return LoginView(authManager: dc.authManager, authService: dc.authService) {
             path.wrappedValue = [.register]
         }
     }
     
     func makeRegisterView(path: Binding<[AuthCoordinator]>) -> RegisterView {
-        let viewModel = RegisterView.ViewModel(authManager: dc.authManager, authService: dc.authService)
-        return RegisterView(viewModel: viewModel) {
+        return RegisterView(authManager: dc.authManager, authService: dc.authService) {
             path.wrappedValue = []
         }
     }
@@ -48,59 +46,45 @@ final class ScreenFactoryImpl {
     }
     
     func makeSettingsView() -> SettingsView {
-        let viewModel = SettingsView.ViewModel(chatService: dc.chatService, authManager: dc.authManager)
-        return SettingsView(viewModel: viewModel)
+        return SettingsView(chatService: dc.chatService, authManager: dc.authManager)
     }
     
     func makeChatView() -> ChatView {
-        let viewModel = ChatView.ViewModel(chatService: dc.chatService, authManager: dc.authManager)
-        return ChatView(viewModel: viewModel)
+        return ChatView(chatService: dc.chatService, authManager: dc.authManager)
     }
 
     func makeScannerView() -> ScannerView {
-        let viewModel = ScannerView.ViewModel(ingredientService: dc.ingredientService, authManager: dc.authManager)
-        return ScannerView(viewModel: viewModel)
+        return ScannerView(ingredientService: dc.ingredientService, authManager: dc.authManager)
     }
     
     func makeHomeView() -> HomeView {
-        let prayerCardVM = PrayerTimesCardView.ViewModel(
+        return HomeView(
+            verseService: dc.verseService,
             locationService: dc.locationService,
             prayerTimeService: dc.prayerTimeService,
-            settingsStore: dc.prayerSettingsStore
-        )
-        let viewModel = HomeView.ViewModel(
-            verseService: dc.verseService,
-            prayerCardViewModel: prayerCardVM,
+            settingsStore: dc.prayerSettingsStore,
             authManager: dc.authManager
         )
-        return HomeView(viewModel: viewModel)
     }
 
     func makePrayerNotificationSettingsView() -> PrayerNotificationSettingsView {
-        let viewModel = PrayerNotificationSettingsView.ViewModel(
+        return PrayerNotificationSettingsView(
             settingsStore: dc.prayerSettingsStore,
             notificationService: dc.prayerNotificationService,
             locationService: dc.locationService
         )
-        return PrayerNotificationSettingsView(viewModel: viewModel)
     }
 
     func makeQuranListView() -> QuranListView {
-        let viewModel = QuranListView.ViewModel(quranStorage: dc.quranStorage)
-        return QuranListView(viewModel: viewModel)
+        return QuranListView(quranStorage: dc.quranStorage)
     }
 
     func makeSuraReaderView(suraIndex: Int) -> SuraReaderView {
-        let viewModel = SuraReaderView.ViewModel(suraIndex: suraIndex, quranStorage: dc.quranStorage)
-        return SuraReaderView(viewModel: viewModel)
+        return SuraReaderView(suraIndex: suraIndex, quranStorage: dc.quranStorage)
     }
 
     func makeHalalMapView() -> HalalMapView {
-        let viewModel = HalalMapView.ViewModel(
-            placesService: dc.halalPlacesService,
-            locationService: dc.locationService
-        )
-        return HalalMapView(viewModel: viewModel)
+        return HalalMapView(placesService: dc.halalPlacesService, locationService: dc.locationService)
     }
 }
 

@@ -9,8 +9,29 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(Coordinator.self) var coordinator
-    var viewModel: ViewModel
-    
+    @State private var viewModel: ViewModel
+
+    init(
+        verseService: VerseService,
+        locationService: LocationService,
+        prayerTimeService: PrayerTimeService,
+        settingsStore: PrayerSettingsStore,
+        authManager: AuthManager
+    ) {
+        let prayerCardVM = PrayerTimesCardView.ViewModel(
+            locationService: locationService,
+            prayerTimeService: prayerTimeService,
+            settingsStore: settingsStore
+        )
+        _viewModel = State(
+            initialValue: ViewModel(
+                verseService: verseService,
+                prayerCardViewModel: prayerCardVM,
+                authManager: authManager
+            )
+        )
+    }
+
     var body: some View {
         VStack {
             ScrollView(.vertical, showsIndicators: false) {

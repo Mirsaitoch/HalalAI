@@ -23,5 +23,9 @@ extension HomeView {
             self.prayerCardViewModel = prayerCardViewModel
             self.authManager = authManager
         }
+        
+        deinit {
+            print("deinit HomeViewModel")
+        }
     }
 }

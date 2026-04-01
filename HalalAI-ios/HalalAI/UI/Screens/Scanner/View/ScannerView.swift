@@ -9,10 +9,15 @@ import SwiftUI
 import UIKit
 
 struct ScannerView: View {
-    @Bindable var viewModel: ViewModel
+    @State private var viewModel: ViewModel
     @Environment(\.dismiss) private var dismiss
+
+    init(ingredientService: IngredientService, authManager: AuthManager) {
+        _viewModel = State(initialValue: ViewModel(ingredientService: ingredientService, authManager: authManager))
+    }
     
     var body: some View {
+        @Bindable var vm = viewModel
         ZStack {
             Color.greenBackground.ignoresSafeArea()
             
@@ -29,7 +34,7 @@ struct ScannerView: View {
                         .font(.headline)
                         .foregroundColor(.greenForeground)
                     Spacer()
-                    Button(action: { viewModel.showManualInput.toggle() }) {
+                    Button(action: { vm.showManualInput.toggle() }) {
                         Image(systemName: "keyboard")
                             .font(.title2)
                             .foregroundColor(.greenForeground)
@@ -37,28 +42,28 @@ struct ScannerView: View {
                 }
                 .padding()
                 
-                if viewModel.showManualInput {
+                if vm.showManualInput {
                     manualInputView
                 } else {
                     scannerView
                 }
             }
         }
-        .sheet(isPresented: $viewModel.showCamera) {
-            CameraView(sourceType: viewModel.cameraSource) { images in
-                viewModel.processImages(images)
+        .sheet(isPresented: $vm.showCamera) {
+            CameraView(sourceType: vm.cameraSource) { images in
+                vm.processImages(images)
             }
         }
-        .sheet(isPresented: $viewModel.showResults) {
-            IngredientResultsView(analysis: viewModel.analysis)
+        .sheet(isPresented: $vm.showResults) {
+            IngredientResultsView(analysis: vm.analysis)
         }
         .overlay {
-            if viewModel.authManager.isGuest {
-                GuestAuthPromptView(featureName: "сканирование продуктов", authManager: viewModel.authManager)
+            if vm.authManager.isGuest {
+                GuestAuthPromptView(featureName: "сканирование продуктов", authManager: vm.authManager)
             }
         }
         .overlay {
-            if viewModel.isLoading {
+            if vm.isLoading {
                 ZStack {
                     Color.black.opacity(0.3)
                         .ignoresSafeArea()

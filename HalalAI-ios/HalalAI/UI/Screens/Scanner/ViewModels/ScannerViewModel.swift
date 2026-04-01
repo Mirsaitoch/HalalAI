@@ -12,7 +12,7 @@ import Vision
 extension ScannerView {
     @MainActor
     @Observable
-    final class ViewModel: ObservableObject {
+    final class ViewModel {
         var showCamera = false
         var showManualInput = false
         var showResults = false

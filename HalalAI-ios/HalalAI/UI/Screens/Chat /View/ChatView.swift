@@ -8,19 +8,24 @@
 import SwiftUI
 
 struct ChatView: View {
-    @Bindable var viewModel: ViewModel
+    @State private var viewModel: ViewModel
     @Environment(Coordinator.self) var coordinator
+
+    init(chatService: ChatService, authManager: AuthManager) {
+        _viewModel = State(initialValue: ViewModel(chatService: chatService, authManager: authManager))
+    }
     
     var body: some View {
+        @Bindable var vm = viewModel
         VStack(spacing: 0) {
             ZStack {
-                if viewModel.chatService.messages.isEmpty {
-                    EmptyChatView(chatService: viewModel.chatService)
+                if vm.chatService.messages.isEmpty {
+                    EmptyChatView(chatService: vm.chatService)
                 } else {
                     ScrollViewReader { proxy in
                         ScrollView {
                             LazyVStack(spacing: 16) {
-                                ForEach(viewModel.chatService.messages) { message in
+                                ForEach(vm.chatService.messages) { message in
                                     MessageBubble(message: message)
                                         .id(message.id)
                                         .transition(.asymmetric(
@@ -30,17 +35,17 @@ struct ChatView: View {
                                 }
                                 
                                 // Индикатор печати
-                                if viewModel.chatService.chatState == .typing {
+                                if vm.chatService.chatState == .typing {
                                     TypingIndicator()
                                         .id("typing")
                                 }
                                 
                                 // Сообщение об ошибке
-                                if case .error(let errorMessage) = viewModel.chatService.chatState {
+                                if case .error(let errorMessage) = vm.chatService.chatState {
                                     ErrorMessageView(
                                         message: errorMessage,
                                         onRetry: {
-                                            viewModel.chatService.retryLastMessage()
+                                            vm.chatService.retryLastMessage()
                                         }
                                     )
                                     .id("error")
@@ -54,8 +59,8 @@ struct ChatView: View {
             }
             
             InputBar(
-                messageText: $viewModel.messageText,
-                onSend: viewModel.sendMessage,
+                messageText: $vm.messageText,
+                onSend: vm.sendMessage,
                 onMicrophoneTap: {
                     // TODO: Реализовать голосовой ввод, пока кнопка скрыта
                     print("Микрофон нажат")
@@ -63,23 +68,26 @@ struct ChatView: View {
             )
         }
         .navigationTitle("Halal AI")
+        .navigationBarHidden(vm.authManager.isGuest)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button(action: {
-                        coordinator.currentSelectedTab = .settings
-                    }) {
-                        Label("Настройки модели", systemImage: "gearshape")
+                if !vm.authManager.isGuest {
+                    Menu {
+                        Button(action: {
+                            coordinator.currentSelectedTab = .settings
+                        }) {
+                            Label("Настройки модели", systemImage: "gearshape")
+                        }
+                        
+                        Button(action: {
+                            vm.chatService.clearChat()
+                        }) {
+                            Label("Очистить чат", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
-                    
-                    Button(action: {
-                        viewModel.chatService.clearChat()
-                    }) {
-                        Label("Очистить чат", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
@@ -87,8 +95,8 @@ struct ChatView: View {
             Color.greenBackground.ignoresSafeArea()
         }
         .overlay {
-            if viewModel.authManager.isGuest {
-                GuestAuthPromptView(featureName: "ИИ-чат", authManager: viewModel.authManager)
+            if vm.authManager.isGuest {
+                GuestAuthPromptView(featureName: "ИИ-чат", authManager: vm.authManager)
             }
         }
     }

@@ -10,7 +10,7 @@ import Foundation
 extension LoginView {
     @MainActor
     @Observable
-    final class ViewModel: ObservableObject {
+    final class ViewModel {
         var authManager: AuthManager
         var authService: AuthService
         

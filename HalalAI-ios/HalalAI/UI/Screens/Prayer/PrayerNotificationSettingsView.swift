@@ -9,10 +9,25 @@ import SwiftUI
 import UserNotifications
 
 struct PrayerNotificationSettingsView: View {
-    @Bindable var viewModel: ViewModel
+    @State private var viewModel: ViewModel
     @Environment(Coordinator.self) var coordinator
 
+    init(
+        settingsStore: PrayerSettingsStore,
+        notificationService: PrayerNotificationService,
+        locationService: LocationService
+    ) {
+        _viewModel = State(
+            initialValue: ViewModel(
+                settingsStore: settingsStore,
+                notificationService: notificationService,
+                locationService: locationService
+            )
+        )
+    }
+
     var body: some View {
+        @Bindable var vm = viewModel
         Form {
             calculationSection
             anglesSection
@@ -33,7 +48,7 @@ struct PrayerNotificationSettingsView: View {
             }
         }
         .task {
-            await viewModel.onAppear()
+            await vm.onAppear()
         }
     }
 

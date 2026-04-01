@@ -8,12 +8,22 @@
 import SwiftUI
 
 struct LoginView: View {
-    @Bindable var viewModel: ViewModel
-    var onShowRegister: (() -> Void)? = nil
+    @State private var viewModel: ViewModel
+    private let onShowRegister: (() -> Void)?
+
+    init(
+        authManager: AuthManager,
+        authService: AuthService,
+        onShowRegister: (() -> Void)? = nil
+    ) {
+        _viewModel = State(initialValue: ViewModel(authManager: authManager, authService: authService))
+        self.onShowRegister = onShowRegister
+    }
 
     var body: some View {
+        @Bindable var vm = viewModel
         ZStack(alignment: .bottom) {
-            Color.greenForeground.ignoresSafeArea()
+            Color.darkGreen.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header
@@ -53,23 +63,23 @@ struct LoginView: View {
                                 AuthTextField(
                                     icon: "person.fill",
                                     placeholder: "Имя пользователя или Email",
-                                    text: $viewModel.usernameOrEmail
+                                    text: $vm.usernameOrEmail
                                 )
 
                                 AuthTextField(
                                     icon: "lock.fill",
                                     placeholder: "Пароль",
-                                    text: $viewModel.password,
+                                    text: $vm.password,
                                     isSecure: true
                                 )
                             }
 
                             // Login button
                             Button(action: {
-                                Task { await viewModel.login() }
+                                Task { await vm.login() }
                             }) {
                                 HStack {
-                                    if viewModel.authService.isLoading {
+                                    if vm.authService.isLoading {
                                         ProgressView()
                                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     } else {
@@ -79,12 +89,12 @@ struct LoginView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
-                                .background(viewModel.isDisable ? Color.gray : Color.greenForeground)
+                                .background(vm.isDisable ? Color.greenForeground : Color.darkGreen)
                                 .foregroundColor(.white)
                                 .cornerRadius(14)
                             }
-                            .disabled(viewModel.isDisable)
-                            .opacity(viewModel.isDisable ? 0.6 : 1.0)
+                            .disabled(vm.isDisable)
+                            .opacity(vm.isDisable ? 0.6 : 1.0)
 
                             // Register link
                             HStack(spacing: 4) {
@@ -93,15 +103,15 @@ struct LoginView: View {
                                 Button(action: { onShowRegister?() }) {
                                     Text("Зарегистрироваться")
                                         .fontWeight(.semibold)
-                                        .foregroundColor(.greenForeground)
+                                        .foregroundColor(.darkGreen)
                                 }
                             }
 
                             // Guest login
                             Button(action: {
-                                viewModel.authManager.continueAsGuest()
+                                vm.authManager.continueAsGuest()
                             }) {
-                                Text("Продолжить без регистрации")
+                                Text("Продолжить без аккаунта")
                                     .font(.system(size: 15))
                                     .foregroundColor(.secondary)
                             }
@@ -114,10 +124,10 @@ struct LoginView: View {
                 }
             }
         }
-        .alert("Ошибка", isPresented: $viewModel.showError) {
+        .alert("Ошибка", isPresented: $vm.showError) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(viewModel.errorMessage)
+            Text(vm.errorMessage)
         }
     }
 }

@@ -8,7 +8,11 @@ import SwiftUI
 
 struct SuraReaderView: View {
     @Environment(Coordinator.self) var coordinator
-    @State var viewModel: ViewModel
+    @State private var viewModel: ViewModel
+
+    init(suraIndex: Int, quranStorage: QuranStorageService) {
+        _viewModel = State(initialValue: ViewModel(suraIndex: suraIndex, quranStorage: quranStorage))
+    }
 
     var body: some View {
         Group {

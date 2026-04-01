@@ -7,7 +7,11 @@ import SwiftUI
 
 struct QuranListView: View {
     @Environment(Coordinator.self) var coordinator
-    @Bindable var viewModel: ViewModel
+    @State private var viewModel: ViewModel
+
+    init(quranStorage: QuranStorageService) {
+        _viewModel = State(initialValue: ViewModel(quranStorage: quranStorage))
+    }
 
     var body: some View {
         Group {

@@ -8,12 +8,22 @@
 import SwiftUI
 
 struct RegisterView: View {
-    @Bindable var viewModel: ViewModel
-    var onShowLogin: (() -> Void)? = nil
+    @State private var viewModel: ViewModel
+    private let onShowLogin: (() -> Void)?
+
+    init(
+        authManager: AuthManager,
+        authService: AuthService,
+        onShowLogin: (() -> Void)? = nil
+    ) {
+        _viewModel = State(initialValue: ViewModel(authManager: authManager, authService: authService))
+        self.onShowLogin = onShowLogin
+    }
 
     var body: some View {
+        @Bindable var vm = viewModel
         ZStack(alignment: .bottom) {
-            Color.greenForeground.ignoresSafeArea()
+            Color.darkGreen.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header
@@ -53,23 +63,23 @@ struct RegisterView: View {
                                 AuthTextField(
                                     icon: "person.fill",
                                     placeholder: "Имя пользователя",
-                                    text: $viewModel.username
+                                    text: $vm.username
                                 )
 
                                 AuthTextField(
                                     icon: "envelope.fill",
                                     placeholder: "Email",
-                                    text: $viewModel.email
+                                    text: $vm.email
                                 )
 
                                 VStack(alignment: .leading, spacing: 6) {
                                     AuthTextField(
                                         icon: "lock.fill",
                                         placeholder: "Пароль",
-                                        text: $viewModel.password,
+                                        text: $vm.password,
                                         isSecure: true
                                     )
-                                    if !viewModel.password.isEmpty && viewModel.password.count < 8 {
+                                    if !vm.password.isEmpty && vm.password.count < 8 {
                                         Text("Пароль должен содержать минимум 8 символов")
                                             .font(.caption)
                                             .foregroundColor(.red)
@@ -81,10 +91,10 @@ struct RegisterView: View {
                                     AuthTextField(
                                         icon: "lock.fill",
                                         placeholder: "Подтвердите пароль",
-                                        text: $viewModel.confirmPassword,
+                                        text: $vm.confirmPassword,
                                         isSecure: true
                                     )
-                                    if !viewModel.confirmPassword.isEmpty && viewModel.password != viewModel.confirmPassword {
+                                    if !vm.confirmPassword.isEmpty && vm.password != vm.confirmPassword {
                                         Text("Пароли не совпадают")
                                             .font(.caption)
                                             .foregroundColor(.red)
@@ -95,10 +105,10 @@ struct RegisterView: View {
 
                             // Register button
                             Button(action: {
-                                Task { await viewModel.register() }
+                                Task { await vm.register() }
                             }) {
                                 HStack {
-                                    if viewModel.authService.isLoading {
+                                    if vm.authService.isLoading {
                                         ProgressView()
                                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     } else {
@@ -108,12 +118,12 @@ struct RegisterView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
-                                .background(viewModel.isFormValid ? Color.greenForeground : Color.gray)
+                                .background(vm.isFormValid ? Color.darkGreen : Color.greenForeground)
                                 .foregroundColor(.white)
                                 .cornerRadius(14)
                             }
-                            .disabled(!viewModel.isFormValid || viewModel.authService.isLoading)
-                            .opacity((!viewModel.isFormValid || viewModel.authService.isLoading) ? 0.6 : 1.0)
+                            .disabled(!vm.isFormValid || vm.authService.isLoading)
+                            .opacity((!vm.isFormValid || vm.authService.isLoading) ? 0.6 : 1.0)
 
                             // Login link
                             HStack(spacing: 4) {
@@ -122,8 +132,16 @@ struct RegisterView: View {
                                 Button(action: { onShowLogin?() }) {
                                     Text("Войти")
                                         .fontWeight(.semibold)
-                                        .foregroundColor(.greenForeground)
+                                        .foregroundColor(.darkGreen)
                                 }
+                            }
+                            
+                            Button(action: {
+                                vm.authManager.continueAsGuest()
+                            }) {
+                                Text("Продолжить без регистрации")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.secondary)
                             }
                         }
                         .padding(.horizontal, 28)
@@ -134,10 +152,10 @@ struct RegisterView: View {
                 }
             }
         }
-        .alert("Ошибка", isPresented: $viewModel.showError) {
+        .alert("Ошибка", isPresented: $vm.showError) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(viewModel.errorMessage)
+            Text(vm.errorMessage)
         }
     }
 }

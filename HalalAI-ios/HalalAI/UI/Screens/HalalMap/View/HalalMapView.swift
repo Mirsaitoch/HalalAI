@@ -8,7 +8,11 @@ import MapKit
 
 struct HalalMapView: View {
     @Environment(Coordinator.self) var coordinator
-    var viewModel: ViewModel
+    @State private var viewModel: ViewModel
+
+    init(placesService: HalalPlacesService, locationService: LocationService) {
+        _viewModel = State(initialValue: ViewModel(placesService: placesService, locationService: locationService))
+    }
 
     var body: some View {
         ZStack {

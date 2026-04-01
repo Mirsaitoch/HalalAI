@@ -51,6 +51,7 @@ struct ImageTextComponent: View {
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.greenForeground)
         }
+        .opacity(locked ? 0.6 : 1)
         .overlay(alignment: .topTrailing) {
             if locked {
                 HStack(spacing: 4) {
@@ -67,7 +68,6 @@ struct ImageTextComponent: View {
                 .padding(10)
             }
         }
-        .opacity(locked ? 0.6 : 1)
     }
 }
 

@@ -8,12 +8,17 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @Bindable var viewModel: ViewModel
+    @State private var viewModel: ViewModel
+
+    init(chatService: ChatService, authManager: AuthManager) {
+        _viewModel = State(initialValue: ViewModel(chatService: chatService, authManager: authManager))
+    }
     
     var body: some View {
+        @Bindable var vm = viewModel
         VStack {
             Form {
-                if viewModel.authManager.isGuest {
+                if vm.authManager.isGuest {
                     guestLoginSection
                 } else {
                     accountSection
@@ -31,13 +36,13 @@ struct SettingsView: View {
         }
         .background(Color.greenBackground.ignoresSafeArea())
         .onAppear {
-            viewModel.maxTokensSlider = Double(viewModel.chatService.maxTokens)
+            vm.maxTokensSlider = Double(vm.chatService.maxTokens)
             Task {
-                await viewModel.chatService.loadModels()
+                await vm.chatService.loadModels()
             }
         }
-        .onChange(of: viewModel.maxTokensSlider) { newValue in
-            viewModel.chatService.maxTokens = Int(newValue)
+        .onChange(of: vm.maxTokensSlider) { newValue in
+            vm.chatService.maxTokens = Int(newValue)
         }
     }
     
@@ -202,7 +207,7 @@ struct SettingsView: View {
             Button {
                 viewModel.authManager.logout()
             } label: {
-                Label("Войти или зарегистрироваться ❤️", systemImage: "person.crop.circle")
+                Label("Войти или зарегистрироваться", systemImage: "person.crop.circle")
                     .frame(alignment: .leading)
             }
             .foregroundColor(.darkGreen)

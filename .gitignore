@@ -312,6 +312,9 @@ pyrightconfig.json
 # Cursor IDE
 .cursor/
 
+# Claude Code
+.claude/
+
 ### Java / Maven / Spring Boot ###
 HELP.md
 target/

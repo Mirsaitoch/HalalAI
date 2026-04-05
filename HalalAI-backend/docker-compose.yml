@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    env_file: .env
     environment:
       POSTGRES_DB: halalai
       POSTGRES_USER: ${DB_USERNAME:-halalai}
@@ -18,28 +19,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - halalai-network
 
   llm-service:
     build:
       context: ./LLM-service
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8001:8000"
+    env_file: .env
     environment:
-      - REMOTE_LLM_ENABLED=${REMOTE_LLM_ENABLED:-true}
-      - REMOTE_LLM_MODEL=${REMOTE_LLM_MODEL:-xiaomi/mimo-v2-flash:free}
-      - REMOTE_LLM_BASE_URL=${REMOTE_LLM_BASE_URL:-https://openrouter.ai/api/v1}
-      - REMOTE_LLM_API_KEY=${REMOTE_LLM_API_KEY:-}
-      - RAG_ENABLED=${RAG_ENABLED:-true}
-      - RAG_STORE_PATH=/app/data/vector_store.pt
-    volumes:
-      - llm_data:/app/data
+      - OPEN_ROUTER_KEY=${OPEN_ROUTER_KEY:-}
+      - RAG_HOST=0.0.0.0
+      - RAG_PORT=8000
+      - RAG_LOG_LEVEL=${RAG_LOG_LEVEL:-INFO}
+      - LLM_MODEL=${LLM_MODEL:-openrouter/auto}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1000}
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 3
       start_period: 120s
+    networks:
+      - halalai-network
 
   backend:
     build:
@@ -47,20 +52,25 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    env_file: .env
     environment:
       - DB_URL=jdbc:postgresql://postgres:5432/halalai
       - DB_USERNAME=${DB_USERNAME:-halalai}
       - DB_PASSWORD=${DB_PASSWORD:-halalai}
-      - LLM_SERVICE_URL=http://llm-service:8000
+      - RAG_SERVICE_URL=http://llm-service:8000
       - JWT_SECRET=${JWT_SECRET:-supersecretkey12345678901234567890change_in_prod}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-604800000}
-      - SPRING_AI_OPENAI_API_KEY=${REMOTE_LLM_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
       llm-service:
         condition: service_healthy
+    networks:
+      - halalai-network
 
 volumes:
   postgres_data:
-  llm_data:
+
+networks:
+  halalai-network:
+    driver: bridge

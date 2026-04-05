@@ -355,3 +355,10 @@ data/
 *.bin
 *.gguf
 *.onnx
+*.safetensors
+
+### Large model directories ###
+**/models/
+**/model/
+**/embeddings/
+**/*-embeddings/

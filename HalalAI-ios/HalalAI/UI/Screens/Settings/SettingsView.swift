@@ -24,7 +24,6 @@ struct SettingsView: View {
                     accountSection
                     apiKeySection
                     remoteModelSection
-                    remoteModelSection
                     dataSourcesSection
                     logoutSection
                 }
@@ -108,7 +107,7 @@ struct SettingsView: View {
     
     private var remoteModelSection: some View {
         Section(header: Text("Удалённая модель")) {
-            // Выбор модели
+            // Выбор модели из списка или custom ввод
             if !viewModel.chatService.availableModels.isEmpty {
                 Picker("Выберите модель", selection: $viewModel.chatService.remoteModel) {
                     ForEach(viewModel.chatService.availableModels, id: \.self) { model in
@@ -117,16 +116,31 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.menu)
                 .font(.system(.body, design: .monospaced))
-                
+
                 Text("Доступно \(viewModel.chatService.availableModels.count) моделей. По умолчанию: \(viewModel.chatService.defaultRemoteModel)")
                     .font(.footnote)
                     .foregroundColor(.secondary)
+
+                // Toggle для custom модели
+                Toggle("Использовать custom модель", isOn: $viewModel.useCustomModel)
+                    .toggleStyle(SwitchToggleStyle(tint: .green))
+
+                if viewModel.useCustomModel {
+                    TextField("Введите имя модели (например, meta-llama/llama-3.3-70b-instruct:free)", text: $viewModel.chatService.remoteModel)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                        .font(.system(.body, design: .monospaced))
+
+                    Text("Укажите имя модели в формате провайдера/модель.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
             } else {
-                TextField("remote_model (например, xiaomi/mimo-v2-flash:free)", text: $viewModel.chatService.remoteModel)
+                TextField("Введите имя модели (например, meta-llama/llama-3.3-70b-instruct:free)", text: $viewModel.chatService.remoteModel)
                     .textInputAutocapitalization(.never)
                     .disableAutocorrection(true)
                     .font(.system(.body, design: .monospaced))
-                
+
                 Text("Введите имя модели вручную. Список пока не загружен.")
                     .font(.footnote)
                     .foregroundColor(.secondary)

@@ -113,18 +113,11 @@ final class ChatServiceImpl: ChatService {
             if allowed.isEmpty, !defaultModel.isEmpty {
                 allowed = [defaultModel]
             }
-            // Если текущее remoteModel не из списка и есть список, сбрасываем на default для Picker
             let currentModel = self.remoteModel.trimmingCharacters(in: .whitespacesAndNewlines)
             await MainActor.run {
                 self.defaultRemoteModel = defaultModel
                 self.availableModels = allowed
-                if !allowed.isEmpty {
-                    if currentModel.isEmpty, !defaultModel.isEmpty {
-                        self.remoteModel = defaultModel
-                    } else if !currentModel.isEmpty, !allowed.contains(currentModel) {
-                        self.remoteModel = defaultModel.isEmpty ? allowed.first ?? "" : defaultModel
-                    }
-                } else if currentModel.isEmpty, !defaultModel.isEmpty {
+                if !allowed.isEmpty, currentModel.isEmpty, !defaultModel.isEmpty  {
                     self.remoteModel = defaultModel
                 }
             }
@@ -275,15 +268,6 @@ final class ChatServiceImpl: ChatService {
             let trimmedKey = userApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
             print("✅ Backend ok. used_remote=\(usedRemote), model=\(modelInfo ?? "nil"), remote_error=\(remoteError ?? "nil")")
             
-            // Если у пользователя есть ключ, но он не сработал и используется локальная модель
-            if !usedRemote, !trimmedKey.isEmpty {
-                var warning = "Ваш API ключ не принят, используется локальная модель. Ответ может быть менее точным."
-                if let remoteError = remoteError, !remoteError.isEmpty {
-                    warning += "\nДетали: \(remoteError)"
-                }
-                let warnMessage = ChatMessage(role: .assistant, text: warning, model: nil)
-                messages.append(warnMessage)
-            }
             
             let aiMessage = ChatMessage(role: .assistant, text: reply, model: modelInfo)
             messages.append(aiMessage)

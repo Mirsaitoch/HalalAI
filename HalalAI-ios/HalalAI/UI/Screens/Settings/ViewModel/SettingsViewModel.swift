@@ -21,5 +21,6 @@ extension SettingsView {
 
         var isApiKeyVisible = false
         var maxTokensSlider: Double = 2048
+        var useCustomModel = false
     }
 }

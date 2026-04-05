@@ -1,0 +1,1 @@
+"""HalalAI RAG Service"""

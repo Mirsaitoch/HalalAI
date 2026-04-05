@@ -160,7 +160,10 @@ public class RAGService {
                 for (JsonNode sourceNode : sourcesNode) {
                     // Convert JsonNode to Map manually
                     Map<String, Object> source = new java.util.HashMap<>();
-                    sourceNode.fields().forEachRemaining(entry -> source.put(entry.getKey(), entry.getValue().asObject() != null ? entry.getValue().asObject() : entry.getValue().asText()));
+                    sourceNode.fields().forEachRemaining(entry -> {
+                        JsonNode value = entry.getValue();
+                        source.put(entry.getKey(), value.isValueNode() ? value.asText() : value);
+                    });
                     sources.add(source);
                 }
             }

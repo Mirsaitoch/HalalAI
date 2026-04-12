@@ -28,7 +28,6 @@ public class LLMService implements ILLMService {
     private final RestTemplate restTemplate;
     private final String llmServiceUrl;
     private final int defaultMaxTokens;
-    private final String systemPrompt;
     private final String defaultModel;
     private final List<String> allowedModels;
 
@@ -36,18 +35,17 @@ public class LLMService implements ILLMService {
             RestTemplate restTemplate,
             @Value("${llm.service.url}") String llmServiceUrl,
             @Value("${llm.service.max-tokens:256}") int maxTokens,
-            @Value("${llm.system.prompt}") String systemPrompt,
             @Value("${llm.models.default}") String defaultModel,
             @Value("${llm.models.allowed}") String allowedModelsStr) {
         this.restTemplate = restTemplate;
         this.llmServiceUrl = llmServiceUrl;
         this.defaultMaxTokens = maxTokens;
-        this.systemPrompt = systemPrompt;
         this.defaultModel = defaultModel;
         this.allowedModels = List.of(allowedModelsStr.split(","));
 
         logger.info("Инициализация LLM Service... URL: {}", llmServiceUrl);
         logger.info("Доступные модели: default={}, count={}", defaultModel, this.allowedModels.size());
+        logger.info("Примечание: системный промпт управляется Python LLM сервисом");
     }
 
     public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String apiKey, String remoteModel, Integer maxTokensOverride) {
@@ -58,12 +56,10 @@ public class LLMService implements ILLMService {
         headers.set("Accept-Charset", "UTF-8");
 
         List<Map<String, String>> messages;
-        
+
         if (clientMessages != null && !clientMessages.isEmpty()) {
             messages = new ArrayList<>(clientMessages);
             logger.debug("Получена история от клиента: {} сообщений", clientMessages.size());
-            messages.add(0, Map.of("role", "system", "content", systemPrompt));
-            logger.debug("Добавлен системный промпт из конфигурации");
         } else {
             throw new IllegalArgumentException("Не указаны ни messages, ни prompt");
         }

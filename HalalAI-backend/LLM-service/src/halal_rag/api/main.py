@@ -3,7 +3,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import logging
 from contextlib import asynccontextmanager
-from halal_rag.quality.checker import QualityChecker
 from halal_rag.llm.open_router import OpenRouterClient
 
 logging.basicConfig(level=logging.INFO)
@@ -11,12 +10,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global rag, quality_checker, _rag_initialized
+    global rag, _rag_initialized
 
     logger.info("Starting HalalAI RAG API...")
-
-    quality_checker = QualityChecker()
-    logger.info("✓ Quality checker ready")
 
     try:
         logger.info("Loading RAG system...")
@@ -53,7 +49,6 @@ app = FastAPI(
 )
 
 rag = None
-quality_checker = None
 llm_client = None
 _rag_initialized = False
 
@@ -70,127 +65,13 @@ def get_llm_client():
             logger.error(f"Failed to initialize OpenRouter client: {e}")
     return llm_client
 
-class SearchRequest(BaseModel):
-    query: str
-    top_k: int = 5
-
-class SearchResult(BaseModel):
-    sura: int
-    verse: int
-    text: str
-    title: str
-    subtitle: str
-    score: float
-
-class SearchResponse(BaseModel):
-    results: list[SearchResult]
-
-class QARequest(BaseModel):
-    query: str
-    use_llm: bool = True
-    top_k: int = 3
-    model: str = "qwen/qwen3.6-plus:free"
-
-class QAResponse(BaseModel):
-    query: str
-    sources: list[SearchResult]
-    answer: str | None = None
-    quality_assessment: dict | None = None
-
-
-@app.get("/health", tags=["Health"])
+@app.get("/llm/health", tags=["Health"])
 async def health_check():
     return {
         "status": "ok",
         "rag_ready": "ready" if _rag_initialized and rag else "initializing",
         "llm_ready": "ready" if llm_client else "not initialized"
     }
-
-@app.post("/search", response_model=SearchResponse, tags=["RAG"])
-async def search(request: SearchRequest):
-    if not request.query.strip():
-        raise HTTPException(status_code=400, detail="Query cannot be empty")
-
-    logger.info(f"Searching for: {request.query}")
-
-    rag_system = get_rag()
-    if not rag_system:
-        raise HTTPException(status_code=503, detail="RAG system initialization failed")
-
-    results = rag_system.search(request.query, top_k=request.top_k)
-
-    return SearchResponse(
-        results=[
-            SearchResult(
-                sura=r['sura'],
-                verse=r['verse'],
-                text=r['text'],
-                title=r.get('title', ''),
-                subtitle=r.get('subtitle', ''),
-                score=r['score']
-            )
-            for r in results
-        ]
-    )
-
-@app.post("/qa", response_model=QAResponse, tags=["RAG"])
-async def qa(request: QARequest):
-    if not request.query.strip():
-        raise HTTPException(status_code=400, detail="Query cannot be empty")
-
-    logger.info(f"QA Query: {request.query} (use_llm={request.use_llm})")
-
-    rag_system = get_rag()
-    if not rag_system:
-        raise HTTPException(status_code=503, detail="RAG system initialization failed")
-
-    sources_raw = rag_system.search(request.query, top_k=request.top_k)
-    sources = [
-        SearchResult(
-            sura=r['sura'],
-            verse=r['verse'],
-            text=r['text'],
-            title=r.get('title', ''),
-            subtitle=r.get('subtitle', ''),
-            score=r['score']
-        )
-        for r in sources_raw
-    ]
-
-    answer = None
-    quality_assessment = None
-
-    if request.use_llm:
-        try:
-            client = get_llm_client()
-            if client:
-                sources_text = "\n\n".join(
-                    [f"Сура {s.sura}:{s.verse}\n{s.text}" for s in sources]
-                )
-
-                answer = await client.generate(
-                    query=request.query,
-                    sources=sources_text,
-                    model=request.model
-                )
-                logger.info(f"LLM generated answer ({len(answer)} chars)")
-
-                if quality_checker and answer:
-                    quality_assessment = quality_checker.check_response(
-                        answer,
-                        [s.dict() for s in sources]
-                    )
-                    logger.info(f"Quality: {quality_assessment.get('quality')}")
-
-        except Exception as e:
-            logger.error(f"LLM generation failed: {e}")
-
-    return QAResponse(
-        query=request.query,
-        sources=sources,
-        answer=answer,
-        quality_assessment=quality_assessment
-    )
 
 class ChatRequest(BaseModel):
     messages: list[dict[str, str]]
@@ -200,11 +81,10 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
-    model: str | None = None
     used_remote: bool = False
     remote_error: str | None = None
 
-@app.post("/chat", response_model=ChatResponse, tags=["Chat"])
+@app.post("/llm/chat", response_model=ChatResponse, tags=["Chat"])
 async def chat(request: ChatRequest):
     if not request.messages:
         raise HTTPException(status_code=400, detail="Messages cannot be empty")
@@ -227,7 +107,6 @@ async def chat(request: ChatRequest):
     ) if sources_raw else "No sources found"
 
     reply = ""
-    model_used = request.remote_model
     used_remote = False
     remote_error = None
 
@@ -263,36 +142,30 @@ async def chat(request: ChatRequest):
 
     return ChatResponse(
         reply=reply,
-        model=model_used,
         used_remote=used_remote,
         remote_error=remote_error
     )
 
-@app.get("/models", tags=["Config"])
-async def get_models():
-    return {
-        "default_model": "qwen/qwen3.6-plus:free",
-        "allowed_models": [
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "mistralai/mistral-small-3.1-24b-instruct:free",
-            "google/gemma-3-27b-it:free",
-            "google/gemma-4-26b-a4b-it",
-            "qwen/qwen3.6-plus:free"
-        ]
-    }
-
-@app.get("/", tags=["Docs"])
-async def root():
+@app.get("/llm/info", tags=["Docs"])
+async def api_info():
     return {
         "name": "HalalAI RAG API",
         "version": "1.0.0",
-        "description": "Semantic search and QA system for Quranic questions",
+        "description": "LLM service with RAG integration for Quranic questions",
         "endpoints": {
-            "health": "/health",
-            "search": "/search (POST)",
-            "qa": "/qa (POST)",
+            "health": "/llm/health",
+            "chat": "/llm/chat (POST)",
+            "info": "/llm/info",
             "docs": "/docs"
         }
+    }
+
+@app.get("/", tags=["Docs"], include_in_schema=False)
+async def root():
+    """Redirect to /llm/info for API documentation."""
+    return {
+        "message": "See /llm/info for API documentation",
+        "docs": "/docs"
     }
 
 if __name__ == "__main__":

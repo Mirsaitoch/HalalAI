@@ -4,7 +4,7 @@ import com.halalai.backend.dto.AuthResponse;
 import com.halalai.backend.dto.LoginRequest;
 import com.halalai.backend.dto.RefreshTokenRequest;
 import com.halalai.backend.dto.RegisterRequest;
-import com.halalai.backend.service.AuthService;
+import com.halalai.backend.service.IAuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-    private final AuthService authService;
+    private final IAuthService authService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(IAuthService authService) {
         this.authService = authService;
     }
 

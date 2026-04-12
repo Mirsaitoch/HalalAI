@@ -1,6 +1,5 @@
 package com.halalai.backend.service;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.halalai.backend.dto.ChatResponse;
 
 @Service
-public class LLMService {
+public class LLMService implements ILLMService {
 
     private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
 
@@ -30,18 +29,25 @@ public class LLMService {
     private final String llmServiceUrl;
     private final int defaultMaxTokens;
     private final String systemPrompt;
+    private final String defaultModel;
+    private final List<String> allowedModels;
 
     public LLMService(
             RestTemplate restTemplate,
             @Value("${llm.service.url}") String llmServiceUrl,
             @Value("${llm.service.max-tokens:256}") int maxTokens,
-            @Value("${llm.system.prompt}") String systemPrompt) {
+            @Value("${llm.system.prompt}") String systemPrompt,
+            @Value("${llm.models.default}") String defaultModel,
+            @Value("${llm.models.allowed}") String allowedModelsStr) {
         this.restTemplate = restTemplate;
         this.llmServiceUrl = llmServiceUrl;
         this.defaultMaxTokens = maxTokens;
         this.systemPrompt = systemPrompt;
-        
+        this.defaultModel = defaultModel;
+        this.allowedModels = List.of(allowedModelsStr.split(","));
+
         logger.info("Инициализация LLM Service... URL: {}", llmServiceUrl);
+        logger.info("Доступные модели: default={}, count={}", defaultModel, this.allowedModels.size());
     }
 
     public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String apiKey, String remoteModel, Integer maxTokensOverride) {
@@ -75,7 +81,7 @@ public class LLMService {
         }
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
-        String chatUrl = llmServiceUrl + "/chat";
+        String chatUrl = llmServiceUrl + "/llm/chat";
 
         try {
             logger.debug("Отправка запроса к LLM сервису: {}", chatUrl);
@@ -99,22 +105,21 @@ public class LLMService {
                 throw new RuntimeException("LLM сервис вернул пустой ответ");
             }
             String reply = responseBody.has("reply") ? responseBody.get("reply").asText("") : "";
-            String model = responseBody.has("model") ? responseBody.get("model").asText("") : "";
             Boolean usedRemote = responseBody.has("used_remote") ? responseBody.get("used_remote").asBoolean(false) : Boolean.FALSE;
             String remoteError = null;
             if (responseBody.has("remote_error") && !responseBody.get("remote_error").isNull()) {
                 String error = responseBody.get("remote_error").asText("");
                 remoteError = error.isEmpty() ? null : error;
             }
-            
+
             if (reply.isEmpty()) {
                 throw new RuntimeException("Ответ не содержит поле 'reply' или оно пустое. Структура: " + responseBody);
             }
-            
-            logger.info("Ответ от LLM получен: длина={} символов, модель={}, remote={}", 
-                    reply.length(), model, usedRemote);
 
-            return new ChatResponse(reply, model, usedRemote, remoteError);
+            logger.info("Ответ от LLM получен: длина={} символов, remote={}",
+                    reply.length(), usedRemote);
+
+            return new ChatResponse(reply, usedRemote, remoteError);
             
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             logger.error("Ошибка HTTP при обращении к LLM сервису: статус={}, URL={}, тело={}", 
@@ -141,29 +146,4 @@ public class LLMService {
         }
     }
 
-    public Map<String, Object> fetchModels() {
-        String url = llmServiceUrl + "/models";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-        try {
-            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, JsonNode.class);
-            if (response.getBody() == null) {
-                throw new RuntimeException("Пустой ответ от /models");
-            }
-            Map<String, Object> result = new HashMap<>();
-            JsonNode body = response.getBody();
-            result.put("default_model", body.path("default_model").asText(""));
-            if (body.has("allowed_models") && body.get("allowed_models").isArray()) {
-                List<String> allowed = new ArrayList<>();
-                body.get("allowed_models").forEach(node -> allowed.add(node.asText("")));
-                result.put("allowed_models", allowed);
-            } else {
-                result.put("allowed_models", List.of());
-            }
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException("Не удалось получить список моделей: " + e.getMessage(), e);
-        }
-    }
 }

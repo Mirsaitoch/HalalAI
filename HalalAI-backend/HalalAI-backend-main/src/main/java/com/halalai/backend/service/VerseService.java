@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 @Service
-public class VerseService {
+public class VerseService implements IVerseService {
 
     private static final Logger logger = LoggerFactory.getLogger(VerseService.class);
     private final VerseRepository verseRepository;

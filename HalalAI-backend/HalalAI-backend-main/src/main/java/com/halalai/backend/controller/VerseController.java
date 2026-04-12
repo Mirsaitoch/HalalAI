@@ -1,7 +1,7 @@
 package com.halalai.backend.controller;
 
 import com.halalai.backend.dto.VerseResponse;
-import com.halalai.backend.service.VerseService;
+import com.halalai.backend.service.IVerseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class VerseController {
 
     private static final Logger logger = LoggerFactory.getLogger(VerseController.class);
-    private final VerseService verseService;
+    private final IVerseService verseService;
 
-    public VerseController(VerseService verseService) {
+    public VerseController(IVerseService verseService) {
         this.verseService = verseService;
     }
 

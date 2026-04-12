@@ -263,13 +263,11 @@ final class ChatServiceImpl: ChatService {
             }
         
             let usedRemote = json["used_remote"] as? Bool ?? false
-            let modelInfo = json["model"] as? String
             let remoteError = json["remote_error"] as? String
-            let trimmedKey = userApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-            print("✅ Backend ok. used_remote=\(usedRemote), model=\(modelInfo ?? "nil"), remote_error=\(remoteError ?? "nil")")
+            print("✅ Backend ok. used_remote=\(usedRemote), remote_error=\(remoteError ?? "nil")")
             
             
-            let aiMessage = ChatMessage(role: .assistant, text: reply, model: modelInfo)
+            let aiMessage = ChatMessage(role: .assistant, text: reply)
             messages.append(aiMessage)
             
             chatState = .idle

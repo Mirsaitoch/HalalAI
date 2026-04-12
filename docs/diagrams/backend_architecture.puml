@@ -1,0 +1,175 @@
+@startuml Backend_Architecture
+
+package Controllers {
+  class AuthController {
+    - authService: IAuthService
+    + register(RegisterRequest): AuthResponse
+    + login(LoginRequest): AuthResponse
+    + refreshToken(RefreshTokenRequest): AuthResponse
+  }
+
+  class ChatController {
+    - llmService: ILLMService
+    - configService: IConfigService
+    + createChatCompletion(ChatRequest): ChatResponse
+    + listModels(): Map
+  }
+
+  class VerseController {
+    - verseService: IVerseService
+    + getVerseOfTheDay(): VerseResponse
+  }
+}
+
+package Services {
+  interface IAuthService {
+    + register(RegisterRequest): AuthResponse
+    + login(LoginRequest): AuthResponse
+    + refreshToken(String): AuthResponse
+  }
+
+  class AuthService {
+    - userRepository: UserRepository
+    - jwtProvider: JwtTokenProvider
+  }
+
+  interface ILLMService {
+    + generateCompletion(messages, apiKey, remoteModel, maxTokens): ChatResponse
+  }
+
+  class LLMService {
+    - restTemplate: RestTemplate
+    - llmServiceUrl: String
+  }
+
+  interface IConfigService {
+    + getAvailableModels(): Map
+  }
+
+  class ConfigService {
+    - defaultModel: String
+    - allowedModels: List
+  }
+
+  interface IVerseService {
+    + getVerseOfTheDay(): VerseResponse
+  }
+
+  class VerseService {
+    - verseRepository: VerseRepository
+  }
+}
+
+package Security {
+  class JwtTokenProvider {
+    - secretKey: String
+    + generateToken(User): String
+    + validateToken(String): boolean
+    + getUserIdFromToken(String): Long
+  }
+
+  class JwtAuthenticationFilter {
+    - jwtProvider: JwtTokenProvider
+  }
+}
+
+
+package Models {
+  class User {
+    - id: Long
+    - username: String
+    - email: String
+    - password: String
+    - createdAt: LocalDateTime
+  }
+
+  class Verse {
+    - id: Long
+    - suraIndex: Integer
+    - suraTitle: String
+    - verseNumber: Integer
+    - text: String
+  }
+}
+
+package Repositories {
+  interface UserRepository {
+    + findByUsername(String): User
+    + findByEmail(String): User
+    + save(User): User
+  }
+
+  interface VerseRepository {
+    + findRandom(): Verse
+    + findBySuraAndVerse(int, int): Verse
+  }
+}
+
+package DTOs {
+  class RegisterRequest {
+    - username: String
+    - email: String
+    - password: String
+  }
+
+  class LoginRequest {
+    - usernameOrEmail: String
+    - password: String
+  }
+
+  class RefreshTokenRequest {
+    - token: String
+  }
+
+  class AuthResponse {
+    - token: String
+    - type: String
+    - userId: Long
+    - username: String
+    - email: String
+  }
+
+  class ChatRequest {
+    - messages: List
+    - apiKey: String
+    - remoteModel: String
+    - maxTokens: Integer
+  }
+
+  class ChatResponse {
+    - reply: String
+    - usedRemote: Boolean
+    - remoteError: String
+  }
+
+  class VerseResponse {
+    - id: Long
+    - suraIndex: Integer
+    - suraTitle: String
+    - verseNumber: Integer
+    - text: String
+  }
+}
+
+' Зависимость через Dependency Injection (Controllers зависят от интерфейсов Services)
+AuthController ..> IAuthService
+ChatController ..> ILLMService
+ChatController ..> IConfigService
+VerseController ..> IVerseService
+
+' Реализация интерфейсов
+IAuthService <|.. AuthService
+ILLMService <|.. LLMService
+IConfigService <|.. ConfigService
+IVerseService <|.. VerseService
+
+' Зависимость от Repositories и Security компонентов
+AuthService ..> UserRepository
+VerseService ..> VerseRepository
+AuthService ..> JwtTokenProvider
+JwtAuthenticationFilter ..> JwtTokenProvider
+
+' Models (просто структуры данных, не архитектурные компоненты)
+
+
+@enduml

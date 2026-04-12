@@ -13,11 +13,15 @@ class EmbeddingModel:
     ):
 
         if use_finetuned:
+            if "sbert" in model_name.lower():
+                finetuned_dir = "sbert-quranic-embeddings"
+            else:
+                finetuned_dir = "quranic-embeddings"
 
             finetuned_path = (
                 Path(__file__).parent.parent.parent.parent
                 / "models"
-                / "quranic-embeddings"
+                / finetuned_dir
             )
             if finetuned_path.exists():
                 print(f"Loading fine-tuned model from {finetuned_path}")
@@ -28,13 +32,25 @@ class EmbeddingModel:
                     f"Fine-tuned model not found at {finetuned_path}, "
                     f"falling back to {model_name}"
                 )
+                try:
+                    self.model = SentenceTransformer(
+                        model_name, device="cpu", local_files_only=True
+                    )
+                except Exception:
+                    print(f"Downloading model: {model_name}")
+                    self.model = SentenceTransformer(model_name, device="cpu")
+        else:
+            # Для non-finetuned моделей пробуем локальную версию, если нет - скачиваем
+            try:
                 self.model = SentenceTransformer(
                     model_name, device="cpu", local_files_only=True
                 )
-        else:
-            self.model = SentenceTransformer(
-                model_name, device="cpu", local_files_only=True
-            )
+                print(f"✓ Loaded cached model: {model_name}")
+            except Exception:
+                print(f"📥 Downloading model: {model_name}")
+                self.model = SentenceTransformer(model_name, device="cpu")
+                print(f"✓ Model downloaded successfully")
+
         print("Getting embedding dimension...")
         self.embedding_dim = self.model.get_sentence_embedding_dimension()
         print(f"✓ Embedding dimension: {self.embedding_dim}")

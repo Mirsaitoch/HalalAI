@@ -11,7 +11,6 @@ class SimpleRAG:
         documents: list[dict[str, Any]],
         embedding_model: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
         use_finetuned: bool = False,
-        use_instructor: bool = True,
     ):
 
         self.embeddings = EmbeddingModel(embedding_model, use_finetuned=use_finetuned)

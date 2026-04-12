@@ -1,9 +1,11 @@
-
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 import logging
+import json
 from contextlib import asynccontextmanager
 from halal_rag.llm.open_router import OpenRouterClient
+from halal_rag.rag.retriever import SimpleRAG
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,10 +18,6 @@ async def lifespan(app: FastAPI):
 
     try:
         logger.info("Loading RAG system...")
-        import json
-        from pathlib import Path
-        from halal_rag.rag.retriever import SimpleRAG
-
         data_file = Path(__file__).parent.parent.parent.parent / "data" / "quran_ru.jsonl"
         if not data_file.exists():
             raise FileNotFoundError(f"Quran data not found at {data_file}")
@@ -51,9 +49,6 @@ app = FastAPI(
 rag = None
 llm_client = None
 _rag_initialized = False
-
-def get_rag():
-    return rag
 
 def get_llm_client():
     global llm_client
@@ -100,8 +95,7 @@ async def chat(request: ChatRequest):
 
     logger.info(f"Chat query: {last_user_msg} (model={request.remote_model})")
 
-    rag_system = get_rag()
-    sources_raw = rag_system.search(last_user_msg, top_k=3) if rag_system else []
+    sources_raw = rag.search(last_user_msg, top_k=3) if rag else []
     sources_text = "\n\n".join(
         [f"Сура {r['sura']}:{r['verse']}\n{r['text']}" for r in sources_raw]
     ) if sources_raw else "No sources found"
@@ -129,7 +123,6 @@ async def chat(request: ChatRequest):
 
     if not reply:
         if remote_error:
-
             if "429" in remote_error or "Too Many Requests" in remote_error:
                 reply = "OpenRouter API вернул ошибку 429: слишком много запросов. Это может быть из-за лимита free модели или превышения rate limit. Пожалуйста, попробуйте позже."
             elif "401" in remote_error or "Unauthorized" in remote_error or "authentication" in remote_error.lower():
@@ -137,7 +130,6 @@ async def chat(request: ChatRequest):
             else:
                 reply = f"Ошибка при обращении к OpenRouter: {remote_error}"
         else:
-
             reply = "Извините, удаленная модель недоступна. Пожалуйста, проверьте ваш API ключ и попробуйте снова."
 
     return ChatResponse(

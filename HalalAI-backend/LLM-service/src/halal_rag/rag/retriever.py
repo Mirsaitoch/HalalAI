@@ -3,9 +3,10 @@ from typing import Any
 
 from .embeddings import EmbeddingModel
 from .vector_store import VectorStore
+from .interfaces import IRAGPipeline, IEmbeddingEncoder, IVectorSearcher
 
-class SimpleRAG:
 
+class SimpleRAG(IRAGPipeline):
     def __init__(
         self,
         documents: list[dict[str, Any]],
@@ -13,8 +14,8 @@ class SimpleRAG:
         use_finetuned: bool = False,
     ):
 
-        self.embeddings = EmbeddingModel(embedding_model, use_finetuned=use_finetuned)
-        self.store = VectorStore()
+        self.embeddings: IEmbeddingEncoder = EmbeddingModel(embedding_model, use_finetuned=use_finetuned)
+        self.store: IVectorSearcher = VectorStore()
 
         texts = [doc['text'] for doc in documents]
         embeddings = self.embeddings.encode(texts)

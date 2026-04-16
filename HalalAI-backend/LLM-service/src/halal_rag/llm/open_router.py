@@ -2,10 +2,13 @@
 import httpx
 import logging
 from typing import Optional
+from .interfaces import ILLMClient
+import os
 
 logger = logging.getLogger(__name__)
 
-class OpenRouterClient:
+
+class OpenRouterClient(ILLMClient):
 
     def __init__(
         self,
@@ -13,8 +16,6 @@ class OpenRouterClient:
         model: str = "openrouter/auto",
         base_url: str = "https://openrouter.ai/api/v1"
     ):
-        import os
-
         self.api_key = api_key or os.getenv("OPEN_ROUTER_KEY")
         if not self.api_key:
             raise ValueError(
@@ -107,13 +108,3 @@ Based on these Quranic verses, provide a clear and accurate answer to the questi
             asyncio.run(self.close())
         except:
             pass
-
-class MockOpenRouterClient:
-
-    async def generate(
-        self,
-        query: str,
-        sources: str,
-        **kwargs
-    ) -> str:
-        return f"Based on the Quranic verses provided, the answer to your question '{query}' is derived from Islamic teachings. The relevant verses show that..."

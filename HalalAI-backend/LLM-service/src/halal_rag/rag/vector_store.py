@@ -3,7 +3,10 @@ from typing import Any
 import torch
 from torch import nn
 
-class VectorStore:
+from .interfaces import IVectorSearcher
+
+
+class VectorStore(IVectorSearcher):
 
     def __init__(self):
         self.documents: list[dict[str, Any]] = []

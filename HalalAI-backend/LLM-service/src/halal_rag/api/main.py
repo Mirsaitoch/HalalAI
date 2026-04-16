@@ -1,11 +1,13 @@
 import logging
 import json
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
+
 from halal_rag.llm.open_router import OpenRouterClient
 from halal_rag.rag.retriever import SimpleRAG
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from pathlib import Path
+from .models import ChatRequest, ChatResponse  # Imports from models package
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,16 +70,6 @@ async def health_check():
         "llm_ready": "ready" if llm_client else "not initialized"
     }
 
-class ChatRequest(BaseModel):
-    messages: list[dict[str, str]]
-    max_tokens: int = 256
-    api_key: str | None = None
-    remote_model: str = "qwen/qwen3.6-plus:free"
-
-class ChatResponse(BaseModel):
-    reply: str
-    used_remote: bool = False
-    remote_error: str | None = None
 
 @app.post("/llm/chat", response_model=ChatResponse, tags=["Chat"])
 async def chat(request: ChatRequest):
@@ -147,17 +139,8 @@ async def api_info():
         "endpoints": {
             "health": "/llm/health",
             "chat": "/llm/chat (POST)",
-            "info": "/llm/info",
-            "docs": "/docs"
+            "info": "/llm/info"
         }
-    }
-
-@app.get("/", tags=["Docs"], include_in_schema=False)
-async def root():
-    """Redirect to /llm/info for API documentation."""
-    return {
-        "message": "See /llm/info for API documentation",
-        "docs": "/docs"
     }
 
 if __name__ == "__main__":

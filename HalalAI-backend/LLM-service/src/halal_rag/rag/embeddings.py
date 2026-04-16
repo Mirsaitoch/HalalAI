@@ -4,14 +4,17 @@ from pathlib import Path
 import torch
 from sentence_transformers import SentenceTransformer
 
-class EmbeddingModel:
+from .interfaces import IEmbeddingEncoder
+
+
+class EmbeddingModel(IEmbeddingEncoder):
+
 
     def __init__(
         self,
         model_name: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
         use_finetuned: bool = False,
     ):
-
         if use_finetuned:
             if "sbert" in model_name.lower():
                 finetuned_dir = "sbert-quranic-embeddings"
@@ -40,7 +43,6 @@ class EmbeddingModel:
                     print(f"Downloading model: {model_name}")
                     self.model = SentenceTransformer(model_name, device="cpu")
         else:
-            # Для non-finetuned моделей пробуем локальную версию, если нет - скачиваем
             try:
                 self.model = SentenceTransformer(
                     model_name, device="cpu", local_files_only=True

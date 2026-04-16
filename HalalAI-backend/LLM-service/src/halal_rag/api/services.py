@@ -5,12 +5,13 @@ from typing import Optional
 
 from halal_rag.llm.interfaces import ILLMClient
 from halal_rag.rag.interfaces import IRAGPipeline
+from .interfaces import IChatService
 from .models import ChatRequest, ChatResponse
 
 logger = logging.getLogger(__name__)
 
 
-class ChatService:
+class ChatService(IChatService):
     """Service for handling chat requests"""
 
     def __init__(self, rag: Optional[IRAGPipeline], llm_client: Optional[ILLMClient]):

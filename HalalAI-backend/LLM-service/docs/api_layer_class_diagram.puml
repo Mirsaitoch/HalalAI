@@ -35,11 +35,13 @@ class ChatService {
 class DependencyContainer {
     {field} _rag: IRAGPipeline | None
     {field} _llm_client: ILLMClient | None
+    {field} _chat_service: IChatService | None
     --
     {method} set_rag(rag)
     {method} set_llm_client(client)
     {method} get_rag() -> IRAGPipeline | None
     {method} get_llm_client() -> ILLMClient | None
+    {method} get_chat_service() -> IChatService | None
 }
 
 ' ============= Interfaces =============
@@ -49,6 +51,10 @@ interface IRAGPipeline {
 
 interface ILLMClient {
     {method} generate(query, sources, system_prompt, max_tokens, temperature, model) -> str
+}
+
+interface IChatService {
+    {method} process_chat(request: ChatRequest) -> ChatResponse
 }
 
 ' ============= Data Transfer Objects =============
@@ -103,9 +109,12 @@ ChatService ..> ILLMClient
 ChatService --> ChatRequest
 ChatService --> ChatResponse
 
+' ChatService realizes IChatService
+ChatService ..|> IChatService
+
 ' DependencyContainer manages dependencies
 DependencyContainer --o IRAGPipeline
 DependencyContainer --o ILLMClient
-DependencyContainer --o ChatService
+DependencyContainer --o IChatService
 
 @enduml

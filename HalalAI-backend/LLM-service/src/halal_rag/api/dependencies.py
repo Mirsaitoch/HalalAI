@@ -7,6 +7,7 @@ from halal_rag.llm.interfaces import ILLMClient
 from halal_rag.llm.open_router import OpenRouterClient
 from halal_rag.rag.interfaces import IRAGPipeline
 from halal_rag.rag.retriever import SimpleRAG
+from .interfaces import IChatService
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class DependencyContainer:
 
     _rag: Optional[IRAGPipeline] = None
     _llm_client: Optional[ILLMClient] = None
-    _chat_service: Optional["ChatService"] = None
+    _chat_service: Optional[IChatService] = None
 
     @classmethod
     def set_rag(cls, rag: IRAGPipeline) -> None:
@@ -46,7 +47,7 @@ class DependencyContainer:
         return cls._llm_client
 
     @classmethod
-    def get_chat_service(cls) -> Optional["ChatService"]:
+    def get_chat_service(cls) -> Optional[IChatService]:
         """Get or create ChatService singleton"""
         if cls._chat_service is None:
             rag = cls.get_rag()
@@ -83,6 +84,6 @@ def get_llm_client() -> Optional[ILLMClient]:
     return DependencyContainer.get_llm_client()
 
 
-def get_chat_service() -> Optional["ChatService"]:
+def get_chat_service() -> Optional[IChatService]:
     """Get ChatService singleton"""
     return DependencyContainer.get_chat_service()

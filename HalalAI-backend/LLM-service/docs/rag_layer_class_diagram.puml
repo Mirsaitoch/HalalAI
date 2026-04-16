@@ -1,0 +1,83 @@
+@startuml RAG_Layer_Class_Diagram
+
+!theme plain
+skinparam classBackgroundColor #E5FFE5
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+
+title RAG Layer — Class Diagram
+
+' ============= Interfaces =============
+interface IRAGPipeline {
+    {method} search(query: str, top_k: int) -> list[dict]
+}
+
+interface IEmbeddingEncoder {
+    {method} encode(texts: list[str]) -> Tensor
+    {method} encode_single(text: str) -> Tensor
+}
+
+interface IVectorSearcher {
+    {method} add_documents(documents, embeddings) -> None
+    {method} search(query_embedding: Tensor, top_k: int) -> list[dict]
+}
+
+' ============= SimpleRAG =============
+class SimpleRAG {
+    {field} embeddings: IEmbeddingEncoder
+    {field} store: IVectorSearcher
+    --
+    {method} __init__(documents, embedding_model, use_finetuned)
+    {method} search(query: str, top_k: int) -> list[dict]
+}
+
+' ============= EmbeddingModel =============
+class EmbeddingModel {
+    {field} model: SentenceTransformer
+    {field} embedding_dim: int
+    --
+    {method} __init__(model_name, use_finetuned)
+    {method} encode(texts: list[str]) -> Tensor
+    {method} encode_single(text: str) -> Tensor
+}
+
+' ============= VectorStore =============
+class VectorStore {
+    {field} documents: list[dict]
+    {field} embeddings: Tensor | None
+    --
+    {method} __init__()
+    {method} add_documents(documents, embeddings) -> None
+    {method} search(query_embedding: Tensor, top_k: int) -> list[dict]
+}
+
+' ============= External Dependencies =============
+class SentenceTransformer {
+    {method} encode(texts) -> Tensor
+    {method} get_sentence_embedding_dimension() -> int
+}
+
+class Tensor {
+    {field} shape: tuple
+    {field} data: ndarray
+}
+
+' ============= Relationships =============
+
+' Realization (implements interface)
+SimpleRAG ..|> IRAGPipeline
+EmbeddingModel ..|> IEmbeddingEncoder
+VectorStore ..|> IVectorSearcher
+
+' Composition (owns, manages lifecycle)
+SimpleRAG --* IEmbeddingEncoder
+SimpleRAG --* IVectorSearcher
+EmbeddingModel --* SentenceTransformer
+
+' Aggregation (has, receives from outside)
+VectorStore --o Tensor
+
+' Dependency (produces, uses temporarily)
+EmbeddingModel ..> Tensor
+
+@enduml

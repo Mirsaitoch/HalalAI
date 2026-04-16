@@ -1,0 +1,132 @@
+@startuml API_Layer_Class_Diagram
+
+!theme plain
+skinparam classBackgroundColor #FFE5B4
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+
+title API Layer — Class Diagram
+
+' ============= FastAPI Application =============
+class FastAPIApp {
+    {field} title: str
+    {field} description: str
+    {field} version: str
+    --
+    {method} get(path: str)
+    {method} post(path: str)
+    {method} add_event_handler()
+}
+
+' ============= Endpoints =============
+class HealthCheckEndpoint {
+    {field} path: str = "/llm/health"
+    {field} method: str = "GET"
+    --
+    {method} health_check() -> HealthStatus
+}
+
+class ChatEndpoint {
+    {field} path: str = "/llm/chat"
+    {field} method: str = "POST"
+    --
+    {method} chat(request: ChatRequest) -> ChatResponse
+}
+
+class InfoEndpoint {
+    {field} path: str = "/llm/info"
+    {field} method: str = "GET"
+    --
+    {method} api_info() -> APIInfo
+}
+
+' ============= Request Models =============
+class ChatRequest {
+    {field} messages: list[dict[str, str]]
+    {field} max_tokens: int = 256
+    {field} api_key: str | None = None
+    {field} remote_model: str
+    --
+    {method} model_validate()
+    {method} model_dump()
+}
+
+' ============= Response Models =============
+class ChatResponse {
+    {field} reply: str
+    {field} used_remote: bool = False
+    {field} remote_error: str | None = None
+    --
+    {method} model_dump()
+}
+
+class HealthStatus {
+    {field} status: str
+    {field} rag_ready: str
+    {field} llm_ready: str
+    --
+    {method} model_dump()
+}
+
+class APIInfo {
+    {field} name: str
+    {field} version: str
+    {field} description: str
+    {field} endpoints: dict[str, str]
+    --
+    {method} model_dump()
+}
+
+' ============= Relationships =============
+
+FastAPIApp --> HealthCheckEndpoint: routes
+FastAPIApp --> ChatEndpoint: routes
+FastAPIApp --> InfoEndpoint: routes
+
+ChatEndpoint --> ChatRequest: accepts
+ChatEndpoint --> ChatResponse: returns
+HealthCheckEndpoint --> HealthStatus: returns
+InfoEndpoint --> APIInfo: returns
+
+
+
+note right of ChatRequest
+  Входная модель
+  для /llm/chat
+
+  Содержит:
+  - История сообщений
+  - Параметры генерации
+  - API ключ
+  - Имя модели
+end note
+
+note right of ChatResponse
+  Выходная модель
+  для /llm/chat
+
+  Содержит:
+  - Сгенерированный ответ
+  - Статус использования LLM
+  - Сообщение об ошибке
+end note
+
+note right of HealthStatus
+  Ответ /llm/health
+
+  Показывает:
+  - Статус сервиса
+  - Готовность RAG
+  - Готовность LLM
+end note
+
+note right of APIInfo
+  Ответ /llm/info
+
+  Содержит:
+  - Информацию об API
+  - Список endpoints
+  - Версию сервиса
+end note
+
+@enduml

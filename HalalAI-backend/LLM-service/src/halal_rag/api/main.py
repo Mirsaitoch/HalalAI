@@ -4,13 +4,10 @@ import logging
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
-
-from fastapi import FastAPI, HTTPException, Depends
-
+from fastapi import FastAPI, HTTPException
 from halal_rag.rag.retriever import SimpleRAG
 from . import dependencies
-from .models import ChatRequest, ChatResponse
-from .services import ChatService
+from .models import ChatRequest, ChatResponse, HealthResponse, ApiInfoResponse, RootResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,17 +55,17 @@ app = FastAPI(
 )
 
 
-@app.get("/llm/health", tags=["Health"])
-async def health_check():
+@app.get("/llm/health", response_model=HealthResponse, tags=["Health"])
+async def health_check() -> HealthResponse:
     """Check service availability"""
     rag = dependencies.get_rag()
     llm_client = dependencies.get_llm_client()
 
-    return {
-        "status": "ok",
-        "rag_ready": "ready" if rag else "initializing",
-        "llm_ready": "ready" if llm_client else "not initialized"
-    }
+    return HealthResponse(
+        status="ok",
+        rag_ready="ready" if rag else "initializing",
+        llm_ready="ready" if llm_client else "not initialized"
+    )
 
 
 @app.post("/llm/chat", response_model=ChatResponse, tags=["Chat"])
@@ -77,41 +74,36 @@ async def chat(request: ChatRequest):
     if not request.messages:
         raise HTTPException(status_code=400, detail="Messages cannot be empty")
 
-    # Get dependencies
-    rag = dependencies.get_rag()
-    llm_client = dependencies.get_llm_client()
+    service = dependencies.get_chat_service()
+    if not service:
+        raise HTTPException(status_code=503, detail="Chat service not initialized")
 
-    if not rag:
-        raise HTTPException(status_code=503, detail="RAG system not initialized")
-
-    # Process chat
-    service = ChatService(rag=rag, llm_client=llm_client)
     return await service.process_chat(request)
 
 
-@app.get("/llm/info", tags=["Docs"])
-async def api_info():
+@app.get("/llm/info", response_model=ApiInfoResponse, tags=["Docs"])
+async def api_info() -> ApiInfoResponse:
     """Get API information"""
-    return {
-        "name": "HalalAI RAG API",
-        "version": "1.0.0",
-        "description": "LLM service with RAG integration for Quranic questions",
-        "endpoints": {
+    return ApiInfoResponse(
+        name="HalalAI RAG API",
+        version="1.0.0",
+        description="LLM service with RAG integration for Quranic questions",
+        endpoints={
             "health": "/llm/health",
             "chat": "/llm/chat (POST)",
             "info": "/llm/info",
             "docs": "/docs"
         }
-    }
+    )
 
 
-@app.get("/", tags=["Docs"], include_in_schema=False)
-async def root():
+@app.get("/", response_model=RootResponse, tags=["Docs"], include_in_schema=False)
+async def root() -> RootResponse:
     """Redirect to API info"""
-    return {
-        "message": "See /llm/info for API documentation",
-        "docs": "/docs"
-    }
+    return RootResponse(
+        message="See /llm/info for API documentation",
+        docs="/docs"
+    )
 
 
 if __name__ == "__main__":

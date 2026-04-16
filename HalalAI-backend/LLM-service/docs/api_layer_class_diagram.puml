@@ -10,123 +10,102 @@ title API Layer — Class Diagram
 ' ============= FastAPI Application =============
 class FastAPIApp {
     {field} title: str
-    {field} description: str
     {field} version: str
     --
-    {method} get(path: str)
-    {method} post(path: str)
-    {method} add_event_handler()
+    {method} health_check(): HealthResponse
+    {method} chat(request: ChatRequest): ChatResponse
+    {method} api_info(): ApiInfoResponse
+    {method} root(): RootResponse
 }
 
-' ============= Endpoints =============
-class HealthCheckEndpoint {
-    {field} path: str = "/llm/health"
-    {field} method: str = "GET"
+' ============= Services =============
+class ChatService {
+    {field} rag: IRAGPipeline | None
+    {field} llm_client: ILLMClient | None
     --
-    {method} health_check() -> HealthStatus
+    {method} extract_user_message(messages) -> str
+    {method} search_sources(query, top_k) -> list[dict]
+    {method} format_sources(sources) -> str
+    {method} generate_response(query, sources, api_key, model, max_tokens) -> tuple
+    {method} handle_error(error) -> str
+    {method} process_chat(request) -> ChatResponse
 }
 
-class ChatEndpoint {
-    {field} path: str = "/llm/chat"
-    {field} method: str = "POST"
+' ============= Dependencies =============
+class DependencyContainer {
+    {field} _rag: IRAGPipeline | None
+    {field} _llm_client: ILLMClient | None
     --
-    {method} chat(request: ChatRequest) -> ChatResponse
+    {method} set_rag(rag)
+    {method} set_llm_client(client)
+    {method} get_rag() -> IRAGPipeline | None
+    {method} get_llm_client() -> ILLMClient | None
 }
 
-class InfoEndpoint {
-    {field} path: str = "/llm/info"
-    {field} method: str = "GET"
-    --
-    {method} api_info() -> APIInfo
+' ============= Interfaces =============
+interface IRAGPipeline {
+    {method} search(query: str, top_k: int) -> list[dict]
 }
 
-' ============= Request Models =============
-class ChatRequest {
+interface ILLMClient {
+    {method} generate(query, sources, system_prompt, max_tokens, temperature, model) -> str
+}
+
+' ============= Data Transfer Objects =============
+class ChatRequest <<dto>> {
     {field} messages: list[dict[str, str]]
     {field} max_tokens: int = 256
     {field} api_key: str | None = None
     {field} remote_model: str
-    --
-    {method} model_validate()
-    {method} model_dump()
 }
 
-' ============= Response Models =============
-class ChatResponse {
+class ChatResponse <<dto>> {
     {field} reply: str
     {field} used_remote: bool = False
     {field} remote_error: str | None = None
-    --
-    {method} model_dump()
 }
 
-class HealthStatus {
+class HealthResponse <<dto>> {
     {field} status: str
     {field} rag_ready: str
     {field} llm_ready: str
-    --
-    {method} model_dump()
 }
 
-class APIInfo {
+class ApiInfoResponse <<dto>> {
     {field} name: str
     {field} version: str
     {field} description: str
     {field} endpoints: dict[str, str]
-    --
-    {method} model_dump()
+}
+
+class RootResponse <<dto>> {
+    {field} message: str
+    {field} docs: str
 }
 
 ' ============= Relationships =============
 
-FastAPIApp --> HealthCheckEndpoint: routes
-FastAPIApp --> ChatEndpoint: routes
-FastAPIApp --> InfoEndpoint: routes
+' FastAPI uses DependencyContainer to resolve dependencies
+FastAPIApp --> DependencyContainer
 
-ChatEndpoint --> ChatRequest: accepts
-ChatEndpoint --> ChatResponse: returns
-HealthCheckEndpoint --> HealthStatus: returns
-InfoEndpoint --> APIInfo: returns
+' FastAPI uses DTOs (association)
+FastAPIApp --> ChatRequest
+FastAPIApp --> ChatResponse
+FastAPIApp --> HealthResponse
+FastAPIApp --> ApiInfoResponse
+FastAPIApp --> RootResponse
 
+' ChatService uses interfaces (dependency)
+ChatService ..> IRAGPipeline
+ChatService ..> ILLMClient
 
+' ChatService uses DTOs (association)
+ChatService --> ChatRequest
+ChatService --> ChatResponse
 
-note right of ChatRequest
-  Входная модель
-  для /llm/chat
-
-  Содержит:
-  - История сообщений
-  - Параметры генерации
-  - API ключ
-  - Имя модели
-end note
-
-note right of ChatResponse
-  Выходная модель
-  для /llm/chat
-
-  Содержит:
-  - Сгенерированный ответ
-  - Статус использования LLM
-  - Сообщение об ошибке
-end note
-
-note right of HealthStatus
-  Ответ /llm/health
-
-  Показывает:
-  - Статус сервиса
-  - Готовность RAG
-  - Готовность LLM
-end note
-
-note right of APIInfo
-  Ответ /llm/info
-
-  Содержит:
-  - Информацию об API
-  - Список endpoints
-  - Версию сервиса
-end note
+' DependencyContainer manages dependencies
+DependencyContainer --o IRAGPipeline
+DependencyContainer --o ILLMClient
+DependencyContainer --o ChatService
 
 @enduml

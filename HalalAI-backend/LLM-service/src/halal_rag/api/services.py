@@ -3,8 +3,8 @@
 import logging
 from typing import Optional
 
-from halal_rag.llm.open_router import OpenRouterClient
-from halal_rag.rag.retriever import SimpleRAG
+from halal_rag.llm.interfaces import ILLMClient
+from halal_rag.rag.interfaces import IRAGPipeline
 from .models import ChatRequest, ChatResponse
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ChatService:
     """Service for handling chat requests"""
 
-    def __init__(self, rag: Optional[SimpleRAG], llm_client: Optional[OpenRouterClient]):
+    def __init__(self, rag: Optional[IRAGPipeline], llm_client: Optional[ILLMClient]):
         self.rag = rag
         self.llm_client = llm_client
 

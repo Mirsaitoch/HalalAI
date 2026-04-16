@@ -3,42 +3,86 @@
 import logging
 from typing import Optional
 
-from fastapi import Depends
+from halal_rag.llm.interfaces import ILLMClient
 from halal_rag.llm.open_router import OpenRouterClient
+from halal_rag.rag.interfaces import IRAGPipeline
 from halal_rag.rag.retriever import SimpleRAG
 
 logger = logging.getLogger(__name__)
 
-# Shared state (initialized once)
-_rag: Optional[SimpleRAG] = None
-_llm_client: Optional[OpenRouterClient] = None
+
+class DependencyContainer:
+    """Manages dependencies for the application"""
+
+    _rag: Optional[IRAGPipeline] = None
+    _llm_client: Optional[ILLMClient] = None
+    _chat_service: Optional["ChatService"] = None
+
+    @classmethod
+    def set_rag(cls, rag: IRAGPipeline) -> None:
+        """Set RAG instance (called during app startup)"""
+        cls._rag = rag
+
+    @classmethod
+    def set_llm_client(cls, client: ILLMClient) -> None:
+        """Set LLM client instance"""
+        cls._llm_client = client
+
+    @classmethod
+    def get_rag(cls) -> Optional[IRAGPipeline]:
+        """Get RAG instance"""
+        return cls._rag
+
+    @classmethod
+    def get_llm_client(cls) -> Optional[ILLMClient]:
+        """Get or create LLM client (lazy initialization)"""
+        if cls._llm_client is None:
+            try:
+                cls._llm_client = OpenRouterClient()
+                logger.info("✓ OpenRouter client initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize OpenRouter client: {e}")
+                cls._llm_client = None
+        return cls._llm_client
+
+    @classmethod
+    def get_chat_service(cls) -> Optional["ChatService"]:
+        """Get or create ChatService singleton"""
+        if cls._chat_service is None:
+            rag = cls.get_rag()
+            llm_client = cls.get_llm_client()
+            if rag:
+                from .services import ChatService
+                cls._chat_service = ChatService(rag=rag, llm_client=llm_client)
+                logger.info("✓ ChatService initialized")
+        return cls._chat_service
 
 
-def set_rag(rag: SimpleRAG) -> None:
+# Module-level convenience functions for backward compatibility
+def set_rag(rag: IRAGPipeline) -> None:
     """Set RAG instance (called during app startup)"""
-    global _rag
-    _rag = rag
+    DependencyContainer.set_rag(rag)
+    # Reset chat service when RAG changes
+    DependencyContainer._chat_service = None
 
 
-def set_llm_client(client: OpenRouterClient) -> None:
+def set_llm_client(client: ILLMClient) -> None:
     """Set LLM client instance"""
-    global _llm_client
-    _llm_client = client
+    DependencyContainer.set_llm_client(client)
+    # Reset chat service when LLM client changes
+    DependencyContainer._chat_service = None
 
 
-def get_rag() -> Optional[SimpleRAG]:
+def get_rag() -> Optional[IRAGPipeline]:
     """Get RAG instance"""
-    return _rag
+    return DependencyContainer.get_rag()
 
 
-def get_llm_client() -> Optional[OpenRouterClient]:
+def get_llm_client() -> Optional[ILLMClient]:
     """Get or create LLM client (lazy initialization)"""
-    global _llm_client
-    if _llm_client is None:
-        try:
-            _llm_client = OpenRouterClient()
-            logger.info("✓ OpenRouter client initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize OpenRouter client: {e}")
-            _llm_client = None
-    return _llm_client
+    return DependencyContainer.get_llm_client()
+
+
+def get_chat_service() -> Optional["ChatService"]:
+    """Get ChatService singleton"""
+    return DependencyContainer.get_chat_service()

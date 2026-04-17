@@ -1,0 +1,41 @@
+@startuml LLM_Layer_Class_Diagram
+
+!theme plain
+skinparam classBackgroundColor #FFE5B4
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+
+title LLM Layer — Class Diagram
+
+' ============= Interfaces =============
+interface ILLMClient {
+    {method} generate(query, sources, system_prompt, max_tokens, temperature, model) -> str
+}
+
+' ============= Implementations =============
+class OpenRouterClient {
+    {field} api_key: str
+    {field} model: str
+    {field} base_url: str
+    {field} client: httpx.AsyncClient
+    --
+    {method} __init__(api_key, model, base_url)
+    {method} generate(query, sources, system_prompt, max_tokens, temperature, model) -> str
+    {method} close()
+}
+
+' ============= External Dependencies =============
+class httpx.AsyncClient {
+    {method} post(url, json) -> Response
+    {method} aclose()
+}
+
+' ============= Relationships =============
+
+' OpenRouterClient realizes ILLMClient
+OpenRouterClient ..|> ILLMClient
+
+' OpenRouterClient uses httpx.AsyncClient (dependency)
+OpenRouterClient ..> httpx.AsyncClient
+
+@enduml

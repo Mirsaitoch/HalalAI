@@ -57,11 +57,11 @@ def main():
     print(f"✓ Loaded {len(train_examples)} training examples")
     print(f"  ({len(train_examples)//2} positive + {len(train_examples)//2} negative pairs)")
 
-    # Create data loader
+    # Create data loader (batch_size=2 for MPS memory constraints)
     train_dataloader = DataLoader(
         train_examples,
         shuffle=True,
-        batch_size=4,
+        batch_size=2,
         pin_memory=False
     )
 
@@ -70,15 +70,15 @@ def main():
 
     # Fine-tune with conservative settings
     print(f"\n⏳ Fine-tuning model...")
-    print(f"  Epochs: 20")
-    print(f"  Batch size: 4")
+    print(f"  Epochs: 10")
+    print(f"  Batch size: 2 (optimized for MPS memory)")
     print(f"  Learning rate: 2e-5 (conservative)")
-    print(f"  Warmup steps: 50")
+    print(f"  Warmup steps: 25")
 
     model.fit(
         train_objectives=[(train_dataloader, train_loss)],
-        epochs=20,
-        warmup_steps=50,
+        epochs=10,
+        warmup_steps=25,
         weight_decay=0.01,
         show_progress_bar=True,
     )

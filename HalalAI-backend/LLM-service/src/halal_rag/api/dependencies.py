@@ -1,6 +1,7 @@
 """Dependency Injection for FastAPI"""
 
 import logging
+import os
 from typing import Optional
 
 from halal_rag.llm.interfaces import ILLMClient
@@ -35,11 +36,14 @@ class DependencyContainer:
         return cls._rag
 
     @classmethod
-    def get_llm_client(cls) -> Optional[ILLMClient]:
+    def get_llm_client(cls, api_key: Optional[str] = None) -> Optional[ILLMClient]:
         """Get or create LLM client (lazy initialization)"""
         if cls._llm_client is None:
             try:
-                cls._llm_client = OpenRouterClient()
+                key = api_key or os.getenv("OPEN_ROUTER_KEY")
+                if not key:
+                    raise ValueError("OPEN_ROUTER_KEY must be provided or set as environment variable")
+                cls._llm_client = OpenRouterClient(api_key=key)
                 logger.info("✓ OpenRouter client initialized")
             except Exception as e:
                 logger.error(f"Failed to initialize OpenRouter client: {e}")
@@ -79,9 +83,9 @@ def get_rag() -> Optional[IRAGPipeline]:
     return DependencyContainer.get_rag()
 
 
-def get_llm_client() -> Optional[ILLMClient]:
+def get_llm_client(api_key: Optional[str] = None) -> Optional[ILLMClient]:
     """Get or create LLM client (lazy initialization)"""
-    return DependencyContainer.get_llm_client()
+    return DependencyContainer.get_llm_client(api_key=api_key)
 
 
 def get_chat_service() -> Optional[IChatService]:

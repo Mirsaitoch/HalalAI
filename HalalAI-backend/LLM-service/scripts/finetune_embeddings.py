@@ -44,11 +44,12 @@ def main():
     )
     model_output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load model
-    print("Loading model...")
+    # Load model on CPU to avoid MPS memory issues
+    print("Loading model on CPU...")
     model = SentenceTransformer(
         "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-        local_files_only=True
+        local_files_only=True,
+        device="cpu"
     )
 
     # Load training data
@@ -56,18 +57,21 @@ def main():
     train_examples = load_training_pairs(pairs_file)
     print(f"Loaded {len(train_examples)} training examples")
 
-    # Create data loader
-    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
+    # Create data loader (batch_size=2 for MPS memory constraints)
+    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=2)
 
     # Loss function - Contrastive loss for similarity learning
     train_loss = losses.CosineSimilarityLoss(model)
 
     # Fine-tune
     print(f"\nFine-tuning model...")
+    print(f"  Batch size: 2 (optimized for MPS memory)")
+    print(f"  Epochs: 10")
+    print(f"  Training examples: {len(train_examples)}")
     model.fit(
         train_objectives=[(train_dataloader, train_loss)],
-        epochs=50,
-        warmup_steps=100,
+        epochs=10,
+        warmup_steps=25,
         show_progress_bar=True,
     )
 

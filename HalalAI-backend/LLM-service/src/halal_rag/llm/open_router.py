@@ -3,7 +3,6 @@ import httpx
 import logging
 from typing import Optional
 from .interfaces import ILLMClient
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -12,17 +11,16 @@ class OpenRouterClient(ILLMClient):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str,
         model: str = "openrouter/auto",
         base_url: str = "https://openrouter.ai/api/v1"
     ):
-        self.api_key = api_key or os.getenv("OPEN_ROUTER_KEY")
-        if not self.api_key:
+        if not api_key:
             raise ValueError(
-                "OPEN_ROUTER_KEY environment variable not set. "
+                "api_key must be provided. "
                 "Get your key from https://openrouter.ai"
             )
-
+        self.api_key = api_key
         self.model = model
         self.base_url = base_url
         self.client = httpx.AsyncClient(
@@ -44,23 +42,23 @@ class OpenRouterClient(ILLMClient):
         model: Optional[str] = None
     ) -> str:
         if not system_prompt:
-            system_prompt = """You are HalalAI, an expert Islamic assistant based on the Quran.
-Your role is to answer questions accurately using the provided Quranic verses.
-Provide clear, respectful answers grounded in Islamic teachings.
-Always cite the specific Surah and Ayah numbers.
-Respond in Russian."""
+            system_prompt = """
+            # Ты - HalalAI, опытный специалист по исламу.
+            1. Задача - точно отвечать на вопросы, **основываясь на Коране и Хадисах**.
+            2. Давать **четкие**, уважительные ответы, основанные на исламском учении.
+            3. Всегда приводите конкретные номера сур и аятов.
+            4. Отвечай на **русском** языке.
+            """
 
-        prompt = f"""Question: {query}
-
-Relevant Quranic Verses:
-{sources}
-
-Based on these Quranic verses, provide a clear and accurate answer to the question."""
+        prompt = f"""
+        # Вопрос : {query}
+        Соответствующие аяты Корана:
+        {sources}
+        """
 
         try:
             effective_model = model if model else self.model
-            logger.info(f"Using model: {effective_model}")
-
+            logger.info(f"Используем llm-модель: {effective_model}")
             response = await self.client.post(
                 "/chat/completions",
                 json={

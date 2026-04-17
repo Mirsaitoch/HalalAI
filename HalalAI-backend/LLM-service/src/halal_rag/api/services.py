@@ -38,7 +38,7 @@ class ChatService(IChatService):
         return "\n\n".join([f"Сура {r['sura']}:{r['verse']}\n{r['text']}" for r in sources])
 
     async def generate_response(
-        self, query: str, sources: str, api_key: Optional[str], model: str, max_tokens: int
+        self, query: str, sources: str, api_key: Optional[str], model: str, max_tokens: int, temperature: float = 0.7
     ) -> tuple[str, bool, Optional[str]]:
         """Generate response using LLM"""
         if not api_key or not self.llm_client:
@@ -49,7 +49,8 @@ class ChatService(IChatService):
                 query=query,
                 sources=sources,
                 model=model,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
+                temperature=temperature
             )
             return reply, True, None
         except Exception as e:
@@ -92,7 +93,8 @@ class ChatService(IChatService):
             sources=sources_text,
             api_key=request.api_key,
             model=request.remote_model,
-            max_tokens=request.max_tokens
+            max_tokens=request.max_tokens,
+            temperature=request.temperature
         )
 
         # 4. Handle errors if needed

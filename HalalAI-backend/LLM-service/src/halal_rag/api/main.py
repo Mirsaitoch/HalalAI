@@ -6,8 +6,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from halal_rag.rag.retriever import SimpleRAG
-from . import dependencies
-from .dto import ChatRequest, ChatResponse, HealthResponse, ApiInfoResponse, RootResponse
+from halal_rag.api import dependencies
+from halal_rag.api.dto import ChatRequest, ChatResponse, HealthResponse, ApiInfoResponse, RootResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown"""
-    logger.info("Starting HalalAI RAG API...")
+    print("🚀 Starting HalalAI RAG API...")
 
     # Startup: Initialize RAG
     try:
-        logger.info("Loading RAG system...")
+        print("📚 Loading RAG system...")
         data_file = Path(__file__).parent.parent.parent.parent / "data" / "quran_ru.jsonl"
 
         if not data_file.exists():
@@ -33,20 +33,20 @@ async def lifespan(app: FastAPI):
                 if line:
                     docs.append(json.loads(line))
 
-        logger.info(f"Loaded {len(docs)} Quranic verses")
-        rag = SimpleRAG(documents=docs, use_finetuned=True)
+        print(f"✓ Loaded {len(docs)} Quranic verses")
+        rag = SimpleRAG(documents=docs, model_type="paraphrase", use_finetuned=False)
         dependencies.set_rag(rag)
-        logger.info("✓ RAG system ready")
+        print("✓ RAG system ready")
 
     except Exception as e:
-        logger.error(f"Failed to initialize RAG: {e}")
+        print(f"❌ Failed to initialize RAG: {e}")
         raise
 
-    logger.info("✓ Application startup complete")
+    print("✓ Application startup complete")
     yield
 
     # Shutdown
-    logger.info("Shutting down RAG system...")
+    print("👋 Shutting down RAG system...")
 
 
 app = FastAPI(

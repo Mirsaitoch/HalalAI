@@ -11,31 +11,18 @@ class OpenRouterClient(ILLMClient):
 
     def __init__(
         self,
-        api_key: str,
         model: str = "openrouter/auto",
         base_url: str = "https://openrouter.ai/api/v1"
     ):
-        if not api_key:
-            raise ValueError(
-                "api_key must be provided. "
-                "Get your key from https://openrouter.ai"
-            )
-        self.api_key = api_key
         self.model = model
         self.base_url = base_url
-        self.client = httpx.AsyncClient(
-            base_url=self.base_url,
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "HTTP-Referer": "https://halalai.app",
-                "X-Title": "HalalAI"
-            }
-        )
+        self.client = httpx.AsyncClient(base_url=self.base_url)
 
     async def generate(
         self,
         query: str,
         sources: str,
+        api_key: str,
         system_prompt: Optional[str] = None,
         max_tokens: int = 1000,
         temperature: float = 0.7,
@@ -52,13 +39,20 @@ class OpenRouterClient(ILLMClient):
 
         prompt = f"""
         # Вопрос : {query}
-        Соответствующие аяты Корана:
-        {sources}
         """
+        if sources:
+            prompt += f"""
+                Соответствующие аяты Корана:
+                {sources}
+            """
 
         try:
             effective_model = model if model else self.model
-            logger.info(f"Используем llm-модель: {effective_model}")
+            print(f"🤖 Используем llm-модель: {effective_model}")
+
+            print(f"=== SYSTEM PROMPT ===\n{system_prompt}")
+            print(f"=== USER PROMPT ===\n{prompt}")
+
             response = await self.client.post(
                 "/chat/completions",
                 json={
@@ -75,6 +69,11 @@ class OpenRouterClient(ILLMClient):
                     ],
                     "temperature": temperature,
                     "max_tokens": max_tokens,
+                },
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "HTTP-Referer": "https://halalai.app",
+                    "X-Title": "HalalAI"
                 }
             )
 
@@ -82,27 +81,24 @@ class OpenRouterClient(ILLMClient):
             data = response.json()
 
             answer = data["choices"][0]["message"]["content"]
-            logger.info(
-                f"OpenRouter response: "
+            print(
+                f"✅ OpenRouter response: "
                 f"{len(answer)} chars, "
                 f"tokens: {data['usage']['total_tokens']}"
             )
+            print(f"=== LLM RESPONSE ===\n{answer}")
 
             return answer
 
         except httpx.HTTPError as e:
-            logger.error(f"OpenRouter API error: {e}")
+            print(f"❌ OpenRouter API error: {e}")
             raise
         except KeyError as e:
-            logger.error(f"Unexpected OpenRouter response format: {e}")
+            print(f"❌ Unexpected OpenRouter response format: {e}")
             raise ValueError(f"Invalid OpenRouter response: {e}")
 
     async def close(self):
-        await self.client.aclose()
-
-    def __del__(self):
         try:
-            import asyncio
-            asyncio.run(self.close())
-        except:
-            pass
+            await self.client.aclose()
+        except Exception as e:
+            pass  # Ignore close errors

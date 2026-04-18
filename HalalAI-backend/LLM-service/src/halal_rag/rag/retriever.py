@@ -10,11 +10,11 @@ class SimpleRAG(IRAGPipeline):
     def __init__(
         self,
         documents: list[dict[str, Any]],
-        embedding_model: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        model_type: str = "paraphrase",  # "paraphrase" или "sbert"
         use_finetuned: bool = False,
     ):
 
-        self.embeddings: IEmbeddingEncoder = EmbeddingModel(embedding_model, use_finetuned=use_finetuned)
+        self.embeddings: IEmbeddingEncoder = EmbeddingModel(model_type=model_type, use_finetuned=use_finetuned)
         self.store: IVectorSearcher = VectorStore()
 
         texts = [doc['text'] for doc in documents]

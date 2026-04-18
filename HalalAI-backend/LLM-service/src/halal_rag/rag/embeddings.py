@@ -9,21 +9,28 @@ from .interfaces import IEmbeddingEncoder
 
 class EmbeddingModel(IEmbeddingEncoder):
 
+    # Маппинг типов моделей на полные имена
+    MODEL_MAPPING = {
+        "paraphrase": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        "sbert": "ai-forever/sbert_large_nlu_ru",
+    }
 
     def __init__(
         self,
-        model_name: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        model_type: str = "paraphrase",
         use_finetuned: bool = False,
     ):
+        model_name = self.MODEL_MAPPING.get(model_type, self.MODEL_MAPPING["paraphrase"])
+
         if use_finetuned:
-            if "sbert" in model_name.lower():
+            if "sbert" in model_type.lower():
                 finetuned_dir = "sbert-quranic-embeddings"
             else:
                 finetuned_dir = "quranic-embeddings"
 
             finetuned_path = (
                 Path(__file__).parent.parent.parent.parent
-                / "dto"
+                / "models"
                 / finetuned_dir
             )
             if finetuned_path.exists():

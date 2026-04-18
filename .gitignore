@@ -360,5 +360,6 @@ data/
 ### Large model directories ###
 **/models/
 **/model/
+**/results/
 **/embeddings/
 **/*-embeddings/

@@ -1,5 +1,5 @@
-
-from typing import Any
+from __future__ import annotations
+from typing import Any, Optional
 import torch
 from torch import nn
 
@@ -10,7 +10,7 @@ class VectorStore(IVectorSearcher):
 
     def __init__(self):
         self.documents: list[dict[str, Any]] = []
-        self.embeddings: torch.Tensor | None = None
+        self.embeddings: Optional[torch.Tensor] = None
 
     def add_documents(self, documents: list[dict[str, Any]], embeddings: torch.Tensor):
         self.documents.extend(documents)

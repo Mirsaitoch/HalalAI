@@ -44,9 +44,9 @@ class DependencyContainer:
                 if not key:
                     raise ValueError("OPEN_ROUTER_KEY must be provided or set as environment variable")
                 cls._llm_client = OpenRouterClient(api_key=key)
-                logger.info("✓ OpenRouter client initialized")
+                print("✓ OpenRouter client initialized")
             except Exception as e:
-                logger.error(f"Failed to initialize OpenRouter client: {e}")
+                print(f"⚠️  Failed to initialize OpenRouter client: {e}")
                 cls._llm_client = None
         return cls._llm_client
 
@@ -59,7 +59,7 @@ class DependencyContainer:
             if rag:
                 from .services import ChatService
                 cls._chat_service = ChatService(rag=rag, llm_client=llm_client)
-                logger.info("✓ ChatService initialized")
+                print("✓ ChatService initialized")
         return cls._chat_service
 
 

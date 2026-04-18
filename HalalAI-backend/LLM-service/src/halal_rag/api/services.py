@@ -6,7 +6,8 @@ from typing import Optional
 from halal_rag.llm.interfaces import ILLMClient
 from halal_rag.rag.interfaces import IRAGPipeline
 from .interfaces import IChatService
-from .models import ChatRequest, ChatResponse
+from .dto import ChatRequest, ChatResponse
+from halal_rag.llm.open_router import OpenRouterClient
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,8 @@ class ChatService(IChatService):
     def __init__(self, rag: Optional[IRAGPipeline], llm_client: Optional[ILLMClient]):
         self.rag = rag
         self.llm_client = llm_client
+        # Create one reusable OpenRouter client
+        self.openrouter_client = OpenRouterClient()
 
     def extract_user_message(self, messages: list[dict[str, str]]) -> str:
         """Extract last user message from conversation history"""
@@ -41,21 +44,23 @@ class ChatService(IChatService):
         self, query: str, sources: str, api_key: Optional[str], model: str, max_tokens: int, temperature: float = 0.7
     ) -> tuple[str, bool, Optional[str]]:
         """Generate response using LLM"""
-        if not api_key or not self.llm_client:
-            return "", False, None
+        if not api_key:
+            return "", False, "API key is required"
 
         try:
-            reply = await self.llm_client.generate(
+            reply = await self.openrouter_client.generate(
                 query=query,
                 sources=sources,
+                api_key=api_key,
                 model=model,
                 max_tokens=max_tokens,
                 temperature=temperature
             )
             return reply, True, None
+
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"LLM generation failed: {error_msg}")
+            print(f"❌ LLM generation failed: {error_msg}")
             return "", False, error_msg
 
     def handle_error(self, error: Optional[str]) -> str:
@@ -79,15 +84,27 @@ class ChatService(IChatService):
             3. Всегда приводите конкретные номера сур и аятов.
             4. Отвечай на **русском** языке.
             """
-        user_prompt = f"""
+
+        # Only include sources section if sources are provided
+        if sources.strip():
+            user_prompt = f"""
         # Вопрос : {query}
         Соответствующие аяты Корана:
         {sources}
         """
+        else:
+            user_prompt = f"""
+        # Вопрос : {query}
+        """
+
         return system_prompt, user_prompt
 
     async def process_chat(self, request: ChatRequest) -> ChatResponse:
         """Process chat request end-to-end"""
+        print("\n" + "="*80)
+        print(f"🔄 PROCESSING NEW REQUEST (RAG={request.use_rag})")
+        print("="*80)
+
         # 1. Extract message
         query = self.extract_user_message(request.messages)
         if not query:
@@ -97,25 +114,28 @@ class ChatService(IChatService):
                 remote_error="Invalid request"
             )
 
-        logger.info(f"Chat query: {query} (model={request.remote_model}, dry_run={request.dry_run})")
+        print(f"📝 Chat query: {query}\n   model={request.remote_model}, use_rag={request.use_rag}")
 
-        # 2. Search sources
-        sources = self.search_sources(query)
-        sources_text = self.format_sources(sources)
+        # 2. Search sources (only if RAG enabled)
+        sources = []
+        sources_text = ""
+        if request.use_rag:
+            sources = self.search_sources(query)
+            sources_text = self.format_sources(sources)
+            # Log retrieved sources
+            print(f"\n📚 RAG RETRIEVED {len(sources)} SOURCES:")
+            for i, source in enumerate(sources, 1):
+                score = source.get('score', 'N/A')
+                sura = source.get('sura', 'N/A')
+                verse = source.get('verse', 'N/A')
+                text = source.get('text', '')[:80]
+                print(f"  {i}. [Score: {score:.3f}] Сура {sura}:{verse} - {text}...")
 
         # 3. Build prompt
         system_prompt, user_prompt = self.build_prompt(query, sources_text)
         full_prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
 
-        # 4. dry_run — вернуть промт без отправки в LLM
-        if request.dry_run:
-            return ChatResponse(
-                reply="[dry_run] Промт собран, LLM не вызывался",
-                used_remote=False,
-                prompt=full_prompt
-            )
-
-        # 5. Generate response
+        # 4. Generate response via LLM
         reply, used_remote, error = await self.generate_response(
             query=query,
             sources=sources_text,
@@ -125,9 +145,13 @@ class ChatService(IChatService):
             temperature=request.temperature
         )
 
-        # 6. Handle errors if needed
+        # 5. Handle errors if needed
         if not reply:
             reply = self.handle_error(error)
+
+        print("="*80)
+        print(f"✅ REQUEST COMPLETED")
+        print("="*80 + "\n")
 
         return ChatResponse(
             reply=reply,

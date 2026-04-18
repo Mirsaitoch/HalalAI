@@ -1,7 +1,7 @@
 """Service interfaces for API layer"""
 
 from abc import ABC, abstractmethod
-from .models import ChatRequest, ChatResponse
+from .dto import ChatRequest, ChatResponse
 
 
 class IChatService(ABC):

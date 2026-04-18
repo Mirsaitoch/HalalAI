@@ -23,7 +23,7 @@ class EmbeddingModel(IEmbeddingEncoder):
 
             finetuned_path = (
                 Path(__file__).parent.parent.parent.parent
-                / "models"
+                / "dto"
                 / finetuned_dir
             )
             if finetuned_path.exists():

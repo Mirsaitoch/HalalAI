@@ -4,7 +4,7 @@ import torch
 
 
 class IEmbeddingEncoder(ABC):
-    """Interface for embedding models"""
+    """Interface for embedding dto"""
 
     @abstractmethod
     def encode(self, texts: list[str]) -> torch.Tensor:

@@ -40,7 +40,7 @@ def main():
     # Paths
     pairs_file = Path(__file__).parent.parent / "tests" / "fixtures" / "quranic_pairs.json"
     model_output_dir = (
-        Path(__file__).parent.parent / "models" / "sbert-quranic-embeddings"
+        Path(__file__).parent.parent / "dto" / "sbert-quranic-embeddings"
     )
     model_output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -49,7 +49,7 @@ def main():
     print(f"📥 Loading SBERT Large NLU RU...")
     model = SentenceTransformer(model_name, device="cpu")
     print(f"✓ Model loaded successfully")
-    print(f"  Embedding dimension: {model.get_embedding_dimension()}")
+    print(f"  Embedding dimension: {model.get_sentence_embedding_dimension()}")
 
     # Load training data
     print(f"\n📚 Loading training pairs from {pairs_file}...")
@@ -57,28 +57,28 @@ def main():
     print(f"✓ Loaded {len(train_examples)} training examples")
     print(f"  ({len(train_examples)//2} positive + {len(train_examples)//2} negative pairs)")
 
-    # Create data loader (batch_size=2 for MPS memory constraints)
+    # Create data loader
     train_dataloader = DataLoader(
         train_examples,
         shuffle=True,
-        batch_size=2,
+        batch_size=16,
         pin_memory=False
     )
 
     # Loss function - Cosine Similarity Loss
     train_loss = losses.CosineSimilarityLoss(model)
 
-    # Fine-tune with conservative settings
+    # Fine-tune
     print(f"\n⏳ Fine-tuning model...")
-    print(f"  Epochs: 10")
-    print(f"  Batch size: 2 (optimized for MPS memory)")
-    print(f"  Learning rate: 2e-5 (conservative)")
-    print(f"  Warmup steps: 25")
+    print(f"  Epochs: 20")
+    print(f"  Batch size: 16")
+    print(f"  Learning rate: 2e-5")
+    print(f"  Warmup steps: 50")
 
     model.fit(
         train_objectives=[(train_dataloader, train_loss)],
-        epochs=10,
-        warmup_steps=25,
+        epochs=20,
+        warmup_steps=50,
         weight_decay=0.01,
         show_progress_bar=True,
     )

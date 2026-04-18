@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from halal_rag.rag.retriever import SimpleRAG
 from . import dependencies
-from .models import ChatRequest, ChatResponse, HealthResponse, ApiInfoResponse, RootResponse
+from .dto import ChatRequest, ChatResponse, HealthResponse, ApiInfoResponse, RootResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,7 +29,9 @@ async def lifespan(app: FastAPI):
         docs = []
         with open(data_file, 'r', encoding='utf-8') as f:
             for line in f:
-                docs.append(json.loads(line))
+                line = line.strip()
+                if line:
+                    docs.append(json.loads(line))
 
         logger.info(f"Loaded {len(docs)} Quranic verses")
         rag = SimpleRAG(documents=docs, use_finetuned=True)

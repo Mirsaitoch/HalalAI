@@ -40,7 +40,7 @@ def main():
     # Paths
     pairs_file = Path(__file__).parent.parent / "tests" / "fixtures" / "quranic_pairs.json"
     model_output_dir = (
-        Path(__file__).parent.parent / "models" / "quranic-embeddings"
+        Path(__file__).parent.parent / "dto" / "quranic-embeddings"
     )
     model_output_dir.mkdir(parents=True, exist_ok=True)
 

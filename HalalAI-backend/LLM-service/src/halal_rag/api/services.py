@@ -70,6 +70,22 @@ class ChatService(IChatService):
         else:
             return f"Ошибка при обращении к OpenRouter: {error}"
 
+    def build_prompt(self, query: str, sources: str) -> tuple[str, str]:
+        """Build system prompt and user prompt"""
+        system_prompt = """
+            # Ты - HalalAI, опытный специалист по исламу.
+            1. Задача - точно отвечать на вопросы, **основываясь на Коране и Хадисах**.
+            2. Давать **четкие**, уважительные ответы, основанные на исламском учении.
+            3. Всегда приводите конкретные номера сур и аятов.
+            4. Отвечай на **русском** языке.
+            """
+        user_prompt = f"""
+        # Вопрос : {query}
+        Соответствующие аяты Корана:
+        {sources}
+        """
+        return system_prompt, user_prompt
+
     async def process_chat(self, request: ChatRequest) -> ChatResponse:
         """Process chat request end-to-end"""
         # 1. Extract message
@@ -81,13 +97,25 @@ class ChatService(IChatService):
                 remote_error="Invalid request"
             )
 
-        logger.info(f"Chat query: {query} (model={request.remote_model})")
+        logger.info(f"Chat query: {query} (model={request.remote_model}, dry_run={request.dry_run})")
 
         # 2. Search sources
         sources = self.search_sources(query)
         sources_text = self.format_sources(sources)
 
-        # 3. Generate response
+        # 3. Build prompt
+        system_prompt, user_prompt = self.build_prompt(query, sources_text)
+        full_prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
+
+        # 4. dry_run — вернуть промт без отправки в LLM
+        if request.dry_run:
+            return ChatResponse(
+                reply="[dry_run] Промт собран, LLM не вызывался",
+                used_remote=False,
+                prompt=full_prompt
+            )
+
+        # 5. Generate response
         reply, used_remote, error = await self.generate_response(
             query=query,
             sources=sources_text,
@@ -97,7 +125,7 @@ class ChatService(IChatService):
             temperature=request.temperature
         )
 
-        # 4. Handle errors if needed
+        # 6. Handle errors if needed
         if not reply:
             reply = self.handle_error(error)
 

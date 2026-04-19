@@ -68,10 +68,10 @@ struct ChatView: View {
             )
         }
         .navigationTitle("Halal AI")
-        .navigationBarHidden(vm.authManager.isGuest)
+        .toolbar(vm.authManager.isGuest ? .hidden : .visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
                 if !vm.authManager.isGuest {
                     Menu {
                         Button(action: {
@@ -86,7 +86,8 @@ struct ChatView: View {
                             Label("Очистить чат", systemImage: "trash")
                         }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Label("Опции", systemImage: "ellipsis.circle")
+                            .labelStyle(.iconOnly)
                     }
                 }
             }
@@ -111,10 +112,10 @@ struct ErrorMessageView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                     Text("Ошибка соединения")
                         .font(.headline)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                 }
                 
                 Text(message)

@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 
 @MainActor
 protocol ChatService {
@@ -72,7 +71,6 @@ final class ChatServiceImpl: ChatService {
     var defaultRemoteModel: String = ""
     
     // MARK: - private
-    private var cancellables = Set<AnyCancellable>()
     private var isSending = false 
     private var lastSendAt: Date?
     private var configLoaded = true
@@ -135,12 +133,10 @@ final class ChatServiceImpl: ChatService {
                 allowed = [defaultModel]
             }
             let currentModel = self.remoteModel.trimmingCharacters(in: .whitespacesAndNewlines)
-            await MainActor.run {
-                self.defaultRemoteModel = defaultModel
-                self.availableModels = allowed
-                if !allowed.isEmpty, currentModel.isEmpty, !defaultModel.isEmpty  {
-                    self.remoteModel = defaultModel
-                }
+            self.defaultRemoteModel = defaultModel
+            self.availableModels = allowed
+            if !allowed.isEmpty, currentModel.isEmpty, !defaultModel.isEmpty  {
+                self.remoteModel = defaultModel
             }
             print("✅ Модели загружены: default=\(defaultModel), count=\(allowed.count)")
         } catch {
@@ -150,7 +146,7 @@ final class ChatServiceImpl: ChatService {
     
     func sendMessage(_ text: String) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        if isSending, let last = lastSendAt, Date().timeIntervalSince(last) > 15 {
+        if isSending, let last = lastSendAt, Date.now.timeIntervalSince(last) > 15 {
             isSending = false
             print("⚠️ sendMessage: предыдущий запрос завис >15с, сбрасываем isSending")
         }
@@ -165,7 +161,7 @@ final class ChatServiceImpl: ChatService {
         chatState = .typing
         connectionState = .connecting
         isSending = true
-        lastSendAt = Date()
+        lastSendAt = Date.now
         
         Task {
             await sendRequestToBackend(userMessage: userMessage, isRetry: false)

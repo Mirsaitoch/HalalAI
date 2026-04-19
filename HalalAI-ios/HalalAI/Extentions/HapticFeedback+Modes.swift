@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// TODO: Рассмотреть миграцию на .sensoryFeedback() модификатор SwiftUI
 struct HapticFeedback {
     static func light() {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)

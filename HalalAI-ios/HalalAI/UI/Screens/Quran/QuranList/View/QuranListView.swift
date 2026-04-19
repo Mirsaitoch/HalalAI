@@ -28,10 +28,10 @@ struct QuranListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Image(systemName: "arrow.left")
-                    .onTapGesture {
-                        coordinator.dismiss()
-                    }
+                Button("Назад", systemImage: "arrow.left") {
+                    coordinator.dismiss()
+                }
+                .labelStyle(.iconOnly)
             }
         }
         .onAppear { viewModel.loadQuran() }
@@ -57,8 +57,8 @@ struct QuranListView: View {
     private var continueReadingButton: some View {
         Button {
             if let idx = viewModel.quranStorage.lastReadSuraIndex,
-               let sura = viewModel.suras.first(where: { $0.index == idx }) {
-                coordinator.nextStep(step: .Home(.sura(suraIndex: idx)))
+               viewModel.suras.contains(where: { $0.index == idx }) {
+                coordinator.nextStep(step: .home(.sura(suraIndex: idx)))
             }
         } label: {
             HStack {
@@ -79,14 +79,14 @@ struct QuranListView: View {
             }
             .padding()
             .background(RoundedRectangle(cornerRadius: 16).fill(Color.greenForeground.opacity(0.3)))
-            .foregroundColor(.darkGreen)
+            .foregroundStyle(.darkGreen)
         }
         .buttonStyle(.plain)
     }
 
     private func suraRow(_ sura: Sura) -> some View {
         Button {
-            coordinator.nextStep(step: .Home(.sura(suraIndex: sura.index)))
+            coordinator.nextStep(step: .home(.sura(suraIndex: sura.index)))
         } label: {
             HStack {
                 Text("\(sura.index)")
@@ -94,23 +94,23 @@ struct QuranListView: View {
                     .fontWeight(.semibold)
                     .frame(width: 28, height: 28)
                     .background(Circle().fill(Color.greenForeground.opacity(0.5)))
-                    .foregroundColor(.darkGreen)
+                    .foregroundStyle(.darkGreen)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(sura.title)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(.darkGreen)
+                        .foregroundStyle(.darkGreen)
                     Text(sura.subtitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text("\(sura.verses.count) аятов")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 12)

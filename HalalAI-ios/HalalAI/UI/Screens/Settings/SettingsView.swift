@@ -41,10 +41,10 @@ struct SettingsView: View {
                 await vm.chatService.loadModels()
             }
         }
-        .onChange(of: vm.maxTokensSlider) { newValue in
+        .onChange(of: vm.maxTokensSlider) { _, newValue in
             vm.chatService.maxTokens = Int(newValue)
         }
-        .onChange(of: vm.temperatureSlider) { newValue in
+        .onChange(of: vm.temperatureSlider) { _, newValue in
             vm.chatService.temperature = newValue
         }
     }
@@ -58,18 +58,18 @@ struct SettingsView: View {
                     Text("Пользователь")
                     Spacer()
                     Text(user.username)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
                 
                 HStack {
                     Text("Email")
                     Spacer()
                     Text(user.email)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             } else {
                 Text("Не авторизован")
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -104,7 +104,7 @@ struct SettingsView: View {
             // Описание
             Text("Если указать API ключ (например, OpenAI или совместимый), ответы будут генерироваться через удалённую модель. Без ключа применяется локальная модель HalalAI.")
                 .font(.footnote)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .padding(.top, 4)
         }
     }
@@ -123,7 +123,7 @@ struct SettingsView: View {
 
                 Text("Доступно \(viewModel.chatService.availableModels.count) моделей. По умолчанию: \(viewModel.chatService.defaultRemoteModel)")
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
 
                 // Toggle для custom модели
                 Toggle("Использовать custom модель", isOn: $viewModel.useCustomModel)
@@ -137,7 +137,7 @@ struct SettingsView: View {
 
                     Text("Укажите имя модели в формате провайдера/модель.")
                         .font(.footnote)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             } else {
                 TextField("Введите имя модели (например, meta-llama/llama-3.3-70b-instruct:free)", text: $viewModel.chatService.remoteModel)
@@ -147,7 +147,7 @@ struct SettingsView: View {
 
                 Text("Введите имя модели вручную. Список пока не загружен.")
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
             
             // Слайдер max_tokens
@@ -156,7 +156,7 @@ struct SettingsView: View {
                     Text("max_tokens")
                     Spacer()
                     Text("\(Int(viewModel.maxTokensSlider))")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .font(.system(.body, design: .monospaced))
                 }
 
@@ -168,18 +168,18 @@ struct SettingsView: View {
                     minimumValueLabel: {
                         Text("16")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     },
                     maximumValueLabel: {
                         Text("6144")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 )
 
                 Text("Лимит токенов для генерации. Сервер принимает до 6144.")
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
 
             // Слайдер temperature
@@ -187,8 +187,8 @@ struct SettingsView: View {
                 HStack {
                     Text("temperature")
                     Spacer()
-                    Text(String(format: "%.2f", viewModel.temperatureSlider))
-                        .foregroundColor(.secondary)
+                    Text(viewModel.temperatureSlider, format: .number.precision(.fractionLength(2)))
+                        .foregroundStyle(.secondary)
                         .font(.system(.body, design: .monospaced))
                 }
 
@@ -200,18 +200,18 @@ struct SettingsView: View {
                     minimumValueLabel: {
                         Text("0.0")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     },
                     maximumValueLabel: {
                         Text("2.0")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 )
 
                 Text("Контролирует случайность ответов. 0 = детерминированно, 2.0 = максимально случайно.")
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
 
             // Toggle для RAG
@@ -220,7 +220,7 @@ struct SettingsView: View {
 
             Text("RAG извлекает релевантные аяты из Корана для контекста. Выключите для ответов без контекста.")
                 .font(.footnote)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
 
             // Кнопка обновления списка моделей
             Button("Обновить список моделей") {
@@ -236,13 +236,14 @@ struct SettingsView: View {
         Section(header: Text("Источники данных")) {
             Text("Система RAG формирует контекст из «Перевода смыслов Священного Корана» Э.Р. Кулиева.")
                 .font(.footnote)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .padding(.vertical, 4)
             
-            Link("Открыть источник",
-                 destination: URL(string: "https://xn----8sbemuhsaeiwd9h5a9c.xn--p1ai/chitat-koran-na-russkom/elmir-kuliev/")!)
-            .font(.footnote)
-            .foregroundColor(.blue)
+            if let url = URL(string: "https://xn----8sbemuhsaeiwd9h5a9c.xn--p1ai/chitat-koran-na-russkom/elmir-kuliev/") {
+                Link("Открыть источник", destination: url)
+                    .font(.footnote)
+                    .foregroundStyle(.blue)
+            }
         }
     }
     
@@ -268,7 +269,7 @@ struct SettingsView: View {
                 Label("Войти или зарегистрироваться", systemImage: "person.crop.circle")
                     .frame(alignment: .leading)
             }
-            .foregroundColor(.darkGreen)
+            .foregroundStyle(.darkGreen)
         } header: {
             Text("Аккаунт")
         }

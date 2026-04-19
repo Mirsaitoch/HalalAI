@@ -29,16 +29,17 @@ struct LoginView: View {
                 // Header
                 VStack(spacing: 12) {
                     Image(systemName: "moon.stars.fill")
-                        .font(.system(size: 48))
-                        .foregroundColor(.white)
+                        .font(.largeTitle)
+                        .foregroundStyle(.white)
 
                     Text("Halal AI")
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.largeTitle)
+                        .bold()
+                        .foregroundStyle(.white)
 
                     Text("Войдите в свой аккаунт")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.8))
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 70)
@@ -90,8 +91,8 @@ struct LoginView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
                                 .background(vm.isDisable ? Color.greenForeground : Color.darkGreen)
-                                .foregroundColor(.white)
-                                .cornerRadius(14)
+                                .foregroundStyle(.white)
+                                .clipShape(.rect(cornerRadius: 14))
                             }
                             .disabled(vm.isDisable)
                             .opacity(vm.isDisable ? 0.6 : 1.0)
@@ -99,11 +100,11 @@ struct LoginView: View {
                             // Register link
                             HStack(spacing: 4) {
                                 Text("Нет аккаунта?")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Button(action: { onShowRegister?() }) {
                                     Text("Зарегистрироваться")
                                         .fontWeight(.semibold)
-                                        .foregroundColor(.darkGreen)
+                                        .foregroundStyle(.darkGreen)
                                 }
                             }
 
@@ -112,8 +113,8 @@ struct LoginView: View {
                                 vm.authManager.continueAsGuest()
                             }) {
                                 Text("Продолжить без аккаунта")
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.secondary)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                         .padding(.horizontal, 28)

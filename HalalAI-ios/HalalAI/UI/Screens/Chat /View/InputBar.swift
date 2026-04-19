@@ -22,8 +22,8 @@ struct InputBar: View {
                     onMicrophoneTap()
                 }) {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.blue)
+                        .font(.title3)
+                        .foregroundStyle(.blue)
                         .frame(width: 40, height: 40)
                         .background {
                             Circle()
@@ -42,8 +42,8 @@ struct InputBar: View {
                 onSend()
             }) {
                 Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .blue)
+                    .font(.title)
+                    .foregroundStyle(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .blue)
             }
             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }

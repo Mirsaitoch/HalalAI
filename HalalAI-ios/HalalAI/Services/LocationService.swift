@@ -9,6 +9,7 @@ import Foundation
 import CoreLocation
 import Observation
 
+@MainActor
 protocol LocationService: AnyObject {
     var currentLocation: CLLocation? { get }
     var authorizationStatus: CLAuthorizationStatus { get }

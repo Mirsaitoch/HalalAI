@@ -34,8 +34,8 @@ struct MessageBubble: View {
                         .overlay(alignment: .topTrailing) {
                             if let model = message.model, !model.isEmpty {
                                 Text(model)
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(
@@ -54,8 +54,8 @@ struct MessageBubble: View {
                         }
                 } else {
                     Text(message.text)
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
+                        .font(.body)
+                        .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background {
@@ -72,8 +72,8 @@ struct MessageBubble: View {
                 }
                 
                 Text(formatTime(message.date))
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
             }
             
@@ -91,17 +91,15 @@ struct MessageBubble: View {
     }
     
     private func formatTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        date.formatted(date: .omitted, time: .shortened)
     }
     
     // MARK: - Markdown Support
     
     private var messageTextView: some View {
         Text(parseMarkdown(message.text))
-            .font(.system(size: 16))
-            .foregroundColor(.primary)
+            .font(.body)
+            .foregroundStyle(.primary)
             .textSelection(.enabled)
     }
     

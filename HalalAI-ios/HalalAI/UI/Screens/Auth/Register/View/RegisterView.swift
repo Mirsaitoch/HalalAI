@@ -29,16 +29,17 @@ struct RegisterView: View {
                 // Header
                 VStack(spacing: 12) {
                     Image(systemName: "moon.stars.fill")
-                        .font(.system(size: 48))
-                        .foregroundColor(.white)
+                        .font(.largeTitle)
+                        .foregroundStyle(.white)
 
                     Text("Halal AI")
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.largeTitle)
+                        .bold()
+                        .foregroundStyle(.white)
 
                     Text("Создайте новый аккаунт")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.8))
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 70)
@@ -82,7 +83,7 @@ struct RegisterView: View {
                                     if !vm.password.isEmpty && vm.password.count < 8 {
                                         Text("Пароль должен содержать минимум 8 символов")
                                             .font(.caption)
-                                            .foregroundColor(.red)
+                                            .foregroundStyle(.red)
                                             .padding(.horizontal, 4)
                                     }
                                 }
@@ -97,7 +98,7 @@ struct RegisterView: View {
                                     if !vm.confirmPassword.isEmpty && vm.password != vm.confirmPassword {
                                         Text("Пароли не совпадают")
                                             .font(.caption)
-                                            .foregroundColor(.red)
+                                            .foregroundStyle(.red)
                                             .padding(.horizontal, 4)
                                     }
                                 }
@@ -119,8 +120,8 @@ struct RegisterView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
                                 .background(vm.isFormValid ? Color.darkGreen : Color.greenForeground)
-                                .foregroundColor(.white)
-                                .cornerRadius(14)
+                                .foregroundStyle(.white)
+                                .clipShape(.rect(cornerRadius: 14))
                             }
                             .disabled(!vm.isFormValid || vm.authService.isLoading)
                             .opacity((!vm.isFormValid || vm.authService.isLoading) ? 0.6 : 1.0)
@@ -128,11 +129,11 @@ struct RegisterView: View {
                             // Login link
                             HStack(spacing: 4) {
                                 Text("Уже есть аккаунт?")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Button(action: { onShowLogin?() }) {
                                     Text("Войти")
                                         .fontWeight(.semibold)
-                                        .foregroundColor(.darkGreen)
+                                        .foregroundStyle(.darkGreen)
                                 }
                             }
                             
@@ -140,8 +141,8 @@ struct RegisterView: View {
                                 vm.authManager.continueAsGuest()
                             }) {
                                 Text("Продолжить без регистрации")
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.secondary)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                         .padding(.horizontal, 28)

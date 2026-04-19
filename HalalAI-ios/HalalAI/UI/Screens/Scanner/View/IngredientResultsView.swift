@@ -12,7 +12,7 @@ struct IngredientResultsView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Color.greenBackground.ignoresSafeArea()
                 
@@ -39,17 +39,17 @@ struct IngredientResultsView: View {
                     }
                 } else {
                     Text("Ошибка анализа")
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
                 }
             }
             .navigationTitle("Результаты анализа")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Закрыть") {
                         dismiss()
                     }
-                    .foregroundColor(.greenForeground)
+                    .foregroundStyle(.greenForeground)
                 }
             }
         }
@@ -59,17 +59,17 @@ struct IngredientResultsView: View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: analysis.isHalal ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(colorForStatus(analysis.overallStatus))
+                    .font(.largeTitle)
+                    .foregroundStyle(colorForStatus(analysis.overallStatus))
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Статус продукта")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
                     Text(analysis.overallStatus.displayName)
                         .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(colorForStatus(analysis.overallStatus))
+                        .bold()
+                        .foregroundStyle(colorForStatus(analysis.overallStatus))
                 }
                 
                 Spacer()
@@ -80,13 +80,13 @@ struct IngredientResultsView: View {
                      ? "Продукт содержит запрещенные ингредиенты"
                      : "Продукт содержит сомнительные ингредиенты")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.gray)
                     .multilineTextAlignment(.center)
             }
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(16)
+        .clipShape(.rect(cornerRadius: 16))
         .shadow(radius: 4)
     }
     
@@ -94,10 +94,10 @@ struct IngredientResultsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                 Text("Запрещенные ингредиенты")
                     .font(.headline)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
             }
             
             ForEach(ingredients) { ingredient in
@@ -106,7 +106,7 @@ struct IngredientResultsView: View {
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(16)
+        .clipShape(.rect(cornerRadius: 16))
         .shadow(radius: 4)
     }
     
@@ -114,10 +114,10 @@ struct IngredientResultsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "questionmark.circle.fill")
-                    .foregroundColor(.orange)
+                    .foregroundStyle(.orange)
                 Text("Сомнительные ингредиенты")
                     .font(.headline)
-                    .foregroundColor(.orange)
+                    .foregroundStyle(.orange)
             }
             
             ForEach(ingredients) { ingredient in
@@ -126,7 +126,7 @@ struct IngredientResultsView: View {
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(16)
+        .clipShape(.rect(cornerRadius: 16))
         .shadow(radius: 4)
     }
     
@@ -134,7 +134,7 @@ struct IngredientResultsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Все ингредиенты")
                 .font(.headline)
-                .foregroundColor(.greenForeground)
+                .foregroundStyle(.greenForeground)
             
             ForEach(ingredients) { ingredient in
                 IngredientRowView(ingredient: ingredient, showStatus: true)
@@ -142,7 +142,7 @@ struct IngredientResultsView: View {
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(16)
+        .clipShape(.rect(cornerRadius: 16))
         .shadow(radius: 4)
     }
     
@@ -182,28 +182,27 @@ struct IngredientRowView: View {
                 if showStatus {
                     Text(ingredient.status.displayName)
                         .font(.caption)
-                        .foregroundColor(colorForStatus(ingredient.status))
+                        .foregroundStyle(colorForStatus(ingredient.status))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(colorForStatus(ingredient.status).opacity(0.2))
-                        .cornerRadius(8)
+                        .clipShape(.rect(cornerRadius: 8))
                 } else if let matched = ingredient.matchedIngredient {
                     Text(matched.nameRu)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
                 }
                 
                 // Кнопка раскрытия, если есть note
                 if ingredient.matchedIngredient?.note != nil {
-                    Button(action: {
+                    Button(isExpanded ? "Свернуть" : "Развернуть", systemImage: isExpanded ? "chevron.up" : "chevron.down") {
                         withAnimation {
                             isExpanded.toggle()
                         }
-                    }) {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption)
-                            .foregroundColor(.gray)
                     }
+                    .font(.caption)
+                    .foregroundStyle(.gray)
+                    .labelStyle(.iconOnly)
                 }
             }
             
@@ -213,7 +212,7 @@ struct IngredientRowView: View {
                     Divider()
                     Text(note)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
                         .padding(.leading, 16)
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))

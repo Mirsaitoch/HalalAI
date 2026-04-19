@@ -8,20 +8,9 @@
 import SwiftUI
 
 enum Step: Hashable, Equatable {
-    case Chat(_ val: ChatCoordinator)
-    case Settings(_ val: SettingsCoordinator)
-    case Home(_ val: HomeCoordinator)
-
-    @MainActor
-    var view: some View {
-        Group {
-            switch self {
-            case .Chat(let value): value.view
-            case .Settings(let value): value.view
-            case .Home(let value): value.view
-            }
-        }
-    }
+    case chat(_ val: ChatCoordinator)
+    case settings(_ val: SettingsCoordinator)
+    case home(_ val: HomeCoordinator)
 }
 
 @MainActor
@@ -58,9 +47,9 @@ final class Coordinator {
     @ViewBuilder
     func build(step: Step) -> some View {
         switch step {
-        case .Chat(let value): value.view
-        case .Settings(let value): value.view
-        case .Home(let value): value.view
+        case .chat(let value): value.view
+        case .settings(let value): value.view
+        case .home(let value): value.view
         }
     }
 }

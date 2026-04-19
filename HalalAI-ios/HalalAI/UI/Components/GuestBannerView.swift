@@ -12,23 +12,25 @@ struct GuestBannerView: View {
         Button(action: onLogin) {
             HStack(spacing: 12) {
                 Image(systemName: "person.crop.circle.badge.plus")
-                    .font(.system(size: 28))
-                    .foregroundColor(.darkGreen)
+                    .font(.title2)
+                    .foregroundStyle(.darkGreen)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Войдите в аккаунт")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.darkGreen)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.darkGreen)
                     Text("Чтобы использовать чат и сканер")
-                        .font(.system(size: 13))
-                        .foregroundColor(.darkGreen)
+                        .font(.caption)
+                        .foregroundStyle(.darkGreen)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.greenForeground)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.greenForeground)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)

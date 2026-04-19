@@ -7,12 +7,14 @@
 
 import Foundation
 
+@MainActor
 protocol VerseService {
     var verseOfTheDay: Verse? { get set }
     func fetchVerseOfTheDay() async throws
 }
 
 @Observable
+@MainActor
 final class VerseServiceImpl: VerseService {
     var verseOfTheDay: Verse?
     

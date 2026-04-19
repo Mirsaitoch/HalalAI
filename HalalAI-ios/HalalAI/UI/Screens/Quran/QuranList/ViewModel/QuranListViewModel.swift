@@ -9,6 +9,7 @@ import Foundation
 
 extension QuranListView {
     @Observable
+    @MainActor
     final class ViewModel {
         var quranStorage: QuranStorageService
         var suras: [Sura] = []
@@ -25,15 +26,11 @@ extension QuranListView {
             Task {
                 do {
                     try quranStorage.loadQuranFromBundle()
-                    await MainActor.run {
-                        suras = quranStorage.suras
-                        isLoading = false
-                    }
+                    suras = quranStorage.suras
+                    isLoading = false
                 } catch {
-                    await MainActor.run {
-                        errorMessage = error.localizedDescription
-                        isLoading = false
-                    }
+                    errorMessage = error.localizedDescription
+                    isLoading = false
                 }
             }
         }

@@ -5,6 +5,7 @@
 
 import Foundation
 
+@MainActor
 protocol QuranStorageService {
     var suras: [Sura] { get }
     var lastReadSuraIndex: Int? { get }
@@ -20,6 +21,7 @@ private enum UserDefaultsKeys {
 }
 
 @Observable
+@MainActor
 final class QuranStorageServiceImpl: QuranStorageService {
     private(set) var suras: [Sura] = []
     private var surasLoaded = false

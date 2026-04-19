@@ -9,6 +9,7 @@ import Foundation
 
 extension HomeView {
     @Observable
+    @MainActor
     final class ViewModel {
         var verseService: VerseService
         var prayerCardViewModel: PrayerTimesCardView.ViewModel

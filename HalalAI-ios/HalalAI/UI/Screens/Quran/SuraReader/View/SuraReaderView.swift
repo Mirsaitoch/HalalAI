@@ -25,10 +25,10 @@ struct SuraReaderView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Image(systemName: "arrow.left")
-                    .onTapGesture {
-                        coordinator.dismiss()
-                    }
+                Button("Назад", systemImage: "arrow.left") {
+                    coordinator.dismiss()
+                }
+                .labelStyle(.iconOnly)
             }
         }
         .navigationTitle(viewModel.sura?.displayTitle ?? "Сура")
@@ -41,7 +41,7 @@ struct SuraReaderView: View {
     private func readerContent(sura: Sura) -> some View {
         VStack(spacing: 0) {
             fontControls
-            ScrollView(.vertical, showsIndicators: false) {
+            ScrollView {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     ForEach(Array(sura.verses.enumerated()), id: \.element.id) { index, verse in
                         verseRow(verse: verse, sura: sura)
@@ -52,6 +52,7 @@ struct SuraReaderView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 24)
             }
+            .scrollIndicators(.hidden)
         }
     }
 
@@ -59,7 +60,7 @@ struct SuraReaderView: View {
         HStack {
             Text("Размер текста")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
             Slider(value: $viewModel.fontSize, in: 14...28, step: 1)
                 .tint(Color.greenForeground)
             Text("\(Int(viewModel.fontSize))")
@@ -76,12 +77,12 @@ struct SuraReaderView: View {
             if let num = verse.verseNumber {
                 Text("\(num)")
                     .font(.system(size: viewModel.fontSize * 0.7, weight: .medium))
-                    .foregroundColor(.greenForeground)
+                    .foregroundStyle(.greenForeground)
                     .frame(width: 24, alignment: .trailing)
             }
             Text(verse.text)
                 .font(.system(size: viewModel.fontSize))
-                .foregroundColor(.darkGreen)
+                .foregroundStyle(.darkGreen)
                 .lineSpacing(6)
                 .fixedSize(horizontal: false, vertical: true)
         }

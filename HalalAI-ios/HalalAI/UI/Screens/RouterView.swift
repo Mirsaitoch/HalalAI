@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 struct RouterView: View {
     @State var coordinator = Coordinator()
@@ -49,11 +48,11 @@ struct RouterView: View {
     private var tabRootView: some View {
         switch coordinator.currentSelectedTab {
         case .home:
-            coordinator.build(step: .Home(.home))
+            coordinator.build(step: .home(.home))
         case .chat:
-            coordinator.build(step: .Chat(.chat))
+            coordinator.build(step: .chat(.chat))
         case .settings:
-            coordinator.build(step: .Settings(.settings))
+            coordinator.build(step: .settings(.settings))
         }
     }
 

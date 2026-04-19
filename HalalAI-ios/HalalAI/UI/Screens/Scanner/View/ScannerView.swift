@@ -24,21 +24,23 @@ struct ScannerView: View {
             VStack(spacing: 0) {
                 // Заголовок
                 HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(.greenForeground)
+                    Button("Назад", systemImage: "chevron.left") {
+                        dismiss()
                     }
+                    .font(.title2)
+                    .foregroundStyle(.greenForeground)
+                    .labelStyle(.iconOnly)
                     Spacer()
                     Text("Сканирование состава")
                         .font(.headline)
-                        .foregroundColor(.greenForeground)
+                        .foregroundStyle(.greenForeground)
                     Spacer()
-                    Button(action: { vm.showManualInput.toggle() }) {
-                        Image(systemName: "keyboard")
-                            .font(.title2)
-                            .foregroundColor(.greenForeground)
+                    Button("Ввод вручную", systemImage: "keyboard") {
+                        vm.showManualInput.toggle()
                     }
+                    .font(.title2)
+                    .foregroundStyle(.greenForeground)
+                    .labelStyle(.iconOnly)
                 }
                 .padding()
                 
@@ -72,12 +74,12 @@ struct ScannerView: View {
                             .scaleEffect(1.5)
                             .tint(.greenForeground)
                         Text("Обработка изображения...")
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .font(.headline)
                     }
                     .padding(30)
                     .background(Color.greenForeground.opacity(0.9))
-                    .cornerRadius(20)
+                    .clipShape(.rect(cornerRadius: 20))
                 }
             }
         }
@@ -89,17 +91,17 @@ struct ScannerView: View {
             
             Image(systemName: "camera.viewfinder")
                 .font(.system(size: 80))
-                .foregroundColor(.greenForeground)
+                .foregroundStyle(.greenForeground)
             
             Text("Наведите камеру на состав продукта")
                 .font(.title2)
                 .multilineTextAlignment(.center)
-                .foregroundColor(.greenForeground)
+                .foregroundStyle(.greenForeground)
                 .padding(.horizontal)
             
             Text("Или введите состав вручную")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundStyle(.gray)
             
             VStack(spacing: 15) {
                 Button(action: {
@@ -111,11 +113,11 @@ struct ScannerView: View {
                         Text("Сфотографировать")
                     }
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.greenForeground)
-                    .cornerRadius(12)
+                    .clipShape(.rect(cornerRadius: 12))
                 }
                 
                 Button(action: {
@@ -127,7 +129,7 @@ struct ScannerView: View {
                         Text("Выбрать из галереи")
                     }
                     .font(.headline)
-                    .foregroundColor(.greenForeground)
+                    .foregroundStyle(.greenForeground)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.white)
@@ -135,7 +137,7 @@ struct ScannerView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.greenForeground, lineWidth: 2)
                     )
-                    .cornerRadius(12)
+                    .clipShape(.rect(cornerRadius: 12))
                 }
             }
             .padding(.horizontal, 40)
@@ -149,14 +151,14 @@ struct ScannerView: View {
         VStack(spacing: 20) {
             Text("Введите состав продукта")
                 .font(.headline)
-                .foregroundColor(.greenForeground)
+                .foregroundStyle(.greenForeground)
                 .padding(.top)
             
             TextEditor(text: $viewModel.manualInput)
                 .frame(height: 200)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(12)
+                .clipShape(.rect(cornerRadius: 12))
                 .padding(.horizontal)
             
             Button(action: {
@@ -167,11 +169,11 @@ struct ScannerView: View {
                     Text("Проверить")
                 }
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.greenForeground)
-                .cornerRadius(12)
+                .clipShape(.rect(cornerRadius: 12))
             }
             .padding(.horizontal)
             .disabled(viewModel.manualInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

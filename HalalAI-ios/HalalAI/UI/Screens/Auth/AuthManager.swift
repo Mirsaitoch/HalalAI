@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 @MainActor
 protocol AuthManager {
@@ -29,6 +28,7 @@ final class AuthManagerImpl: AuthManager {
     var currentUser: AuthResponse?
     var errorMessage: String?
     
+    // TODO: Перенести хранение токена в Keychain для безопасности
     private let tokenKey = "HalalAI.authToken"
     private let userKey = "HalalAI.currentUser"
     private let guestKey = "HalalAI.isGuest"
@@ -105,9 +105,9 @@ final class AuthManagerImpl: AuthManager {
     }
     
     private func cleanUserDefaults() {
-        UserDefaults.standard.dictionaryRepresentation().keys.forEach {
-            UserDefaults.standard.removeObject(forKey: $0)
-        }
+        UserDefaults.standard.removeObject(forKey: tokenKey)
+        UserDefaults.standard.removeObject(forKey: userKey)
+        UserDefaults.standard.removeObject(forKey: guestKey)
     }
 }
 

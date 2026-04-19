@@ -51,14 +51,17 @@ struct TabBarIcon: View {
     let tab: TabBarItem
     var coordinator: Coordinator
     var body: some View {
-        Image(uiImage: tab.model.image)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 27, height: 27)
-            .scaleEffect(coordinator.currentSelectedTab == tab ? 1.2 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: coordinator.currentSelectedTab)
-            .onTapGesture {
-                coordinator.selectTab(item: tab)
-            }
+        Button {
+            coordinator.selectTab(item: tab)
+        } label: {
+            Image(uiImage: tab.model.image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 27, height: 27)
+                .scaleEffect(coordinator.currentSelectedTab == tab ? 1.2 : 1.0)
+                .animation(.easeInOut(duration: 0.2), value: coordinator.currentSelectedTab)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tab.model.name)
     }
 }

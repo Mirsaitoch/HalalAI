@@ -17,27 +17,27 @@ struct VerseView: View {
                     // Информация о суре
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Аят дня")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.headline)
                         HStack {
                             Text(verse.suraTitle)
                             Text("Сура \(verse.suraIndex):\(verse.verseNumber)")
                         }
-                        .font(.system(size: 13, weight: .regular))
+                        .font(.caption)
                     }
-                    .foregroundColor(.darkGreen)
+                    .foregroundStyle(.darkGreen)
 
                     Divider()
                         .padding(.vertical, 4)
                     
                     // Текст аята
                     Text(verse.text)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundColor(.black)
+                        .font(.subheadline)
+                        .foregroundStyle(.black)
                         .padding(.top, 4)
                 }
                 .padding(16)
                 .background(.greenForeground)
-                .cornerRadius(12)
+                .clipShape(.rect(cornerRadius: 12))
                 .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 2)
             }
         }

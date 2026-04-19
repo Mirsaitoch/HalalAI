@@ -15,15 +15,11 @@ struct ChatUtils {
     // MARK: - Text Processing
     
     static func formatMessageTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        date.formatted(date: .omitted, time: .shortened)
     }
     
     static func formatMessageDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter.string(from: date)
+        date.formatted(date: .abbreviated, time: .omitted)
     }
     
     static func isToday(_ date: Date) -> Bool {

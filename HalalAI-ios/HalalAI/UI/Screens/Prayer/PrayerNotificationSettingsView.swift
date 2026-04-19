@@ -41,10 +41,10 @@ struct PrayerNotificationSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Image(systemName: "arrow.left")
-                    .onTapGesture {
-                        coordinator.dismiss()
-                    }
+                Button("Назад", systemImage: "arrow.left") {
+                    coordinator.dismiss()
+                }
+                .labelStyle(.iconOnly)
             }
         }
         .task {
@@ -198,12 +198,12 @@ private struct AngleStepper: View {
                     step: 0.5
                 ) {
                     HStack(spacing: 4) {
-                        Text(String(format: "%.1f°", value))
+                        Text("\(value.formatted(.number.precision(.fractionLength(1))))°")
                             .monospacedDigit()
                             .fontWeight(isCustom ? .semibold : .regular)
                             .foregroundStyle(isCustom ? Color.greenForeground : .primary)
                         if !isCustom {
-                            Text("(по умолчанию \(String(format: "%.1f°", defaultAngle)))")
+                            Text("(по умолчанию \(defaultAngle.formatted(.number.precision(.fractionLength(1))))°)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

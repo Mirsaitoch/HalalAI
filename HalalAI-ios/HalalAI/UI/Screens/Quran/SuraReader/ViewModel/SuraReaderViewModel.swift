@@ -9,6 +9,7 @@ import SwiftUI
 
 extension SuraReaderView {
     @Observable
+    @MainActor
     final class ViewModel {
         var suraIndex: Int
         var quranStorage: QuranStorageService
@@ -40,9 +41,7 @@ extension SuraReaderView {
             }
             Task {
                 try? quranStorage.loadQuranFromBundle()
-                await MainActor.run {
-                    sura = quranStorage.suras.first { $0.index == suraIndex }
-                }
+                sura = quranStorage.suras.first { $0.index == suraIndex }
             }
         }
     }

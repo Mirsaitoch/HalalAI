@@ -18,17 +18,17 @@ struct EmptyChatView: View {
                 Text("Ассаламу алейкум 👋")
                     .font(.title2)
                     .fontWeight(.semibold)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                 
                 Text("Я — HalalAI, ваш халяль-помощник.")
                     .font(.headline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             Spacer()
             
             VStack(alignment: .leading, spacing: 12) {
-                ScrollView(.horizontal, showsIndicators: false) {
+                ScrollView(.horizontal) {
                     HStack {
                         Spacer()
                         QuickQuestionButton(text: "Что такое халяль?", onTap: { chatService.sendMessage("Что такое халяль?") })
@@ -38,6 +38,7 @@ struct EmptyChatView: View {
                         Spacer()
                     }
                 }
+                .scrollIndicators(.hidden)
             }
         }
         .onAppear {
@@ -58,7 +59,7 @@ struct QuickQuestionButton: View {
         }) {
             Text(text)
                 .font(.caption)
-                .foregroundColor(.darkGreen)
+                .foregroundStyle(.darkGreen)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background {

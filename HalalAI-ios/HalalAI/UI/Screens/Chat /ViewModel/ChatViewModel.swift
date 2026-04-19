@@ -9,6 +9,7 @@ import SwiftUI
 
 extension ChatView {
     @Observable
+    @MainActor
     final class ViewModel {
         var messageText = ""
         let chatService: ChatService
@@ -19,7 +20,6 @@ extension ChatView {
             self.authManager = authManager
         }
         
-        @MainActor
         func sendMessage() {
             let trimmedText = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedText.isEmpty else { return }

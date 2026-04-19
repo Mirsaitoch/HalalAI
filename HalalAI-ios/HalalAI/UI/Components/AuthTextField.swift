@@ -15,7 +15,7 @@ struct AuthTextField: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(.darkGreen)
+                .foregroundStyle(.darkGreen)
                 .frame(width: 20)
 
             Group {
@@ -27,19 +27,20 @@ struct AuthTextField: View {
                         .disableAutocorrection(true)
                 }
             }
-            .foregroundColor(.primary)
+            .foregroundStyle(.primary)
 
             if isSecure {
-                Button(action: { showText.toggle() }) {
-                    Image(systemName: showText ? "eye.slash.fill" : "eye.fill")
-                        .foregroundColor(.secondary)
-                }
+                Button(showText ? "Скрыть пароль" : "Показать пароль",
+                       systemImage: showText ? "eye.slash.fill" : "eye.fill",
+                       action: { showText.toggle() })
+                    .labelStyle(.iconOnly)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
         .background(Color.white)
-        .cornerRadius(14)
+        .clipShape(.rect(cornerRadius: 14))
         .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 2)
     }
 }

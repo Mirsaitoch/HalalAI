@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 struct PrayerTimesCardView: View {
     @Environment(Coordinator.self) var coordinator
@@ -137,15 +136,14 @@ struct PrayerTimesCardView: View {
 
             Spacer()
 
-            Button {
-                coordinator.nextStep(step: .Home(.prayerSettings))
-            } label: {
-                Image(systemName: "bell.badge")
-                    .font(.title3)
-                    .foregroundStyle(.darkGreen)
-                    .padding(8)
-                    .background(Circle().fill(Color.greenForeground.opacity(0.12)))
+            Button("Настройки уведомлений", systemImage: "bell.badge") {
+                coordinator.nextStep(step: .home(.prayerSettings))
             }
+            .font(.title3)
+            .foregroundStyle(.darkGreen)
+            .labelStyle(.iconOnly)
+            .padding(8)
+            .background(Circle().fill(Color.greenForeground.opacity(0.12)))
         }
         .padding()
     }
@@ -198,13 +196,13 @@ private struct PrayerRowView: View {
                 .foregroundStyle(isNext ? .darkGreen : .secondary)
 
             Text(prayer.localizedName)
-                .foregroundStyle(isNext ? .primary : .secondary)
+                .foregroundStyle(isNext ? .darkGreen : .secondary)
                 .fontWeight(isNext ? .semibold : .regular)
 
             Spacer()
 
             Text(time, format: .dateTime.hour().minute())
-                .foregroundStyle(isNext ? .primary : .secondary)
+                .foregroundStyle(isNext ? .darkGreen : .secondary)
                 .fontWeight(isNext ? .semibold : .regular)
         }
         .padding(.horizontal)

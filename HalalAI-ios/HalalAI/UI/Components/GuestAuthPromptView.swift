@@ -16,18 +16,18 @@ struct GuestAuthPromptView: View {
 
             VStack(spacing: 24) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 56))
-                    .foregroundColor(.darkGreen)
+                    .font(.largeTitle)
+                    .foregroundStyle(.darkGreen)
 
                 VStack(spacing: 8) {
                     Text("Нужна авторизация")
                         .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.darkGreen)
+                        .bold()
+                        .foregroundStyle(.darkGreen)
 
                     Text("Войдите в аккаунт,\nчтобы использовать \(featureName)")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
 
@@ -39,8 +39,8 @@ struct GuestAuthPromptView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(Color.darkGreen)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .foregroundStyle(.white)
+                        .clipShape(.rect(cornerRadius: 12))
                 }
                 .padding(.horizontal, 32)
             }

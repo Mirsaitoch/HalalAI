@@ -35,7 +35,7 @@ extension PrayerTimesCardView {
 
         var displayedDayTitle: String {
             let offset = effectiveDayOffset
-            let start = calendar.startOfDay(for: Date())
+            let start = calendar.startOfDay(for: Date.now)
             guard let day = calendar.date(byAdding: .day, value: offset, to: start) else { return "" }
             switch offset {
             case 0:
@@ -45,10 +45,7 @@ extension PrayerTimesCardView {
             case -1:
                 return "Вчера"
             default:
-                let f = DateFormatter()
-                f.locale = Locale(identifier: "ru_RU")
-                f.dateFormat = "d MMMM, EEEE"
-                return f.string(from: day).capitalized
+                return day.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(Locale(identifier: "ru_RU"))).capitalized
             }
         }
 
@@ -90,7 +87,7 @@ extension PrayerTimesCardView {
         func recalculate() {
             guard let loc = locationService.currentLocation else { return }
             let settings = settingsStore.settings
-            let startOfToday = calendar.startOfDay(for: Date())
+            let startOfToday = calendar.startOfDay(for: Date.now)
             if cachedStartOfToday != startOfToday {
                 cachedStartOfToday = startOfToday
                 preferredDayOffset = nil

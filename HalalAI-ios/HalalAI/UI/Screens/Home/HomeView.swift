@@ -34,7 +34,7 @@ struct HomeView: View {
 
     var body: some View {
         VStack {
-            ScrollView(.vertical, showsIndicators: false) {
+            ScrollView(showsIndicators: false) {
                 VerseView(verseService: viewModel.verseService)
                 
                 if viewModel.authManager.isGuest {
@@ -45,53 +45,63 @@ struct HomeView: View {
                 
                 PrayerTimesCardView(viewModel: viewModel.prayerCardViewModel)
 
-                ImageTextComponent(
-                    componentSize: .large,
-                    image: .scan,
-                    title: "Сканировать состав",
-                    description: "Проверь ингредиенты на халяльность",
-                    locked: viewModel.authManager.isGuest
-                )
-                .onTapGesture {
+                Button {
                     guard !viewModel.authManager.isGuest else { return }
-                    coordinator.nextStep(step: .Home(.scanner))
-                }
-
-                HStack(spacing: 8) {
+                    coordinator.nextStep(step: .home(.scanner))
+                } label: {
                     ImageTextComponent(
-                        componentSize: .medium,
-                        image: .quran,
-                        title: "Чат с AI",
-                        description: "Задай вопрос",
+                        componentSize: .large,
+                        image: .scan,
+                        title: "Сканировать состав",
+                        description: "Проверь ингредиенты на халяльность",
                         locked: viewModel.authManager.isGuest
                     )
-                    .onTapGesture {
+                }
+                .buttonStyle(.plain)
+
+                HStack(spacing: 8) {
+                    Button {
                         guard !viewModel.authManager.isGuest else { return }
                         coordinator.selectTab(item: .chat)
+                    } label: {
+                        ImageTextComponent(
+                            componentSize: .medium,
+                            image: .quran,
+                            title: "Чат с AI",
+                            description: "Задай вопрос",
+                            locked: viewModel.authManager.isGuest
+                        )
                     }
-                    ImageTextComponent(
-                        componentSize: .medium,
-                        image: .map,
-                        title: "Найти заведение",
-                        description: "Халяль места рядом"
-                    )
-                    .onTapGesture {
-                        coordinator.nextStep(step: .Home(.halalMap))
+                    .buttonStyle(.plain)
+
+                    Button {
+                        coordinator.nextStep(step: .home(.halalMap))
+                    } label: {
+                        ImageTextComponent(
+                            componentSize: .medium,
+                            image: .map,
+                            title: "Найти заведение",
+                            description: "Халяль места рядом"
+                        )
                     }
+                    .buttonStyle(.plain)
                 }
                 
-                ImageTextComponent(
-                    componentSize: .large,
-                    image: .mosque,
-                    title: "Изучай Ислам",
-                    description: "Суры и Аяты из Корана"
-                )
-                .onTapGesture {
+                Button {
                     withAnimation {
-                        coordinator.nextStep(step: .Home(.quran))
+                        coordinator.nextStep(step: .home(.quran))
                     }
+                } label: {
+                    ImageTextComponent(
+                        componentSize: .large,
+                        image: .mosque,
+                        title: "Изучай Ислам",
+                        description: "Суры и Аяты из Корана"
+                    )
                 }
+                .buttonStyle(.plain)
             }
+            .scrollIndicators(.hidden)
         }
         .padding(.horizontal, 24)
         .background {

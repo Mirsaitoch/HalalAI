@@ -11,6 +11,7 @@ import Observation
 private let kPrayerSettingsKey = "HalalAI.prayerSettings"
 
 @Observable
+@MainActor
 final class PrayerSettingsStore {
     var settings: PrayerSettings {
         didSet { persist() }

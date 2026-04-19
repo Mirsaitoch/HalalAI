@@ -11,7 +11,6 @@ extension RegisterView {
     @MainActor
     @Observable
     final class ViewModel {
-        var username: String = ""
         var email: String = ""
         var password: String = ""
         var confirmPassword: String = ""
@@ -23,13 +22,12 @@ extension RegisterView {
         var authManager: AuthManager
         var authService: AuthService
         
-        init(authManager: AuthManager, authService: AuthService, ) {
+        init(authManager: AuthManager, authService: AuthService) {
             self.authManager = authManager
             self.authService = authService
         }
         
         var isFormValid: Bool {
-            !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
             !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
             password.count >= 8 &&
             password == confirmPassword &&
@@ -43,8 +41,7 @@ extension RegisterView {
         }
         
         func register() async {
-            guard !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            guard !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   password.count >= 8,
                   password == confirmPassword else {
                 errorMessage = "Проверьте правильность заполнения всех полей"
@@ -60,7 +57,6 @@ extension RegisterView {
             
             do {
                 let response = try await authService.register(
-                    username: username,
                     email: email,
                     password: password
                 )

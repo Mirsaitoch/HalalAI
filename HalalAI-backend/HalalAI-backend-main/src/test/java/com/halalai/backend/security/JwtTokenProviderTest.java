@@ -23,66 +23,63 @@ class JwtTokenProviderTest {
 
     @Test
     void testGenerateToken() {
-        String token = tokenProvider.generateToken("testuser", 1L);
+        String token = tokenProvider.generateToken("user@example.com", 1L);
         assertNotNull(token);
         assertFalse(token.isEmpty());
     }
 
     @Test
     void testGetUsernameFromToken() {
-        String username = "testuser";
-        String token = tokenProvider.generateToken(username, 1L);
-        String extractedUsername = tokenProvider.getUsernameFromToken(token);
-        assertEquals(username, extractedUsername);
+        String email = "user@example.com";
+        String token = tokenProvider.generateToken(email, 1L);
+        String extracted = tokenProvider.getUsernameFromToken(token);
+        assertEquals(email, extracted);
     }
 
     @Test
     void testValidateToken() {
-        String username = "testuser";
-        String token = tokenProvider.generateToken(username, 1L);
-        
+        String email = "user@example.com";
+        String token = tokenProvider.generateToken(email, 1L);
+
         UserDetails userDetails = User.builder()
-                .username(username)
+                .username(email)
                 .password("password")
                 .authorities("ROLE_USER")
                 .build();
-        
+
         assertTrue(tokenProvider.validateToken(token, userDetails));
     }
 
     @Test
-    void testValidateTokenWithWrongUsername() {
-        String token = tokenProvider.generateToken("testuser", 1L);
-        
+    void testValidateTokenWithWrongEmail() {
+        String token = tokenProvider.generateToken("user@example.com", 1L);
+
         UserDetails userDetails = User.builder()
-                .username("wronguser")
+                .username("other@example.com")
                 .password("password")
                 .authorities("ROLE_USER")
                 .build();
-        
+
         assertFalse(tokenProvider.validateToken(token, userDetails));
     }
 
     @Test
     void testGetUsernameFromExpiredToken() {
-        // Создаем токен с очень коротким временем жизни
         ReflectionTestUtils.setField(tokenProvider, "expiration", -1000L);
-        String token = tokenProvider.generateToken("testuser", 1L);
-        
-        // Восстанавливаем нормальное время
+        String token = tokenProvider.generateToken("user@example.com", 1L);
+
         ReflectionTestUtils.setField(tokenProvider, "expiration", EXPIRATION);
-        
-        // Должен извлечь username даже из истекшего токена
-        String username = tokenProvider.getUsernameFromExpiredToken(token);
-        assertEquals("testuser", username);
+
+        String email = tokenProvider.getUsernameFromExpiredToken(token);
+        assertEquals("user@example.com", email);
     }
 
     @Test
     void testGetUserIdFromExpiredToken() {
         ReflectionTestUtils.setField(tokenProvider, "expiration", -1000L);
-        String token = tokenProvider.generateToken("testuser", 123L);
+        String token = tokenProvider.generateToken("user@example.com", 123L);
         ReflectionTestUtils.setField(tokenProvider, "expiration", EXPIRATION);
-        
+
         Long userId = tokenProvider.getUserIdFromExpiredToken(token);
         assertEquals(123L, userId);
     }
@@ -90,16 +87,15 @@ class JwtTokenProviderTest {
     @Test
     void testIsTokenExpired() {
         ReflectionTestUtils.setField(tokenProvider, "expiration", -1000L);
-        String expiredToken = tokenProvider.generateToken("testuser", 1L);
+        String expiredToken = tokenProvider.generateToken("user@example.com", 1L);
         ReflectionTestUtils.setField(tokenProvider, "expiration", EXPIRATION);
-        
+
         assertTrue(tokenProvider.isTokenExpired(expiredToken));
     }
 
     @Test
     void testIsTokenNotExpired() {
-        String token = tokenProvider.generateToken("testuser", 1L);
+        String token = tokenProvider.generateToken("user@example.com", 1L);
         assertFalse(tokenProvider.isTokenExpired(token));
     }
 }
-

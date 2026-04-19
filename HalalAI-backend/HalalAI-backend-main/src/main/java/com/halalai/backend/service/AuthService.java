@@ -8,7 +8,6 @@ import com.halalai.backend.repository.UserRepository;
 import com.halalai.backend.security.JwtTokenProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,55 +34,49 @@ public class AuthService implements IAuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.username())) {
-            throw new IllegalArgumentException("Пользователь с таким именем уже существует");
-        }
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Пользователь с таким email уже существует");
         }
 
         User user = new User();
-        user.setUsername(request.username());
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setEnabled(true);
 
         user = userRepository.save(user);
 
-        String token = tokenProvider.generateToken(user.getUsername(), user.getId());
+        String token = tokenProvider.generateToken(user.getEmail(), user.getId());
 
-        return AuthResponse.of(token, user.getId(), user.getUsername(), user.getEmail());
+        return AuthResponse.of(token, user.getId(), user.getEmail());
     }
 
     public AuthResponse login(LoginRequest request) {
-        // Аутентификация пользователя
-        Authentication authentication = authenticationManager.authenticate(
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.usernameOrEmail(),
+                        request.email(),
                         request.password()
                 )
         );
 
-        User user = userRepository.findByUsername(request.usernameOrEmail())
-                .orElseGet(() -> userRepository.findByEmail(request.usernameOrEmail())
-                        .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден")));
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
         if (!user.getEnabled()) {
             throw new IllegalArgumentException("Аккаунт пользователя отключен");
         }
-        String token = tokenProvider.generateToken(user.getUsername(), user.getId());
+        String token = tokenProvider.generateToken(user.getEmail(), user.getId());
 
-        return AuthResponse.of(token, user.getId(), user.getUsername(), user.getEmail());
+        return AuthResponse.of(token, user.getId(), user.getEmail());
     }
 
     public AuthResponse refreshToken(String oldToken) {
-        String username = tokenProvider.getUsernameFromExpiredToken(oldToken);
+        String email = tokenProvider.getUsernameFromExpiredToken(oldToken);
         Long userId = tokenProvider.getUserIdFromExpiredToken(oldToken);
 
-        if (username == null) {
-            throw new IllegalArgumentException("Не удалось извлечь username из токена");
+        if (email == null) {
+            throw new IllegalArgumentException("Не удалось извлечь email из токена");
         }
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
         if (!user.getEnabled()) {
@@ -92,9 +85,8 @@ public class AuthService implements IAuthService {
         if (userId != null && !userId.equals(user.getId())) {
             throw new IllegalArgumentException("Неверный токен");
         }
-        String newToken = tokenProvider.generateToken(user.getUsername(), user.getId());
+        String newToken = tokenProvider.generateToken(user.getEmail(), user.getId());
 
-        return AuthResponse.of(newToken, user.getId(), user.getUsername(), user.getEmail());
+        return AuthResponse.of(newToken, user.getId(), user.getEmail());
     }
 }
-

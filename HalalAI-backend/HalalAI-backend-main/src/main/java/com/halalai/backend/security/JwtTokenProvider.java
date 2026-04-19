@@ -33,10 +33,11 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username, Long userId) {
+    /** subject JWT — email пользователя (Spring UserDetails#getUsername() тоже email). */
+    public String generateToken(String email, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
-        return createToken(claims, username);
+        return createToken(claims, email);
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -57,7 +58,7 @@ public class JwtTokenProvider {
     }
 
     /**
-     * Извлекает username из токена, даже если он истек (для refresh)
+     * Извлекает subject (email) из токена, даже если он истек (для refresh)
      */
     public String getUsernameFromExpiredToken(String token) {
         try {
@@ -70,7 +71,7 @@ public class JwtTokenProvider {
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             return e.getClaims().getSubject();
         } catch (Exception e) {
-            logger.error("Ошибка при извлечении username из истекшего токена: {}", e.getMessage(), e);
+            logger.error("Ошибка при извлечении email из истекшего токена: {}", e.getMessage(), e);
             throw e;
         }
     }

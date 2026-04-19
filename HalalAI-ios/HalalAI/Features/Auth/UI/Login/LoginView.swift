@@ -62,9 +62,9 @@ struct LoginView: View {
                         VStack(spacing: 20) {
                             VStack(spacing: 14) {
                                 AuthTextField(
-                                    icon: "person.fill",
-                                    placeholder: "Имя пользователя или Email",
-                                    text: $vm.usernameOrEmail
+                                    icon: "envelope.fill",
+                                    placeholder: "Email",
+                                    text: $vm.email
                                 )
 
                                 AuthTextField(

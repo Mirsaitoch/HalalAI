@@ -40,19 +40,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (jwt != null) {
             try {
-                String username = tokenProvider.getUsernameFromToken(jwt);
+                String email = tokenProvider.getUsernameFromToken(jwt);
                 
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                     
                     if (tokenProvider.validateToken(jwt, userDetails)) {
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities());
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        logger.debug("Аутентификация установлена для пользователя: {}", username);
+                        logger.debug("Аутентификация установлена для пользователя: {}", email);
                     } else {
-                        logger.warn("JWT токен не прошел валидацию для пользователя: {}", username);
+                        logger.warn("JWT токен не прошел валидацию для пользователя: {}", email);
                     }
                 }
             } catch (Exception e) {

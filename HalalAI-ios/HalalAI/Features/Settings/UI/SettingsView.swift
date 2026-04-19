@@ -72,13 +72,6 @@ struct SettingsView: View {
         Section(header: Text("Аккаунт")) {
             if let user = viewModel.authManager.currentUser {
                 HStack {
-                    Text("Пользователь")
-                    Spacer()
-                    Text(user.username)
-                        .foregroundStyle(.secondary)
-                }
-                
-                HStack {
                     Text("Email")
                     Spacer()
                     Text(user.email)

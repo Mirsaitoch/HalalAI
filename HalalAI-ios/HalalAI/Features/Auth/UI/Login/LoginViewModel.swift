@@ -19,17 +19,17 @@ extension LoginView {
             self.authService = authService
         }
         
-        var usernameOrEmail: String = ""
+        var email: String = ""
         var password: String = ""
         var showPassword: Bool = false
         var showError: Bool = false
         var errorMessage: String = ""
         var isDisable: Bool {
-            authService.isLoading || usernameOrEmail.isEmpty || password.isEmpty
+            authService.isLoading || email.isEmpty || password.isEmpty
         }
         
         func login() async {
-            guard !usernameOrEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            guard !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   !password.isEmpty else {
                 errorMessage = "Заполните все поля"
                 showError = true
@@ -38,7 +38,7 @@ extension LoginView {
             
             do {
                 let response = try await authService.login(
-                    usernameOrEmail: usernameOrEmail,
+                    email: email,
                     password: password
                 )
                 authManager.saveAuth(response)

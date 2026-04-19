@@ -62,12 +62,6 @@ struct RegisterView: View {
                         VStack(spacing: 20) {
                             VStack(spacing: 14) {
                                 AuthTextField(
-                                    icon: "person.fill",
-                                    placeholder: "Имя пользователя",
-                                    text: $vm.username
-                                )
-
-                                AuthTextField(
                                     icon: "envelope.fill",
                                     placeholder: "Email",
                                     text: $vm.email

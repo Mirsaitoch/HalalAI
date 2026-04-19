@@ -1,5 +1,5 @@
 //
-//  HTTPClient.swift
+//  NetworkClient.swift
 //  HalalAI
 //
 //  Sendable обёртка над URLSession. Принимает типизированные APIRequest.

@@ -15,11 +15,6 @@ public class User {
     private Long id;
 
     @NotBlank
-    @Size(min = 2, max = 50)
-    @Column(unique = true, nullable = false)
-    private String username;
-
-    @NotBlank
     @Email
     @Column(unique = true, nullable = false)
     private String email;
@@ -52,8 +47,7 @@ public class User {
     public User() {
     }
 
-    public User(String username, String email, String password) {
-        this.username = username;
+    public User(String email, String password) {
         this.email = email;
         this.password = password;
     }
@@ -64,14 +58,6 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getEmail() {
@@ -114,4 +100,3 @@ public class User {
         this.enabled = enabled;
     }
 }
-

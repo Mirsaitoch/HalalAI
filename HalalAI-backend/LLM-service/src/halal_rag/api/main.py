@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
                     docs.append(json.loads(line))
 
         print(f"✓ Loaded {len(docs)} Quranic verses")
-        rag = SimpleRAG(documents=docs, model_type="paraphrase", use_finetuned=False)
+        rag = SimpleRAG(documents=docs, model_type="paraphrase", use_finetuned=True)
         dependencies.set_rag(rag)
         print("✓ RAG system ready")
 

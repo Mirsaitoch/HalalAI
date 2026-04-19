@@ -16,6 +16,8 @@ protocol ChatService {
     var userApiKey: String { get set }
     var remoteModel: String { get set }
     var maxTokens: Int { get set }
+    var temperature: Double { get set }
+    var useRag: Bool { get set }
     var availableModels: [String] { get set }
     var defaultRemoteModel: String { get set }
     func loadModels() async
@@ -50,7 +52,22 @@ final class ChatServiceImpl: ChatService {
             UserDefaults.standard.set(maxTokens, forKey: maxTokensDefaultsKey)
         }
     }
-    
+    var temperature: Double = 0.7 {
+        didSet {
+            let clamped = max(0.0, min(temperature, 2.0))
+            if clamped != temperature {
+                temperature = clamped
+                return
+            }
+            UserDefaults.standard.set(temperature, forKey: temperatureDefaultsKey)
+        }
+    }
+    var useRag: Bool = true {
+        didSet {
+            UserDefaults.standard.set(useRag, forKey: useRagDefaultsKey)
+        }
+    }
+
     var availableModels: [String] = []
     var defaultRemoteModel: String = ""
     
@@ -77,6 +94,8 @@ final class ChatServiceImpl: ChatService {
     private let apiKeyDefaultsKey = "HalalAI.userApiKey"
     private let remoteModelDefaultsKey = "HalalAI.remoteModel"
     private let maxTokensDefaultsKey = "HalalAI.maxTokens"
+    private let temperatureDefaultsKey = "HalalAI.temperature"
+    private let useRagDefaultsKey = "HalalAI.useRag"
     
     init(authManager: AuthManager) {
         print("Создаем ChatServiceImpl")
@@ -85,6 +104,8 @@ final class ChatServiceImpl: ChatService {
         self.remoteModel = UserDefaults.standard.string(forKey: remoteModelDefaultsKey) ?? ""
         let savedMax = UserDefaults.standard.integer(forKey: maxTokensDefaultsKey)
         self.maxTokens = savedMax == 0 ? 2048 : savedMax
+        self.temperature = UserDefaults.standard.double(forKey: temperatureDefaultsKey) == 0 ? 0.7 : UserDefaults.standard.double(forKey: temperatureDefaultsKey)
+        self.useRag = UserDefaults.standard.object(forKey: useRagDefaultsKey) as? Bool ?? true
         self.configLoaded = true
     }
     
@@ -193,9 +214,11 @@ final class ChatServiceImpl: ChatService {
         
         var requestBody: [String: Any] = [
             "messages": messagesToSend,
-            "max_tokens": maxTokens
+            "max_tokens": maxTokens,
+            "temperature": temperature,
+            "use_rag": useRag
         ]
-        
+
         let trimmedKey = userApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedModel = remoteModel.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -203,7 +226,7 @@ final class ChatServiceImpl: ChatService {
         requestBody["remote_model"] = trimmedModel
 
         print("➡️ Sending to backend \(backendURL)/api/chat")
-        print("   messages=\(messagesToSend.count), max_tokens=\(maxTokens), api_key=\(!trimmedKey.isEmpty), remote_model=\(trimmedModel.isEmpty ? "none" : trimmedModel)")
+        print("   messages=\(messagesToSend.count), max_tokens=\(maxTokens), temperature=\(temperature), use_rag=\(useRag), api_key=\(!trimmedKey.isEmpty), remote_model=\(trimmedModel.isEmpty ? "none" : trimmedModel)")
         
         guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
             await handleError("Ошибка формирования запроса")

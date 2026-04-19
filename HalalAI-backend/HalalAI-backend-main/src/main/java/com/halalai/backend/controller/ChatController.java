@@ -32,15 +32,19 @@ public class ChatController {
 
     @PostMapping("/chat")
     public ChatResponse createChatCompletion(@RequestBody ChatRequest request) {
-        logger.info("POST /api/chat - сообщений: {}, maxTokens: {}", 
-                request.messages() != null ? request.messages().size() : 0, 
-                request.maxTokens());
+        logger.info("POST /api/chat - сообщений: {}, maxTokens: {}, temperature: {}, useRag: {}",
+                request.messages() != null ? request.messages().size() : 0,
+                request.maxTokens(),
+                request.temperature(),
+                request.useRag());
 
         return llmService.generateCompletion(
                 request.messages(),
                 request.apiKey(),
                 request.remoteModel(),
-                request.maxTokens());
+                request.maxTokens(),
+                request.temperature(),
+                request.useRag());
     }
 
     @GetMapping(value = "/models", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")

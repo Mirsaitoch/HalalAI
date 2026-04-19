@@ -21,6 +21,7 @@ extension SettingsView {
 
         var isApiKeyVisible = false
         var maxTokensSlider: Double = 2048
+        var temperatureSlider: Double = 0.7
         var useCustomModel = false
     }
 }

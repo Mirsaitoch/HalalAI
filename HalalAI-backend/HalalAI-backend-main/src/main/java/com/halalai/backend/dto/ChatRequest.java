@@ -9,7 +9,9 @@ public record ChatRequest(
     List<Map<String, String>> messages,
     @JsonProperty("api_key") String apiKey,
     @JsonProperty("remote_model") String remoteModel,
-    @JsonProperty("max_tokens") Integer maxTokens
+    @JsonProperty("max_tokens") Integer maxTokens,
+    @JsonProperty("temperature") Double temperature,
+    @JsonProperty("use_rag") Boolean useRag
 ) {
 }
 

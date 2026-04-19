@@ -36,12 +36,16 @@ struct SettingsView: View {
         .background(Color.greenBackground.ignoresSafeArea())
         .onAppear {
             vm.maxTokensSlider = Double(vm.chatService.maxTokens)
+            vm.temperatureSlider = vm.chatService.temperature
             Task {
                 await vm.chatService.loadModels()
             }
         }
         .onChange(of: vm.maxTokensSlider) { newValue in
             vm.chatService.maxTokens = Int(newValue)
+        }
+        .onChange(of: vm.temperatureSlider) { newValue in
+            vm.chatService.temperature = newValue
         }
     }
     
@@ -155,7 +159,7 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                         .font(.system(.body, design: .monospaced))
                 }
-                
+
                 Slider(
                     value: $viewModel.maxTokensSlider,
                     in: 16...6144,
@@ -172,12 +176,52 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                 )
-                
+
                 Text("Лимит токенов для генерации. Сервер принимает до 6144.")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
-            
+
+            // Слайдер temperature
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("temperature")
+                    Spacer()
+                    Text(String(format: "%.2f", viewModel.temperatureSlider))
+                        .foregroundColor(.secondary)
+                        .font(.system(.body, design: .monospaced))
+                }
+
+                Slider(
+                    value: $viewModel.temperatureSlider,
+                    in: 0.0...2.0,
+                    step: 0.1,
+                    label: { Text("temperature") },
+                    minimumValueLabel: {
+                        Text("0.0")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    },
+                    maximumValueLabel: {
+                        Text("2.0")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                )
+
+                Text("Контролирует случайность ответов. 0 = детерминированно, 2.0 = максимально случайно.")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+
+            // Toggle для RAG
+            Toggle("Использовать RAG (семантический поиск)", isOn: $viewModel.chatService.useRag)
+                .toggleStyle(SwitchToggleStyle(tint: .green))
+
+            Text("RAG извлекает релевантные аяты из Корана для контекста. Выключите для ответов без контекста.")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+
             // Кнопка обновления списка моделей
             Button("Обновить список моделей") {
                 Task {

@@ -5,5 +5,5 @@ import java.util.List;
 import java.util.Map;
 
 public interface ILLMService {
-    ChatResponse generateCompletion(List<Map<String, String>> messages, String apiKey, String remoteModel, Integer maxTokens);
+    ChatResponse generateCompletion(List<Map<String, String>> messages, String apiKey, String remoteModel, Integer maxTokens, Double temperature, Boolean useRag);
 }

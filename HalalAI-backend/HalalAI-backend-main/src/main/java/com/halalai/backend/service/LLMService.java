@@ -1,5 +1,6 @@
 package com.halalai.backend.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public class LLMService implements ILLMService {
         logger.info("Примечание: системный промпт управляется Python LLM сервисом");
     }
 
-    public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String apiKey, String remoteModel, Integer maxTokensOverride) {
+    public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String apiKey, String remoteModel, Integer maxTokensOverride, Double temperature, Boolean useRag) {
         logger.debug("Запрос к LLM сервису");
         
         HttpHeaders headers = new HttpHeaders();
@@ -75,17 +76,25 @@ public class LLMService implements ILLMService {
         if (remoteModel != null && !remoteModel.isBlank()) {
             requestBody.put("remote_model", remoteModel.trim());
         }
+        if (temperature != null) {
+            requestBody.put("temperature", temperature);
+        }
+        if (useRag != null) {
+            requestBody.put("use_rag", useRag);
+        }
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
         String chatUrl = llmServiceUrl + "/llm/chat";
 
         try {
             logger.debug("Отправка запроса к LLM сервису: {}", chatUrl);
-            logger.debug("Тело запроса: messages={}, max_tokens={}{}{}", 
-                    messages.size(), 
+            logger.debug("Тело запроса: messages={}, max_tokens={}{}{}{}{}",
+                    messages.size(),
                     effectiveMaxTokens,
                     requestBody.containsKey("api_key") ? ", api_key=***" : "",
-                    requestBody.containsKey("remote_model") ? ", remote_model=" + requestBody.get("remote_model") : "");
+                    requestBody.containsKey("remote_model") ? ", remote_model=" + requestBody.get("remote_model") : "",
+                    requestBody.containsKey("temperature") ? ", temperature=" + requestBody.get("temperature") : "",
+                    requestBody.containsKey("use_rag") ? ", use_rag=" + requestBody.get("use_rag") : "");
             
             ResponseEntity<JsonNode> responseEntity = restTemplate.exchange(
                     chatUrl,

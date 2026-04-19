@@ -30,8 +30,9 @@ final class IngredientServiceImpl: IngredientService {
         return ingredients
     }
 
-    func analyzeText(_ text: String) -> ProductAnalysis {
-        matcher.analyze(text: text, ingredients: ingredients)
+    func analyzeText(_ text: String) async -> ProductAnalysis {
+        _ = try? await loadIngredients()
+        return matcher.analyze(text: text, ingredients: ingredients)
     }
 }
 

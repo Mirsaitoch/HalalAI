@@ -49,7 +49,7 @@ struct IngredientResultsView: View {
                     Button("Закрыть") {
                         dismiss()
                     }
-                    .foregroundStyle(.greenForeground)
+                    .foregroundStyle(.darkGreen)
                 }
             }
         }
@@ -134,10 +134,16 @@ struct IngredientResultsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Все ингредиенты")
                 .font(.headline)
-                .foregroundStyle(.greenForeground)
+                .foregroundStyle(.darkGreen)
             
-            ForEach(ingredients) { ingredient in
-                IngredientRowView(ingredient: ingredient, showStatus: true)
+            if ingredients.isEmpty {
+                Text("В тексте не найдено совпадений с базой ингредиентов.")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+            } else {
+                ForEach(ingredients) { ingredient in
+                    IngredientRowView(ingredient: ingredient, showStatus: true)
+                }
             }
         }
         .padding()

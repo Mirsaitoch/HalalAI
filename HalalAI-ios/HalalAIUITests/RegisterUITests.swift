@@ -2,8 +2,6 @@
 //  RegisterUITests.swift
 //  HalalAIUITests
 //
-//  Created by Auto on 2025.
-//
 
 import XCTest
 

@@ -92,6 +92,7 @@ final class ScreenFactoryImpl {
 final class DependencyContainer {
     fileprivate var authManager: AuthManager
     fileprivate var authService: AuthService
+    fileprivate var chatSettingsStore: ChatSettingsStore
     fileprivate var chatService: ChatService
     fileprivate var ingredientService: IngredientService
     fileprivate var verseService: VerseService
@@ -105,7 +106,8 @@ final class DependencyContainer {
     init() {
         self.authManager = AuthManagerImpl()
         self.authService = AuthServiceImpl()
-        self.chatService = ChatServiceImpl(authManager: authManager)
+        self.chatSettingsStore = ChatSettingsStore()
+        self.chatService = ChatServiceImpl(authManager: authManager, settingsStore: chatSettingsStore)
         self.ingredientService = IngredientServiceImpl()
         self.verseService = VerseServiceImpl()
         self.quranStorage = QuranStorageServiceImpl()

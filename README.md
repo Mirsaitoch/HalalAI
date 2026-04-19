@@ -38,9 +38,7 @@ Halal AI — это интеллектуальное мобильное прил
     - Векторный поиск по базе знаний (аяты, хадисы, фетвы)
     - Обогащение промпта релевантным контекстом
     - Хранение векторных эмбеддингов в файловом хранилище
-  - Поддержка двух режимов генерации:
-    - **Local LLM**: Локальная модель Qwen/Qwen3-1.7B (по умолчанию)
-    - **Remote LLM**: Удаленные модели через OpenRouter API (GPT-4, DeepSeek, Mimo и др.)
+  - Поддержка удаленных моделей через OpenRouter API (GPT-4, DeepSeek, Mimo и др.)
   - Технологии: Python, FastAPI, PyTorch, Transformers, Sentence Transformers
 
 * **Vector Store (внутри LLM Service)**
@@ -62,11 +60,9 @@ graph TB
     Vector -->|embeddings| RAG
     
     RAG -->|enriched prompt| LLM
-    LLM -->|if api_key| Remote[Remote LLM<br/>OpenRouter API<br/>GPT-4, DeepSeek, etc.]
-    LLM -->|default| Local[Local LLM<br/>Qwen/Qwen3-1.7B]
-    
+    LLM -->|OpenRouter API| Remote[Remote LLM<br/>GPT-4, DeepSeek, Mimo, etc.]
+
     Remote -->|response| LLM
-    Local -->|response| LLM
     LLM -->|ChatResponse| Backend
     Backend -->|JSON| iOS
     

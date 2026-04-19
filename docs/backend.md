@@ -114,10 +114,9 @@ python main.py
 
 ### Режимы работы
 
-1. **Local LLM** (default) — Qwen/Qwen3-1.7B
-2. **Remote LLM** — OpenRouter API (GPT-4, DeepSeek, etc.)
+**Remote LLM** — OpenRouter API (GPT-4, DeepSeek, Mimo и др.)
 
-Выбор через `settings` endpoint или env переменная.
+Конфигурация через `settings` endpoint или env переменная.
 
 ### RAG Pipeline
 

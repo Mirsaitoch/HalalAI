@@ -1,0 +1,87 @@
+@startuml Navigation Architecture
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+enum TabBarItem {
+    case home
+    case chat
+    case settings
+}
+
+enum Step {
+    case chat(ChatCoordinator)
+    case settings(SettingsCoordinator)
+    case home(HomeCoordinator)
+}
+
+enum HomeCoordinator {
+    case home
+    case scanner
+    case quran
+    case sura(suraIndex: Int)
+    case prayerSettings
+    case halalMap
+    --
+    var view: View
+}
+
+enum ChatCoordinator {
+    case chat
+    --
+    var view: View
+}
+
+enum SettingsCoordinator {
+    case settings
+    --
+    var view: View
+}
+
+enum AuthCoordinator {
+    case login
+    case register
+}
+
+class Coordinator {
+    - path: [Step]
+    - currentSelectedTab: TabBarItem
+    --
+    + init()
+    + nextStep(step: Step)
+    + dismiss()
+    + toRoot()
+    + selectTab(item: TabBarItem)
+    + build(step: Step): View
+}
+
+struct RouterView {
+    - coordinator: Coordinator
+    - isKeyboardVisible: Bool
+    --
+    - var tabRootView: View
+    - var shouldShowTabBar: Bool
+}
+
+struct TabBarView {
+    - coordinator: Coordinator
+}
+
+Step ..> HomeCoordinator
+Step ..> ChatCoordinator
+Step ..> SettingsCoordinator
+
+Coordinator --> Step
+Coordinator --> TabBarItem
+Coordinator ..> HomeCoordinator
+Coordinator ..> ChatCoordinator
+Coordinator ..> SettingsCoordinator
+
+RouterView *-- Coordinator
+RouterView --> TabBarView
+TabBarView --> TabBarItem
+
+@enduml

@@ -1,0 +1,86 @@
+@startuml Quran Module (5.3.3.5)
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "Service Layer" {
+    protocol QuranStorageService {
+        {abstract} var suras: [Sura]
+        {abstract} + loadQuranFromBundle() throws
+        {abstract} + saveProgress(suraIndex: Int)
+    }
+
+    class QuranStorageServiceImpl {
+        - suras: [Sura]
+    }
+}
+
+package "Data Models" {
+    struct Sura {
+        - index: Int
+        - title: String
+        - verses: [QuranVerse]
+    }
+
+    struct QuranVerse {
+        - verseNumber: Int
+        - text: String
+    }
+}
+
+package "UI Layer" {
+    struct QuranListView {
+        - quranStorage: QuranStorageService
+        - var viewModel: QuranListViewModel
+    }
+
+    class QuranListViewModel {
+        - suras: [Sura]
+        - searchText: String
+    }
+
+    struct SuraReaderView {
+        - quranStorage: QuranStorageService
+        - suraIndex: Int
+        - var viewModel: SuraReaderViewModel
+    }
+
+    class SuraReaderViewModel {
+        - sura: Sura?
+        - fontSize: CGFloat
+    }
+}
+
+package "Local Storage" {
+    class UserDefaults
+    class BundleResource
+}
+
+' ===== RELATIONSHIPS =====
+
+QuranStorageServiceImpl ..|> QuranStorageService : implements
+QuranStorageServiceImpl --> UserDefaults : saves progress
+QuranStorageServiceImpl --> BundleResource : loads CSV
+
+QuranListView --> QuranStorageService : uses
+QuranListView *-- QuranListViewModel : contains
+
+QuranListViewModel --> QuranStorageService : calls
+QuranListViewModel --> Sura : filters/searches
+QuranListViewModel --> QuranVerse : displays
+
+SuraReaderView --> QuranStorageService : uses
+SuraReaderView *-- SuraReaderViewModel : contains
+
+SuraReaderViewModel --> QuranStorageService : loads
+SuraReaderViewModel --> Sura : displays
+SuraReaderViewModel --> QuranVerse : renders
+SuraReaderViewModel --> UserDefaults : saves progress
+
+QuranStorageService --> Sura : returns
+Sura --> QuranVerse : contains
+
+@enduml

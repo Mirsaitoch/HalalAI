@@ -1,0 +1,75 @@
+@startuml Settings Module (5.3.3.7)
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "Services" {
+    protocol ChatService {
+        {abstract} var remoteModel: String
+        {abstract} var maxTokens: Int
+        {abstract} var temperature: Float
+        {abstract} var useRag: Bool
+        {abstract} var availableModels: [String]
+        --
+        {abstract} + loadModels() async throws
+    }
+
+    protocol AuthManager {
+        {abstract} var currentUser: User?
+        {abstract} var isGuest: Bool
+        {abstract} var isAuthenticated: Bool
+        --
+        {abstract} + logout()
+    }
+}
+
+package "UI Components" {
+    struct SettingsView {
+        - chatService: ChatService
+        - authManager: AuthManager
+        --
+        - var body: some View
+        - var viewModel: SettingsViewModel
+    }
+
+    class SettingsViewModel {
+        - isApiKeyVisible: Bool
+        - maxTokensSlider: Double
+        - temperatureSlider: Double
+        - useCustomModel: Bool
+    }
+
+    struct RemoteModelSettingsSection {
+        - remoteModel: Binding<String>
+        - availableModels: [String]
+        - maxTokensSlider: Binding<Double>
+        - temperatureSlider: Binding<Double>
+        - useRag: Binding<Bool>
+    }
+}
+
+package "Data Models" {
+    struct User {
+        - email: String
+    }
+}
+
+' ===== RELATIONSHIPS =====
+
+SettingsView --> ChatService : uses
+SettingsView --> AuthManager : uses
+SettingsView *-- SettingsViewModel : contains
+
+SettingsViewModel --> ChatService : manages
+SettingsViewModel --> AuthManager : checks
+
+SettingsView --> RemoteModelSettingsSection : displays
+RemoteModelSettingsSection --> ChatService : controls settings
+
+ChatService --> User : manages
+AuthManager --> User : provides
+
+@enduml

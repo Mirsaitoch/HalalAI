@@ -1,0 +1,1595 @@
+HalalAI-backend-main (Spring Boot) — полные тексты модулей src/main/java (обновлено).
+Формат: путь к файлу от корня проекта, пустая строка, содержимое файла.
+
+src/main/java/com/halalai/backend/HalalAiBackendApplication.java
+
+package com.halalai.backend;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class HalalAiBackendApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(HalalAiBackendApplication.class, args);
+	}
+
+}
+
+
+src/main/java/com/halalai/backend/config/DataLoader.java
+
+package com.halalai.backend.config;
+
+import com.halalai.backend.model.Verse;
+import com.halalai.backend.repository.VerseRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
+@Component
+public class DataLoader implements CommandLineRunner {
+
+    private static final Logger logger = LoggerFactory.getLogger(DataLoader.class);
+    private final VerseRepository verseRepository;
+
+    public DataLoader(VerseRepository verseRepository) {
+        this.verseRepository = verseRepository;
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        // Проверяем, есть ли уже данные в базе
+        if (verseRepository.count() > 0) {
+            logger.info("База данных аятов уже содержит {} записей. Пропускаем загрузку.", verseRepository.count());
+            return;
+        }
+
+        logger.info("Начинаем загрузку аятов из CSV файла...");
+        
+        try {
+            ClassPathResource resource = new ClassPathResource("sury.csv");
+            int loadedCount = 0;
+            int skippedCount = 0;
+
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+                
+                // Пропускаем заголовок
+                String header = reader.readLine();
+                if (header == null || !header.startsWith("sura_index")) {
+                    logger.warn("Неверный формат CSV файла. Ожидается заголовок с 'sura_index'");
+                    return;
+                }
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.trim().isEmpty()) {
+                        continue;
+                    }
+
+                    try {
+                        Verse verse = parseCsvLine(line);
+                        if (verse != null) {
+                            verseRepository.save(verse);
+                            loadedCount++;
+                            
+                            if (loadedCount % 1000 == 0) {
+                                logger.info("Загружено {} аятов...", loadedCount);
+                            }
+                        } else {
+                            skippedCount++;
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Ошибка при парсинге строки: {}. Пропускаем. Ошибка: {}", line.substring(0, Math.min(50, line.length())), e.getMessage());
+                        skippedCount++;
+                    }
+                }
+            }
+
+            logger.info("Загрузка завершена. Загружено: {}, Пропущено: {}, Всего в базе: {}", 
+                    loadedCount, skippedCount, verseRepository.count());
+        } catch (Exception e) {
+            logger.error("Ошибка при загрузке данных из CSV: {}", e.getMessage(), e);
+        }
+    }
+
+    private Verse parseCsvLine(String line) {
+        // Простой парсинг CSV с учетом кавычек
+        // Формат: sura_index,sura_title,sura_subtitle,verse_number,text
+        try {
+            String[] parts = parseCsvFields(line);
+            
+            if (parts.length < 5) {
+                return null;
+            }
+
+            Integer suraIndex = parseInteger(parts[0]);
+            String suraTitle = parts[1].trim();
+            String suraSubtitle = parts[2].trim();
+            Integer verseNumber = parseInteger(parts[3]);
+            String text = parts[4].trim();
+
+            if (suraIndex == null || suraTitle.isEmpty() || text.isEmpty()) {
+                return null;
+            }
+
+            return new Verse(suraIndex, suraTitle, suraSubtitle, verseNumber, text);
+        } catch (Exception e) {
+            logger.debug("Ошибка парсинга строки: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private String[] parseCsvFields(String line) {
+        // Простой парсер CSV, который учитывает кавычки
+        java.util.List<String> fields = new java.util.ArrayList<>();
+        StringBuilder currentField = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ',' && !inQuotes) {
+                fields.add(currentField.toString());
+                currentField = new StringBuilder();
+            } else {
+                currentField.append(c);
+            }
+        }
+        fields.add(currentField.toString());
+
+        return fields.toArray(new String[0]);
+    }
+
+    private Integer parseInteger(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/config/RestTemplateConfig.java
+
+package com.halalai.backend.config;
+
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
+
+@Configuration
+public class RestTemplateConfig {
+
+    @Bean
+    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000);
+        factory.setReadTimeout(180000);
+        
+        return builder
+                .requestFactory(() -> factory)
+                .build();
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/config/SecurityConfig.java
+
+package com.halalai.backend.config;
+
+import com.halalai.backend.security.JwtAuthenticationFilter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final UserDetailsService userDetailsService;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return new ProviderManager(authProvider);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/models").permitAll()
+                        .requestMatchers("/api/verse-of-the-day").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(false);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/controller/AuthController.java
+
+package com.halalai.backend.controller;
+
+import com.halalai.backend.dto.AuthResponse;
+import com.halalai.backend.dto.LoginRequest;
+import com.halalai.backend.dto.RefreshTokenRequest;
+import com.halalai.backend.dto.RegisterRequest;
+import com.halalai.backend.service.IAuthService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+    private final IAuthService authService;
+
+    public AuthController(IAuthService authService) {
+        this.authService = authService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+        AuthResponse response = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authService.refreshToken(request.token());
+        return ResponseEntity.ok(response);
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/controller/ChatController.java
+
+package com.halalai.backend.controller;
+
+import java.util.Map;
+
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.halalai.backend.dto.ChatRequest;
+import com.halalai.backend.dto.ChatResponse;
+import com.halalai.backend.service.IConfigService;
+import com.halalai.backend.service.ILLMService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@RestController
+@RequestMapping("/api")
+public class ChatController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
+
+    private final ILLMService llmService;
+    private final IConfigService configService;
+
+    public ChatController(ILLMService llmService, IConfigService configService) {
+        this.llmService = llmService;
+        this.configService = configService;
+    }
+
+    @PostMapping("/chat")
+    public ChatResponse createChatCompletion(@RequestBody ChatRequest request) {
+        logger.info("POST /api/chat - сообщений: {}, maxTokens: {}, temperature: {}, useRag: {}",
+                request.messages() != null ? request.messages().size() : 0,
+                request.maxTokens(),
+                request.temperature(),
+                request.useRag());
+
+        return llmService.generateCompletion(
+                request.messages(),
+                request.apiKey(),
+                request.remoteModel(),
+                request.maxTokens(),
+                request.temperature(),
+                request.useRag());
+    }
+
+    @GetMapping(value = "/models", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public Map<String, Object> listModels() {
+        logger.info("GET /api/models");
+        return configService.getAvailableModels();
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/controller/VerseController.java
+
+package com.halalai.backend.controller;
+
+import com.halalai.backend.dto.VerseResponse;
+import com.halalai.backend.service.IVerseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api")
+public class VerseController {
+
+    private static final Logger logger = LoggerFactory.getLogger(VerseController.class);
+    private final IVerseService verseService;
+
+    public VerseController(IVerseService verseService) {
+        this.verseService = verseService;
+    }
+
+    @GetMapping("/verse-of-the-day")
+    public ResponseEntity<VerseResponse> getVerseOfTheDay() {
+        logger.info("GET /api/verse-of-the-day");
+        VerseResponse response = verseService.getVerseOfTheDay();
+        return ResponseEntity.ok(response);
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/dto/AuthResponse.java
+
+package com.halalai.backend.dto;
+
+public record AuthResponse(
+        String token,
+        String type,
+        Long userId,
+        String email
+) {
+    public static AuthResponse of(String token, Long userId, String email) {
+        return new AuthResponse(token, "Bearer", userId, email);
+    }
+}
+
+
+src/main/java/com/halalai/backend/dto/ChatRequest.java
+
+package com.halalai.backend.dto;
+
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public record ChatRequest(
+    List<Map<String, String>> messages,
+    @JsonProperty("api_key") String apiKey,
+    @JsonProperty("remote_model") String remoteModel,
+    @JsonProperty("max_tokens") Integer maxTokens,
+    @JsonProperty("temperature") Double temperature,
+    @JsonProperty("use_rag") Boolean useRag
+) {
+}
+
+
+
+src/main/java/com/halalai/backend/dto/ChatResponse.java
+
+package com.halalai.backend.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public record ChatResponse(
+        String reply,
+        @JsonProperty("used_remote") Boolean usedRemote,
+        @JsonProperty("remote_error") String remoteError
+) {
+}
+
+
+
+src/main/java/com/halalai/backend/dto/ConfigResponse.java
+
+package com.halalai.backend.dto;
+
+public record ConfigResponse(
+    String systemPrompt
+) {
+}
+
+
+
+src/main/java/com/halalai/backend/dto/ErrorResponse.java
+
+package com.halalai.backend.dto;
+
+import java.time.LocalDateTime;
+
+public record ErrorResponse(
+        String message,
+        LocalDateTime timestamp,
+        String path
+) {
+    public static ErrorResponse of(String message, String path) {
+        return new ErrorResponse(message, LocalDateTime.now(), path);
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/dto/LoginRequest.java
+
+package com.halalai.backend.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+public record LoginRequest(
+        @NotBlank(message = "Email не может быть пустым")
+        @Email(message = "Email должен быть валидным")
+        String email,
+
+        @NotBlank(message = "Пароль не может быть пустым")
+        String password
+) {
+}
+
+
+src/main/java/com/halalai/backend/dto/RefreshTokenRequest.java
+
+package com.halalai.backend.dto;
+
+import jakarta.validation.constraints.NotBlank;
+
+public record RefreshTokenRequest(
+        @NotBlank(message = "Токен не может быть пустым")
+        String token
+) {
+}
+
+
+
+src/main/java/com/halalai/backend/dto/RegisterRequest.java
+
+package com.halalai.backend.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record RegisterRequest(
+        @NotBlank(message = "Email не может быть пустым")
+        @Email(message = "Email должен быть валидным")
+        String email,
+
+        @NotBlank(message = "Пароль не может быть пустым")
+        @Size(min = 8, message = "Пароль должен содержать минимум 8 символов")
+        String password
+) {
+}
+
+
+src/main/java/com/halalai/backend/dto/VerseResponse.java
+
+package com.halalai.backend.dto;
+
+public record VerseResponse(
+        Long id,
+        Integer suraIndex,
+        String suraTitle,
+        String suraSubtitle,
+        Integer verseNumber,
+        String text
+) {
+}
+
+
+
+src/main/java/com/halalai/backend/exception/GlobalExceptionHandler.java
+
+package com.halalai.backend.exception;
+
+import com.halalai.backend.dto.ErrorResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(
+            MethodArgumentNotValidException ex, WebRequest request) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+
+        return getMapResponseEntity(request, errors);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolationException(
+            ConstraintViolationException ex, WebRequest request) {
+        Map<String, String> errors = ex.getConstraintViolations().stream()
+                .collect(Collectors.toMap(
+                        violation -> violation.getPropertyPath().toString(),
+                        ConstraintViolation::getMessage
+                ));
+
+        return getMapResponseEntity(request, errors);
+    }
+
+    private ResponseEntity<Map<String, Object>> getMapResponseEntity(WebRequest request, Map<String, String> errors) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Ошибка валидации");
+        response.put("errors", errors);
+        response.put("timestamp", java.time.LocalDateTime.now());
+        response.put("path", request.getDescription(false).replace("uri=", ""));
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException ex, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(ex.getMessage(), request.getDescription(false).replace("uri=", "")));
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentialsException(
+            BadCredentialsException ex, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.of("Неверное имя пользователя или пароль", 
+                        request.getDescription(false).replace("uri=", "")));
+    }
+
+    @ExceptionHandler(org.springframework.security.core.userdetails.UsernameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(
+            org.springframework.security.core.userdetails.UsernameNotFoundException ex, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.of("Пользователь не найден", 
+                        request.getDescription(false).replace("uri=", "")));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(
+            RuntimeException ex, WebRequest request) {
+        logger.error("RuntimeException: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of(ex.getMessage(),
+                        request.getDescription(false).replace("uri=", "")));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGlobalException(
+            Exception ex, WebRequest request) {
+        logger.error("Необработанное исключение: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of("Внутренняя ошибка сервера",
+                        request.getDescription(false).replace("uri=", "")));
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/model/User.java
+
+package com.halalai.backend.model;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "users")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Email
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @NotBlank
+    @Size(min = 8)
+    @Column(nullable = false)
+    private String password;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "enabled", nullable = false)
+    private Boolean enabled = true;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    public User() {
+    }
+
+    public User(String email, String password) {
+        this.email = email;
+        this.password = password;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
+    }
+}
+
+
+src/main/java/com/halalai/backend/model/Verse.java
+
+package com.halalai.backend.model;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "verses")
+public class Verse {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "sura_index", nullable = false)
+    private Integer suraIndex;
+
+    @Column(name = "sura_title", nullable = false, length = 200)
+    private String suraTitle;
+
+    @Column(name = "sura_subtitle", length = 200)
+    private String suraSubtitle;
+
+    @Column(name = "verse_number")
+    private Integer verseNumber;
+
+    @Column(name = "text", nullable = false, columnDefinition = "TEXT")
+    private String text;
+
+    public Verse() {
+    }
+
+    public Verse(Integer suraIndex, String suraTitle, String suraSubtitle, Integer verseNumber, String text) {
+        this.suraIndex = suraIndex;
+        this.suraTitle = suraTitle;
+        this.suraSubtitle = suraSubtitle;
+        this.verseNumber = verseNumber;
+        this.text = text;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Integer getSuraIndex() {
+        return suraIndex;
+    }
+
+    public void setSuraIndex(Integer suraIndex) {
+        this.suraIndex = suraIndex;
+    }
+
+    public String getSuraTitle() {
+        return suraTitle;
+    }
+
+    public void setSuraTitle(String suraTitle) {
+        this.suraTitle = suraTitle;
+    }
+
+    public String getSuraSubtitle() {
+        return suraSubtitle;
+    }
+
+    public void setSuraSubtitle(String suraSubtitle) {
+        this.suraSubtitle = suraSubtitle;
+    }
+
+    public Integer getVerseNumber() {
+        return verseNumber;
+    }
+
+    public void setVerseNumber(Integer verseNumber) {
+        this.verseNumber = verseNumber;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/repository/UserRepository.java
+
+package com.halalai.backend.repository;
+
+import com.halalai.backend.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
+}
+
+
+src/main/java/com/halalai/backend/repository/VerseRepository.java
+
+package com.halalai.backend.repository;
+
+import com.halalai.backend.model.Verse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface VerseRepository extends JpaRepository<Verse, Long> {
+    long count();
+    Page<Verse> findAllByOrderByIdAsc(Pageable pageable);
+}
+
+
+
+src/main/java/com/halalai/backend/security/JwtAuthenticationFilter.java
+
+package com.halalai.backend.security;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+    private final JwtTokenProvider tokenProvider;
+    private final UserDetailsService userDetailsService;
+
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserDetailsService userDetailsService) {
+        this.tokenProvider = tokenProvider;
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        String jwt = getJwtFromRequest(request);
+
+        if (jwt != null) {
+            try {
+                String email = tokenProvider.getUsernameFromToken(jwt);
+                
+                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    
+                    if (tokenProvider.validateToken(jwt, userDetails)) {
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.debug("Аутентификация установлена для пользователя: {}", email);
+                    } else {
+                        logger.warn("JWT токен не прошел валидацию для пользователя: {}", email);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Ошибка при валидации JWT токена: {}", e.getMessage(), e);
+            }
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String getJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        
+        if (bearerToken != null) {
+            bearerToken = bearerToken.trim();
+            if (bearerToken.startsWith("Bearer ") || bearerToken.startsWith("bearer ")) {
+                String token = bearerToken.substring(7).trim();
+                if (!token.isEmpty()) {
+                    return token;
+                }
+            }
+        }
+        return null;
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/security/JwtTokenProvider.java
+
+package com.halalai.backend.security;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+@Component
+public class JwtTokenProvider {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
+
+    @Value("${jwt.secret}")
+    private String secret;
+
+    @Value("${jwt.expiration}")
+    private Long expiration;
+
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    /** subject JWT — email пользователя (Spring UserDetails#getUsername() тоже email). */
+    public String generateToken(String email, Long userId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        return createToken(claims, email);
+    }
+
+    private String createToken(Map<String, Object> claims, String subject) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + expiration);
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public String getUsernameFromToken(String token) {
+        return getClaimFromToken(token, Claims::getSubject);
+    }
+
+    /**
+     * Извлекает subject (email) из токена, даже если он истек (для refresh)
+     */
+    public String getUsernameFromExpiredToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return claims.getSubject();
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return e.getClaims().getSubject();
+        } catch (Exception e) {
+            logger.error("Ошибка при извлечении email из истекшего токена: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * Извлекает userId из токена, даже если он истек (для refresh)
+     */
+    public Long getUserIdFromExpiredToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            Object userId = claims.get("userId");
+            if (userId instanceof Number) {
+                return ((Number) userId).longValue();
+            }
+            return null;
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // Для истекших токенов все равно извлекаем userId
+            Object userId = e.getClaims().get("userId");
+            if (userId instanceof Number) {
+                return ((Number) userId).longValue();
+            }
+            return null;
+        } catch (Exception e) {
+            logger.error("Ошибка при извлечении userId из истекшего токена: " + e.getMessage(), e);
+            return null;
+        }
+    }
+
+    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = getAllClaimsFromToken(token);
+        return claimsResolver.apply(claims);
+    }
+
+    private Claims getAllClaimsFromToken(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            logger.debug("JWT токен истек");
+            throw e;
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            logger.error("Неверная подпись JWT токена", e);
+            throw e;
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            logger.error("Некорректный формат JWT токена", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Ошибка при парсинге JWT токена", e);
+            throw e;
+        }
+    }
+
+    public Boolean isTokenExpired(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            Date expiration = claims.getExpiration();
+            return expiration.before(new Date());
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // Если токен истек, возвращаем true
+            return true;
+        } catch (Exception e) {
+            logger.debug("Ошибка при проверке истечения токена: {}", e.getMessage());
+            return true;
+        }
+    }
+
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        try {
+            final String username = getUsernameFromToken(token);
+            boolean isExpired = isTokenExpired(token);
+            boolean usernameMatches = username.equals(userDetails.getUsername());
+            
+            return usernameMatches && !isExpired;
+        } catch (Exception e) {
+            logger.debug("Ошибка при валидации токена: {}", e.getMessage());
+            return false;
+        }
+    }
+}
+
+
+
+src/main/java/com/halalai/backend/service/AuthService.java
+
+package com.halalai.backend.service;
+
+import com.halalai.backend.dto.AuthResponse;
+import com.halalai.backend.dto.LoginRequest;
+import com.halalai.backend.dto.RegisterRequest;
+import com.halalai.backend.model.User;
+import com.halalai.backend.repository.UserRepository;
+import com.halalai.backend.security.JwtTokenProvider;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class AuthService implements IAuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider tokenProvider;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtTokenProvider tokenProvider,
+            AuthenticationManager authenticationManager
+    ) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.tokenProvider = tokenProvider;
+        this.authenticationManager = authenticationManager;
+    }
+
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException("Пользователь с таким email уже существует");
+        }
+
+        User user = new User();
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setEnabled(true);
+
+        user = userRepository.save(user);
+
+        String token = tokenProvider.generateToken(user.getEmail(), user.getId());
+
+        return AuthResponse.of(token, user.getId(), user.getEmail());
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.email(),
+                        request.password()
+                )
+        );
+
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+
+        if (!user.getEnabled()) {
+            throw new IllegalArgumentException("Аккаунт пользователя отключен");
+        }
+        String token = tokenProvider.generateToken(user.getEmail(), user.getId());
+
+        return AuthResponse.of(token, user.getId(), user.getEmail());
+    }
+
+    public AuthResponse refreshToken(String oldToken) {
+        String email = tokenProvider.getUsernameFromExpiredToken(oldToken);
+        Long userId = tokenProvider.getUserIdFromExpiredToken(oldToken);
+
+        if (email == null) {
+            throw new IllegalArgumentException("Не удалось извлечь email из токена");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+
+        if (!user.getEnabled()) {
+            throw new IllegalArgumentException("Аккаунт пользователя отключен");
+        }
+        if (userId != null && !userId.equals(user.getId())) {
+            throw new IllegalArgumentException("Неверный токен");
+        }
+        String newToken = tokenProvider.generateToken(user.getEmail(), user.getId());
+
+        return AuthResponse.of(newToken, user.getId(), user.getEmail());
+    }
+}
+
+
+src/main/java/com/halalai/backend/service/ConfigService.java
+
+package com.halalai.backend.service;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class ConfigService implements IConfigService {
+
+    private final String defaultModel;
+    private final List<String> allowedModels;
+
+    public ConfigService(
+            @Value("${llm.models.default}") String defaultModel,
+            @Value("${llm.models.allowed}") String allowedModelsStr) {
+        this.defaultModel = defaultModel;
+        this.allowedModels = List.of(allowedModelsStr.split(","));
+    }
+
+    public Map<String, Object> getAvailableModels() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("default_model", defaultModel);
+        result.put("allowed_models", allowedModels);
+        return result;
+    }
+}
+
+
+src/main/java/com/halalai/backend/service/IAuthService.java
+
+package com.halalai.backend.service;
+
+import com.halalai.backend.dto.AuthResponse;
+import com.halalai.backend.dto.LoginRequest;
+import com.halalai.backend.dto.RegisterRequest;
+
+public interface IAuthService {
+    AuthResponse register(RegisterRequest request);
+    AuthResponse login(LoginRequest request);
+    AuthResponse refreshToken(String token);
+}
+
+
+src/main/java/com/halalai/backend/service/IConfigService.java
+
+package com.halalai.backend.service;
+
+import java.util.Map;
+
+public interface IConfigService {
+    Map<String, Object> getAvailableModels();
+}
+
+
+src/main/java/com/halalai/backend/service/ILLMService.java
+
+package com.halalai.backend.service;
+
+import com.halalai.backend.dto.ChatResponse;
+import java.util.List;
+import java.util.Map;
+
+public interface ILLMService {
+    ChatResponse generateCompletion(List<Map<String, String>> messages, String apiKey, String remoteModel, Integer maxTokens, Double temperature, Boolean useRag);
+}
+
+
+src/main/java/com/halalai/backend/service/IVerseService.java
+
+package com.halalai.backend.service;
+
+import com.halalai.backend.dto.VerseResponse;
+
+public interface IVerseService {
+    VerseResponse getVerseOfTheDay();
+}
+
+
+src/main/java/com/halalai/backend/service/LLMService.java
+
+package com.halalai.backend.service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.halalai.backend.dto.ChatResponse;
+
+@Service
+public class LLMService implements ILLMService {
+
+    private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
+
+    private final RestTemplate restTemplate;
+    private final String llmServiceUrl;
+    private final int defaultMaxTokens;
+    private final String defaultModel;
+    private final List<String> allowedModels;
+
+    public LLMService(
+            RestTemplate restTemplate,
+            @Value("${llm.service.url}") String llmServiceUrl,
+            @Value("${llm.service.max-tokens:256}") int maxTokens,
+            @Value("${llm.models.default}") String defaultModel,
+            @Value("${llm.models.allowed}") String allowedModelsStr) {
+        this.restTemplate = restTemplate;
+        this.llmServiceUrl = llmServiceUrl;
+        this.defaultMaxTokens = maxTokens;
+        this.defaultModel = defaultModel;
+        this.allowedModels = List.of(allowedModelsStr.split(","));
+
+        logger.info("Инициализация LLM Service... URL: {}", llmServiceUrl);
+        logger.info("Доступные модели: default={}, count={}", defaultModel, this.allowedModels.size());
+        logger.info("Примечание: системный промпт управляется Python LLM сервисом");
+    }
+
+    public ChatResponse generateCompletion(List<Map<String, String>> clientMessages, String apiKey, String remoteModel, Integer maxTokensOverride, Double temperature, Boolean useRag) {
+        logger.debug("Запрос к LLM сервису");
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Accept-Charset", "UTF-8");
+
+        List<Map<String, String>> messages;
+
+        if (clientMessages != null && !clientMessages.isEmpty()) {
+            messages = new ArrayList<>(clientMessages);
+            logger.debug("Получена история от клиента: {} сообщений", clientMessages.size());
+        } else {
+            throw new IllegalArgumentException("Не указаны ни messages, ни prompt");
+        }
+        
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("messages", messages);
+
+        int effectiveMaxTokens = maxTokensOverride != null ? maxTokensOverride : defaultMaxTokens;
+        requestBody.put("max_tokens", effectiveMaxTokens);
+        if (apiKey != null && !apiKey.isBlank()) {
+            requestBody.put("api_key", apiKey.trim());
+        }
+        if (remoteModel != null && !remoteModel.isBlank()) {
+            requestBody.put("remote_model", remoteModel.trim());
+        }
+        if (temperature != null) {
+            requestBody.put("temperature", temperature);
+        }
+        if (useRag != null) {
+            requestBody.put("use_rag", useRag);
+        }
+
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+        String chatUrl = llmServiceUrl + "/llm/chat";
+
+        try {
+            logger.debug("Отправка запроса к LLM сервису: {}", chatUrl);
+            logger.debug("Тело запроса: messages={}, max_tokens={}{}{}{}{}",
+                    messages.size(),
+                    effectiveMaxTokens,
+                    requestBody.containsKey("api_key") ? ", api_key=***" : "",
+                    requestBody.containsKey("remote_model") ? ", remote_model=" + requestBody.get("remote_model") : "",
+                    requestBody.containsKey("temperature") ? ", temperature=" + requestBody.get("temperature") : "",
+                    requestBody.containsKey("use_rag") ? ", use_rag=" + requestBody.get("use_rag") : "");
+            
+            ResponseEntity<JsonNode> responseEntity = restTemplate.exchange(
+                    chatUrl,
+                    HttpMethod.POST,
+                    requestEntity,
+                    JsonNode.class
+            );
+            
+            logger.debug("Получен ответ от LLM сервиса. Статус: {}", responseEntity.getStatusCode());
+
+            JsonNode responseBody = responseEntity.getBody();
+            if (responseBody == null) {
+                throw new RuntimeException("LLM сервис вернул пустой ответ");
+            }
+            String reply = responseBody.has("reply") ? responseBody.get("reply").asText("") : "";
+            Boolean usedRemote = responseBody.has("used_remote") ? responseBody.get("used_remote").asBoolean(false) : Boolean.FALSE;
+            String remoteError = null;
+            if (responseBody.has("remote_error") && !responseBody.get("remote_error").isNull()) {
+                String error = responseBody.get("remote_error").asText("");
+                remoteError = error.isEmpty() ? null : error;
+            }
+
+            if (reply.isEmpty()) {
+                throw new RuntimeException("Ответ не содержит поле 'reply' или оно пустое. Структура: " + responseBody);
+            }
+
+            logger.info("Ответ от LLM получен: длина={} символов, remote={}",
+                    reply.length(), usedRemote);
+
+            return new ChatResponse(reply, usedRemote, remoteError);
+            
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            logger.error("Ошибка HTTP при обращении к LLM сервису: статус={}, URL={}, тело={}", 
+                    e.getStatusCode(), chatUrl, e.getResponseBodyAsString());
+            
+            if (e.getStatusCode().value() == 503) {
+                throw new RuntimeException("LLM сервис не готов. Убедитесь, что Python сервис запущен и модель загружена.", e);
+            }
+            
+            throw new ResponseStatusException(e.getStatusCode(), "Ошибка LLM сервиса: " + e.getResponseBodyAsString(), e);
+            
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            logger.error("Ошибка подключения к LLM сервису: URL={}, сообщение={}", chatUrl, e.getMessage());
+            throw new RuntimeException("Не удалось подключиться к LLM сервису по адресу " + chatUrl + ". " +
+                    "Убедитесь, что Python сервис запущен на " + llmServiceUrl, e);
+            
+        } catch (RestClientException e) {
+            logger.error("Ошибка REST клиента при обращении к LLM сервису: URL={}, сообщение={}", chatUrl, e.getMessage());
+            throw new RuntimeException("Не удалось подключиться к LLM сервису по адресу " + chatUrl + ". " +
+                    "Убедитесь, что Python сервис запущен на " + llmServiceUrl, e);
+        } catch (Exception e) {
+            logger.error("Неизвестная ошибка при генерации ответа: {}", e.getMessage(), e);
+            throw new RuntimeException("Ошибка при генерации ответа: " + e.getMessage(), e);
+        }
+    }
+
+}
+
+
+src/main/java/com/halalai/backend/service/UserDetailsServiceImpl.java
+
+package com.halalai.backend.service;
+
+import com.halalai.backend.model.User;
+import com.halalai.backend.repository.UserRepository;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class UserDetailsServiceImpl implements UserDetailsService {
+
+    private final UserRepository userRepository;
+
+    public UserDetailsServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    @Transactional
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + email));
+
+        return org.springframework.security.core.userdetails.User.builder()
+                .username(user.getEmail())
+                .password(user.getPassword())
+                .disabled(!user.getEnabled())
+                .accountExpired(false)
+                .accountLocked(false)
+                .credentialsExpired(false)
+                .authorities("ROLE_USER")
+                .build();
+    }
+}
+
+
+src/main/java/com/halalai/backend/service/VerseService.java
+
+package com.halalai.backend.service;
+
+import com.halalai.backend.dto.VerseResponse;
+import com.halalai.backend.model.Verse;
+import com.halalai.backend.repository.VerseRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+
+@Service
+public class VerseService implements IVerseService {
+
+    private static final Logger logger = LoggerFactory.getLogger(VerseService.class);
+    private final VerseRepository verseRepository;
+
+    public VerseService(VerseRepository verseRepository) {
+        this.verseRepository = verseRepository;
+    }
+
+    public VerseResponse getVerseOfTheDay() {
+        long totalVerses = verseRepository.count();
+        
+        if (totalVerses == 0) {
+            logger.warn("База данных аятов пуста");
+            throw new RuntimeException("База данных аятов пуста. Пожалуйста, загрузите данные.");
+        }
+
+        // Используем день года (1-365/366) для выбора аята
+        // Это гарантирует, что один и тот же аят будет возвращаться в течение дня
+        LocalDate today = LocalDate.now();
+        LocalDate startOfYear = LocalDate.of(today.getYear(), 1, 1);
+        long dayOfYear = ChronoUnit.DAYS.between(startOfYear, today) + 1;
+        
+        // Используем день года как индекс для выбора аята
+        int verseIndex = (int) ((dayOfYear - 1) % totalVerses);
+        
+        // Используем пагинацию для эффективного получения одного аята
+        Verse verse = verseRepository.findAllByOrderByIdAsc(
+                PageRequest.of(verseIndex, 1)
+        ).getContent().get(0);
+        
+        logger.info("Возвращен аят дня: сура {}, аят {}", verse.getSuraIndex(), verse.getVerseNumber());
+        
+        return new VerseResponse(
+                verse.getId(),
+                verse.getSuraIndex(),
+                verse.getSuraTitle(),
+                verse.getSuraSubtitle(),
+                verse.getVerseNumber(),
+                verse.getText()
+        );
+    }
+}
+
+
+

@@ -1,0 +1,305 @@
+@startuml Features UI Layer
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+' ===== AUTH FEATURE =====
+struct LoginView {
+    - authManager: AuthManager
+    - authService: AuthService
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct LoginView.ViewModel {
+    - email: String
+    - password: String
+    - showPassword: Bool
+    --
+    + login() async
+}
+
+struct RegisterView {
+    - authManager: AuthManager
+    - authService: AuthService
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct RegisterView.ViewModel {
+    - email: String
+    - password: String
+    - confirmPassword: String
+    --
+    + register() async
+}
+
+' ===== CHAT FEATURE =====
+struct ChatView {
+    - chatService: ChatService
+    - authManager: AuthManager
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct ChatView.ViewModel {
+    - messageText: String
+    - chatService: ChatService
+    --
+    + sendMessage()
+    + loadModels() async
+}
+
+struct MessageBubble {
+    - message: ChatMessage
+    --
+    - var body: View
+}
+
+struct InputBar {
+    - messageText: Binding<String>
+    - onSend: () -> Void
+    --
+    - var body: View
+}
+
+' ===== HOME FEATURE =====
+struct HomeView {
+    - verseService: VerseService
+    - locationService: LocationService
+    - prayerTimeService: PrayerTimeService
+    - authManager: AuthManager
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct HomeView.ViewModel {
+    - verseService: VerseService
+    - prayerCardViewModel: PrayerTimesCardView.ViewModel
+    - authManager: AuthManager
+}
+
+struct VerseView {
+    - verseService: VerseService
+    --
+    - var body: View
+}
+
+struct PrayerTimesCardView {
+    - viewModel: ViewModel
+    --
+    - var body: View
+}
+
+struct PrayerTimesCardView.ViewModel {
+    - locationService: LocationService
+    - prayerTimeService: PrayerTimeService
+    - settingsStore: PrayerSettingsStore
+    - todayTimes: DailyPrayerTimes?
+    - nextPrayer: Prayer?
+    --
+    + refresh() async
+    + shiftDisplayedDay(by: Int)
+}
+
+' ===== PRAYER FEATURE =====
+struct PrayerNotificationSettingsView {
+    - settingsStore: PrayerSettingsStore
+    - notificationService: PrayerNotificationService
+    - locationService: LocationService
+    --
+    - var body: View
+}
+
+' ===== SCANNER FEATURE =====
+struct ScannerView {
+    - ingredientService: IngredientService
+    - authManager: AuthManager
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct ScannerView.ViewModel {
+    - manualInput: String
+    - analysis: ProductAnalysis?
+    - isLoading: Bool
+    - showCamera: Bool
+    - showResults: Bool
+    --
+    + openCamera()
+    + processManualInput()
+    + recognizeText(from: UIImage) async
+}
+
+struct CameraView {
+    - sourceType: UIImagePickerController.SourceType
+    - onSelect: (UIImage) -> Void
+}
+
+struct IngredientResultsView {
+    - analysis: ProductAnalysis
+    --
+    - var body: View
+}
+
+' ===== QURAN FEATURE =====
+struct QuranListView {
+    - quranStorage: QuranStorageService
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct QuranListView.ViewModel {
+    - quranStorage: QuranStorageService
+    - suras: [Sura]
+    --
+    + loadQuran() async
+}
+
+struct SuraReaderView {
+    - quranStorage: QuranStorageService
+    - suraIndex: Int
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct SuraReaderView.ViewModel {
+    - quranStorage: QuranStorageService
+    - suraIndex: Int
+    - sura: Sura?
+    - fontSize: CGFloat
+    --
+    + loadSura()
+    + trackVisibleVerse(Int)
+    + saveProgressIfNeeded()
+}
+
+' ===== HALALMAP FEATURE =====
+struct HalalMapView {
+    - halalPlacesService: HalalPlacesService
+    - locationService: LocationService
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct HalalMapView.ViewModel {
+    - halalPlacesService: HalalPlacesService
+    - locationService: LocationService
+    - places: [HalalPlace]
+    - selectedPlace: HalalPlace?
+    - cameraPosition: MapCameraPosition
+    --
+    + loadPlaces() async
+    + openInAppleMaps(HalalPlace)
+}
+
+' ===== SETTINGS FEATURE =====
+struct SettingsView {
+    - chatService: ChatService
+    - authManager: AuthManager
+    --
+    - var body: View
+    - var viewModel: ViewModel
+}
+
+struct SettingsView.ViewModel {
+    - chatService: ChatService
+    - authManager: AuthManager
+    - maxTokensSlider: Double
+    - temperatureSlider: Double
+    --
+    + updateModel(String)
+    + updateSettings()
+}
+
+' ===== COMPONENTS =====
+struct GuestBannerView {
+    - onLogin: () -> Void
+    --
+    - var body: View
+}
+
+struct ErrorView {
+    - error: Error
+    - retry: () -> Void
+}
+
+struct GuestAuthPromptView {
+    - onLogin: () -> Void
+}
+
+' ===== RELATIONSHIPS =====
+LoginView --> AuthManager : uses
+LoginView --> AuthService : uses
+LoginView *-- LoginView.ViewModel
+
+RegisterView --> AuthManager : uses
+RegisterView --> AuthService : uses
+RegisterView *-- RegisterView.ViewModel
+
+ChatView --> ChatService : uses
+ChatView --> AuthManager : uses
+ChatView *-- ChatView.ViewModel
+ChatView --> MessageBubble : displays
+ChatView --> InputBar : uses
+
+InputBar --> ChatService : notifies
+
+MessageBubble --> ChatMessage : displays
+
+HomeView --> VerseService : uses
+HomeView --> LocationService : uses
+HomeView --> PrayerTimeService : uses
+HomeView --> AuthManager : uses
+HomeView *-- HomeView.ViewModel
+HomeView --> VerseView : displays
+HomeView --> PrayerTimesCardView : displays
+HomeView --> GuestBannerView : displays
+
+VerseView --> VerseService : uses
+
+PrayerTimesCardView --> PrayerTimesCardView.ViewModel
+PrayerTimesCardView.ViewModel --> LocationService : uses
+PrayerTimesCardView.ViewModel --> PrayerTimeService : uses
+PrayerTimesCardView.ViewModel --> PrayerSettingsStore : uses
+
+PrayerNotificationSettingsView --> PrayerSettingsStore : uses
+PrayerNotificationSettingsView --> PrayerNotificationService : uses
+PrayerNotificationSettingsView --> LocationService : uses
+
+ScannerView --> IngredientService : uses
+ScannerView --> AuthManager : uses
+ScannerView *-- ScannerView.ViewModel
+ScannerView --> CameraView : uses
+ScannerView --> IngredientResultsView : displays
+
+IngredientResultsView --> ProductAnalysis : displays
+
+QuranListView --> QuranStorageService : uses
+QuranListView *-- QuranListView.ViewModel
+
+SuraReaderView --> QuranStorageService : uses
+SuraReaderView *-- SuraReaderView.ViewModel
+
+HalalMapView --> HalalPlacesService : uses
+HalalMapView --> LocationService : uses
+HalalMapView *-- HalalMapView.ViewModel
+
+SettingsView --> ChatService : uses
+SettingsView --> AuthManager : uses
+SettingsView *-- SettingsView.ViewModel
+
+GuestBannerView --> AuthManager : notifies
+
+@enduml

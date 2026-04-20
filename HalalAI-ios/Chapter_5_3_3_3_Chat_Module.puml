@@ -1,0 +1,108 @@
+@startuml Chat Module (5.3.3.3)
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "Service Layer" {
+    protocol ChatService {
+        {abstract} var messages: [ChatMessage]
+        {abstract} var remoteModel: String
+        --
+        {abstract} + sendMessage(_ text: String) async throws
+        {abstract} + clearChat()
+    }
+
+    class ChatServiceImpl {
+        - networkClient: NetworkClient
+        - authManager: AuthManager
+        --
+        + sendMessage(_ text: String) async throws
+        + clearChat()
+    }
+}
+
+package "Data Models" {
+    struct ChatMessage {
+        - id: String
+        - role: Role
+        - text: String
+        - date: Date
+        - model: String?
+    }
+
+    enum Role {
+        case user
+        case assistant
+    }
+
+    struct ChatRequest {
+        - messages: [ChatMessage]
+        - remoteModel: String?
+    }
+
+    struct ChatResponse {
+        - reply: String
+    }
+}
+
+package "UI Layer" {
+    struct ChatView {
+        - chatService: ChatService
+        - authManager: AuthManager
+        --
+        - var body: some View
+        - var viewModel: ChatViewModel
+    }
+
+    class ChatViewModel {
+        - messageText: String
+        - chatService: ChatService
+        --
+        + sendMessage() async
+    }
+
+    struct MessageBubble
+    struct InputBar
+}
+
+package "Dependencies" {
+    class NetworkClient {
+        + send<T: APIRequest>(request: T) async throws -> T.Response
+    }
+
+    protocol AuthManager {
+        {abstract} var authToken: String?
+        {abstract} var isAuthenticated: Bool
+    }
+}
+
+' ===== RELATIONSHIPS =====
+
+ChatServiceImpl ..|> ChatService : implements
+ChatServiceImpl --> NetworkClient : uses
+ChatServiceImpl --> AuthManager : uses
+
+ChatView --> ChatService : uses
+ChatView --> AuthManager : uses
+ChatView *-- ChatViewModel : contains
+
+ChatViewModel --> ChatService : calls API
+ChatViewModel --> ChatRequest : creates
+ChatViewModel --> ChatMessage : manages
+
+ChatView --> MessageBubble : displays
+ChatView --> InputBar : uses
+
+MessageBubble --> ChatMessage : displays
+MessageBubble --> Role : uses
+
+InputBar --> ChatViewModel : notifies
+
+ChatService --> ChatMessage : manages
+ChatService --> ChatResponse : parses
+ChatServiceImpl --> ChatRequest : sends to backend
+
+@enduml

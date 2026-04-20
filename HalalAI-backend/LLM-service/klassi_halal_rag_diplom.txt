@@ -1,0 +1,837 @@
+LLM-service — полные тексты модулей src/halal_rag (обновлено). Формат: путь к файлу, пустая строка, содержимое файла.
+
+src/halal_rag/__init__.py
+
+"""HalalAI RAG Service"""
+
+
+src/halal_rag/api/__init__.py
+
+"""API module"""
+
+
+src/halal_rag/api/dto/__init__.py
+
+from .chat_request import ChatRequest
+from .chat_response import ChatResponse
+from .health_response import HealthResponse
+from .api_info_response import ApiInfoResponse
+from .root_response import RootResponse
+
+__all__ = ["ChatRequest", "ChatResponse", "HealthResponse", "ApiInfoResponse", "RootResponse"]
+
+
+src/halal_rag/api/dto/api_info_response.py
+
+from pydantic import BaseModel
+
+
+class ApiInfoResponse(BaseModel):
+    name: str
+    version: str
+    description: str
+    endpoints: dict[str, str]
+
+
+src/halal_rag/api/dto/root_response.py
+
+from pydantic import BaseModel
+
+
+class RootResponse(BaseModel):
+    message: str
+    docs: str
+
+
+src/halal_rag/api/dto/health_response.py
+
+from pydantic import BaseModel
+
+
+class HealthResponse(BaseModel):
+    status: str
+    rag_ready: str
+    llm_ready: str
+
+
+src/halal_rag/api/dto/chat_request.py
+
+from typing import Optional
+from pydantic import BaseModel
+
+
+class ChatRequest(BaseModel):
+    """Request model for /llm/chat endpoint"""
+    messages: list[dict[str, str]]
+    max_tokens: int = 256
+    api_key: Optional[str] = None
+    remote_model: str = "qwen/qwen3.6-plus:free"
+    temperature: float = 0.7
+    use_rag: bool = True
+
+
+src/halal_rag/api/dto/chat_response.py
+
+from typing import Optional
+from pydantic import BaseModel
+
+
+class ChatResponse(BaseModel):
+    """Response model for /llm/chat endpoint"""
+    reply: str
+    used_remote: bool = False
+    remote_error: Optional[str] = None
+
+
+src/halal_rag/api/interfaces.py
+
+"""Service interfaces for API layer"""
+
+from abc import ABC, abstractmethod
+from .dto import ChatRequest, ChatResponse
+
+
+class IChatService(ABC):
+    """Interface for chat service"""
+
+    @abstractmethod
+    async def process_chat(self, request: ChatRequest) -> ChatResponse:
+        """Process chat request end-to-end"""
+        pass
+
+
+src/halal_rag/api/services.py
+
+"""Business logic services"""
+
+import logging
+from typing import Optional
+
+from halal_rag.llm.interfaces import ILLMClient
+from halal_rag.rag.interfaces import IRAGPipeline
+from .interfaces import IChatService
+from .dto import ChatRequest, ChatResponse
+from halal_rag.llm.open_router import OpenRouterClient
+
+logger = logging.getLogger(__name__)
+
+
+class ChatService(IChatService):
+    """Service for handling chat requests"""
+
+    def __init__(self, rag: Optional[IRAGPipeline], llm_client: Optional[ILLMClient]):
+        self.rag = rag
+        self.llm_client = llm_client
+        # Create one reusable OpenRouter client
+        self.openrouter_client = OpenRouterClient()
+
+    def extract_user_message(self, messages: list[dict[str, str]]) -> str:
+        """Extract last user message from conversation history"""
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                return msg.get("content", "").strip()
+        return ""
+
+    def search_sources(self, query: str, top_k: int = 3) -> list[dict]:
+        """Search for relevant Quranic verses"""
+        if not self.rag or not query:
+            return []
+        return self.rag.search(query, top_k=top_k)
+
+    def format_sources(self, sources: list[dict]) -> str:
+        """Format sources for LLM prompt"""
+        if not sources:
+            return "No sources found"
+        return "\n\n".join([f"Сура {r['sura']}:{r['verse']}\n{r['text']}" for r in sources])
+
+    async def generate_response(
+        self, query: str, sources: str, api_key: Optional[str], model: str, max_tokens: int, temperature: float = 0.7
+    ) -> tuple[str, bool, Optional[str]]:
+        """Generate response using LLM"""
+        if not api_key:
+            return "", False, "API key is required"
+
+        try:
+            reply = await self.openrouter_client.generate(
+                query=query,
+                sources=sources,
+                api_key=api_key,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature
+            )
+            return reply, True, None
+
+        except Exception as e:
+            error_msg = str(e)
+            print(f"❌ LLM generation failed: {error_msg}")
+            return "", False, error_msg
+
+    def handle_error(self, error: Optional[str]) -> str:
+        """Generate user-friendly error message"""
+        if not error:
+            return "Извините, удаленная модель недоступна. Пожалуйста, проверьте ваш API ключ и попробуйте снова."
+
+        if "429" in error or "Too Many Requests" in error:
+            return "OpenRouter API вернул ошибку 429: слишком много запросов. Это может быть из-за лимита free модели или превышения rate limit. Пожалуйста, попробуйте позже."
+        elif "401" in error or "Unauthorized" in error or "authentication" in error.lower():
+            return "Ошибка аутентификации OpenRouter: ваш API ключ недействителен или истек. Проверьте настройки."
+        else:
+            return f"Ошибка при обращении к OpenRouter: {error}"
+
+    def build_prompt(self, query: str, sources: str) -> tuple[str, str]:
+        """Build system prompt and user prompt"""
+        system_prompt = """
+            # Ты - HalalAI, опытный специалист по исламу.
+            1. Задача - точно отвечать на вопросы, **основываясь на Коране и Хадисах**.
+            2. Давать **четкие**, уважительные ответы, основанные на исламском учении.
+            3. Всегда приводите конкретные номера сур и аятов.
+            4. Отвечай на **русском** языке.
+            """
+
+        # Only include sources section if sources are provided
+        if sources.strip():
+            user_prompt = f"""
+        # Вопрос : {query}
+        Соответствующие аяты Корана:
+        {sources}
+        """
+        else:
+            user_prompt = f"""
+        # Вопрос : {query}
+        """
+
+        return system_prompt, user_prompt
+
+    async def process_chat(self, request: ChatRequest) -> ChatResponse:
+        """Process chat request end-to-end"""
+        print("\n" + "="*80)
+        print(f"🔄 PROCESSING NEW REQUEST (RAG={request.use_rag})")
+        print("="*80)
+
+        # 1. Extract message
+        query = self.extract_user_message(request.messages)
+        if not query:
+            return ChatResponse(
+                reply="No user message found",
+                used_remote=False,
+                remote_error="Invalid request"
+            )
+
+        print(f"📝 Chat query: {query}\n   model={request.remote_model}, use_rag={request.use_rag}")
+
+        # 2. Search sources (only if RAG enabled)
+        sources = []
+        sources_text = ""
+        if request.use_rag:
+            sources = self.search_sources(query)
+            sources_text = self.format_sources(sources)
+            # Log retrieved sources
+            print(f"\n📚 RAG RETRIEVED {len(sources)} SOURCES:")
+            for i, source in enumerate(sources, 1):
+                score = source.get('score', 'N/A')
+                sura = source.get('sura', 'N/A')
+                verse = source.get('verse', 'N/A')
+                text = source.get('text', '')[:80]
+                print(f"  {i}. [Score: {score:.3f}] Сура {sura}:{verse} - {text}...")
+
+        # 3. Build prompt
+        system_prompt, user_prompt = self.build_prompt(query, sources_text)
+        full_prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
+
+        # 4. Generate response via LLM
+        reply, used_remote, error = await self.generate_response(
+            query=query,
+            sources=sources_text,
+            api_key=request.api_key,
+            model=request.remote_model,
+            max_tokens=request.max_tokens,
+            temperature=request.temperature
+        )
+
+        # 5. Handle errors if needed
+        if not reply:
+            reply = self.handle_error(error)
+
+        print("="*80)
+        print(f"✅ REQUEST COMPLETED")
+        print("="*80 + "\n")
+
+        return ChatResponse(
+            reply=reply,
+            used_remote=used_remote,
+            remote_error=error
+        )
+
+
+src/halal_rag/api/dependencies.py
+
+"""Dependency Injection for FastAPI"""
+
+import logging
+import os
+from typing import Optional
+
+from halal_rag.llm.interfaces import ILLMClient
+from halal_rag.llm.open_router import OpenRouterClient
+from halal_rag.rag.interfaces import IRAGPipeline
+from halal_rag.rag.retriever import SimpleRAG
+from .interfaces import IChatService
+
+logger = logging.getLogger(__name__)
+
+
+class DependencyContainer:
+    """Manages dependencies for the application"""
+
+    _rag: Optional[IRAGPipeline] = None
+    _llm_client: Optional[ILLMClient] = None
+    _chat_service: Optional[IChatService] = None
+
+    @classmethod
+    def set_rag(cls, rag: IRAGPipeline) -> None:
+        """Set RAG instance (called during app startup)"""
+        cls._rag = rag
+
+    @classmethod
+    def set_llm_client(cls, client: ILLMClient) -> None:
+        """Set LLM client instance"""
+        cls._llm_client = client
+
+    @classmethod
+    def get_rag(cls) -> Optional[IRAGPipeline]:
+        """Get RAG instance"""
+        return cls._rag
+
+    @classmethod
+    def get_llm_client(cls, api_key: Optional[str] = None) -> Optional[ILLMClient]:
+        """Get or create LLM client (lazy initialization)"""
+        if cls._llm_client is None:
+            try:
+                key = api_key or os.getenv("OPEN_ROUTER_KEY")
+                if not key:
+                    raise ValueError("OPEN_ROUTER_KEY must be provided or set as environment variable")
+                cls._llm_client = OpenRouterClient(api_key=key)
+                print("✓ OpenRouter client initialized")
+            except Exception as e:
+                print(f"⚠️  Failed to initialize OpenRouter client: {e}")
+                cls._llm_client = None
+        return cls._llm_client
+
+    @classmethod
+    def get_chat_service(cls) -> Optional[IChatService]:
+        """Get or create ChatService singleton"""
+        if cls._chat_service is None:
+            rag = cls.get_rag()
+            llm_client = cls.get_llm_client()
+            if rag:
+                from .services import ChatService
+                cls._chat_service = ChatService(rag=rag, llm_client=llm_client)
+                print("✓ ChatService initialized")
+        return cls._chat_service
+
+
+# Module-level convenience functions for backward compatibility
+def set_rag(rag: IRAGPipeline) -> None:
+    """Set RAG instance (called during app startup)"""
+    DependencyContainer.set_rag(rag)
+    # Reset chat service when RAG changes
+    DependencyContainer._chat_service = None
+
+
+def set_llm_client(client: ILLMClient) -> None:
+    """Set LLM client instance"""
+    DependencyContainer.set_llm_client(client)
+    # Reset chat service when LLM client changes
+    DependencyContainer._chat_service = None
+
+
+def get_rag() -> Optional[IRAGPipeline]:
+    """Get RAG instance"""
+    return DependencyContainer.get_rag()
+
+
+def get_llm_client(api_key: Optional[str] = None) -> Optional[ILLMClient]:
+    """Get or create LLM client (lazy initialization)"""
+    return DependencyContainer.get_llm_client(api_key=api_key)
+
+
+def get_chat_service() -> Optional[IChatService]:
+    """Get ChatService singleton"""
+    return DependencyContainer.get_chat_service()
+
+
+src/halal_rag/api/main.py
+
+"""FastAPI application for HalalAI RAG Service"""
+
+import logging
+import json
+from contextlib import asynccontextmanager
+from pathlib import Path
+from fastapi import FastAPI, HTTPException
+from halal_rag.rag.retriever import SimpleRAG
+from halal_rag.api import dependencies
+from halal_rag.api.dto import ChatRequest, ChatResponse, HealthResponse, ApiInfoResponse, RootResponse
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application startup and shutdown"""
+    print("🚀 Starting HalalAI RAG API...")
+
+    # Startup: Initialize RAG
+    try:
+        print("📚 Loading RAG system...")
+        data_file = Path(__file__).parent.parent.parent.parent / "data" / "quran_ru.jsonl"
+
+        if not data_file.exists():
+            raise FileNotFoundError(f"Quran data not found at {data_file}")
+
+        docs = []
+        with open(data_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    docs.append(json.loads(line))
+
+        print(f"✓ Loaded {len(docs)} Quranic verses")
+        rag = SimpleRAG(documents=docs, model_type="paraphrase", use_finetuned=True)
+        dependencies.set_rag(rag)
+        print("✓ RAG system ready")
+
+    except Exception as e:
+        print(f"❌ Failed to initialize RAG: {e}")
+        raise
+
+    print("✓ Application startup complete")
+    yield
+
+    # Shutdown
+    print("👋 Shutting down RAG system...")
+
+
+app = FastAPI(
+    title="HalalAI RAG API",
+    description="Semantic search and QA system for Quranic questions",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+
+@app.get("/llm/health", response_model=HealthResponse, tags=["Health"])
+async def health_check() -> HealthResponse:
+    """Check service availability"""
+    rag = dependencies.get_rag()
+    llm_client = dependencies.get_llm_client()
+
+    return HealthResponse(
+        status="ok",
+        rag_ready="ready" if rag else "initializing",
+        llm_ready="ready" if llm_client else "not initialized"
+    )
+
+
+@app.post("/llm/chat", response_model=ChatResponse, tags=["Chat"])
+async def chat(request: ChatRequest):
+    """Main chat endpoint for Q&A"""
+    if not request.messages:
+        raise HTTPException(status_code=400, detail="Messages cannot be empty")
+
+    service = dependencies.get_chat_service()
+    if not service:
+        raise HTTPException(status_code=503, detail="Chat service not initialized")
+
+    return await service.process_chat(request)
+
+
+@app.get("/llm/info", response_model=ApiInfoResponse, tags=["Docs"])
+async def api_info() -> ApiInfoResponse:
+    """Get API information"""
+    return ApiInfoResponse(
+        name="HalalAI RAG API",
+        version="1.0.0",
+        description="LLM service with RAG integration for Quranic questions",
+        endpoints={
+            "health": "/llm/health",
+            "chat": "/llm/chat (POST)",
+            "info": "/llm/info",
+            "docs": "/docs"
+        }
+    )
+
+
+@app.get("/", response_model=RootResponse, tags=["Docs"], include_in_schema=False)
+async def root() -> RootResponse:
+    """Redirect to API info"""
+    return RootResponse(
+        message="See /llm/info for API documentation",
+        docs="/docs"
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="localhost",
+        port=8001,
+        log_level="info"
+    )
+
+
+src/halal_rag/rag/__init__.py
+
+"""RAG module"""
+
+
+src/halal_rag/rag/interfaces.py
+
+from abc import ABC, abstractmethod
+from typing import Any
+import torch
+
+
+class IEmbeddingEncoder(ABC):
+    """Interface for embedding dto"""
+
+    @abstractmethod
+    def encode(self, texts: list[str]) -> torch.Tensor:
+        """Encode multiple texts to embeddings"""
+        pass
+
+    @abstractmethod
+    def encode_single(self, text: str) -> torch.Tensor:
+        """Encode single text to embedding"""
+        pass
+
+
+class IVectorSearcher(ABC):
+    """Interface for vector search and storage"""
+
+    @abstractmethod
+    def add_documents(self, documents: list[dict[str, Any]], embeddings: torch.Tensor) -> None:
+        """Add documents and their embeddings to the store"""
+        pass
+
+    @abstractmethod
+    def search(self, query_embedding: torch.Tensor, top_k: int = 3) -> list[dict[str, Any]]:
+        """Search for similar documents"""
+        pass
+
+
+class IRAGPipeline(ABC):
+    """Interface for RAG pipeline"""
+
+    @abstractmethod
+    def search(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
+        """Search for relevant documents based on query"""
+        pass
+
+
+src/halal_rag/rag/embeddings.py
+
+
+from pathlib import Path
+
+import torch
+from sentence_transformers import SentenceTransformer
+
+from .interfaces import IEmbeddingEncoder
+
+
+class EmbeddingModel(IEmbeddingEncoder):
+
+    # Маппинг типов моделей на полные имена
+    MODEL_MAPPING = {
+        "paraphrase": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        "sbert": "ai-forever/sbert_large_nlu_ru",
+    }
+
+    def __init__(
+        self,
+        model_type: str = "paraphrase",
+        use_finetuned: bool = False,
+    ):
+        model_name = self.MODEL_MAPPING.get(model_type, self.MODEL_MAPPING["paraphrase"])
+
+        if use_finetuned:
+            if "sbert" in model_type.lower():
+                finetuned_dir = "sbert-quranic-embeddings"
+            else:
+                finetuned_dir = "quranic-embeddings"
+
+            finetuned_path = (
+                Path(__file__).parent.parent.parent.parent
+                / "models"
+                / finetuned_dir
+            )
+            if finetuned_path.exists():
+                print(f"Loading fine-tuned model from {finetuned_path}")
+                self.model = SentenceTransformer(str(finetuned_path), device="cpu")
+                print("✓ Fine-tuned model loaded")
+            else:
+                print(
+                    f"Fine-tuned model not found at {finetuned_path}, "
+                    f"falling back to {model_name}"
+                )
+                try:
+                    self.model = SentenceTransformer(
+                        model_name, device="cpu", local_files_only=True
+                    )
+                except Exception:
+                    print(f"Downloading model: {model_name}")
+                    self.model = SentenceTransformer(model_name, device="cpu")
+        else:
+            try:
+                self.model = SentenceTransformer(
+                    model_name, device="cpu", local_files_only=True
+                )
+                print(f"✓ Loaded cached model: {model_name}")
+            except Exception:
+                print(f"📥 Downloading model: {model_name}")
+                self.model = SentenceTransformer(model_name, device="cpu")
+                print(f"✓ Model downloaded successfully")
+
+        print("Getting embedding dimension...")
+        self.embedding_dim = self.model.get_sentence_embedding_dimension()
+        print(f"✓ Embedding dimension: {self.embedding_dim}")
+
+    def encode(self, texts: list[str]) -> torch.Tensor:
+        embeddings = self.model.encode(
+            texts,
+            convert_to_tensor=True,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )
+        return embeddings.cpu()
+
+    def encode_single(self, text: str) -> torch.Tensor:
+        return self.encode([text])[0]
+
+
+src/halal_rag/rag/vector_store.py
+
+from __future__ import annotations
+from typing import Any, Optional
+import torch
+from torch import nn
+
+from .interfaces import IVectorSearcher
+
+
+class VectorStore(IVectorSearcher):
+
+    def __init__(self):
+        self.documents: list[dict[str, Any]] = []
+        self.embeddings: Optional[torch.Tensor] = None
+
+    def add_documents(self, documents: list[dict[str, Any]], embeddings: torch.Tensor):
+        self.documents.extend(documents)
+
+        if self.embeddings is None:
+            self.embeddings = embeddings
+        else:
+            self.embeddings = torch.cat([self.embeddings, embeddings], dim=0)
+
+    def search(self, query_embedding: torch.Tensor, top_k: int = 3) -> list[dict[str, Any]]:
+        if self.embeddings is None or not self.documents:
+            return []
+
+        if query_embedding.dim() == 1:
+            query_embedding = query_embedding.unsqueeze(0)
+
+        query = nn.functional.normalize(query_embedding, p=2, dim=1)
+        doc_embeddings = nn.functional.normalize(self.embeddings, p=2, dim=1)
+
+        scores = torch.matmul(doc_embeddings, query.T).squeeze(1)
+
+        k = min(top_k, len(self.documents))
+        top_scores, indices = torch.topk(scores, k=k)
+
+        results = []
+        for score, idx in zip(top_scores.tolist(), indices.tolist()):
+            doc = self.documents[idx].copy()
+            doc['score'] = float(score)
+            results.append(doc)
+
+        return results
+
+
+src/halal_rag/rag/retriever.py
+
+
+from typing import Any
+
+from .embeddings import EmbeddingModel
+from .vector_store import VectorStore
+from .interfaces import IRAGPipeline, IEmbeddingEncoder, IVectorSearcher
+
+
+class SimpleRAG(IRAGPipeline):
+    def __init__(
+        self,
+        documents: list[dict[str, Any]],
+        model_type: str = "paraphrase",  # "paraphrase" или "sbert"
+        use_finetuned: bool = False,
+    ):
+
+        self.embeddings: IEmbeddingEncoder = EmbeddingModel(model_type=model_type, use_finetuned=use_finetuned)
+        self.store: IVectorSearcher = VectorStore()
+
+        texts = [doc['text'] for doc in documents]
+        embeddings = self.embeddings.encode(texts)
+
+        self.store.add_documents(documents, embeddings)
+
+    def search(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
+        if not query or not query.strip():
+            return []
+
+        query_embedding = self.embeddings.encode_single(query)
+
+        return self.store.search(query_embedding, top_k=top_k)
+
+
+src/halal_rag/llm/__init__.py
+
+"""LLM module"""
+
+
+src/halal_rag/llm/interfaces.py
+
+from __future__ import annotations
+from abc import ABC, abstractmethod
+
+
+class ILLMClient(ABC):
+    """Interface for LLM clients"""
+
+    @abstractmethod
+    async def generate(
+        self,
+        query: str,
+        sources: str,
+        system_prompt: str | None = None,
+        max_tokens: int = 1000,
+        temperature: float = 0.7,
+        model: str | None = None
+    ) -> str:
+        """Generate response using LLM"""
+        pass
+
+
+src/halal_rag/llm/open_router.py
+
+
+import httpx
+import logging
+from typing import Optional
+from .interfaces import ILLMClient
+
+logger = logging.getLogger(__name__)
+
+
+class OpenRouterClient(ILLMClient):
+
+    def __init__(
+        self,
+        model: str = "openrouter/auto",
+        base_url: str = "https://openrouter.ai/api/v1"
+    ):
+        self.model = model
+        self.base_url = base_url
+        self.client = httpx.AsyncClient(base_url=self.base_url)
+
+    async def generate(
+        self,
+        query: str,
+        sources: str,
+        api_key: str,
+        system_prompt: Optional[str] = None,
+        max_tokens: int = 1000,
+        temperature: float = 0.7,
+        model: Optional[str] = None
+    ) -> str:
+        if not system_prompt:
+            system_prompt = """
+            # Ты - HalalAI, опытный специалист по исламу.
+            1. Задача - точно отвечать на вопросы, **основываясь на Коране и Хадисах**.
+            2. Давать **четкие**, уважительные ответы, основанные на исламском учении.
+            3. Всегда приводите конкретные номера сур и аятов.
+            4. Отвечай на **русском** языке.
+            """
+
+        prompt = f"""
+        # Вопрос : {query}
+        """
+        if sources:
+            prompt += f"""
+                Соответствующие аяты Корана:
+                {sources}
+            """
+
+        try:
+            effective_model = model if model else self.model
+            print(f"🤖 Используем llm-модель: {effective_model}")
+
+            print(f"=== SYSTEM PROMPT ===\n{system_prompt}")
+            print(f"=== USER PROMPT ===\n{prompt}")
+
+            response = await self.client.post(
+                "/chat/completions",
+                json={
+                    "model": effective_model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": system_prompt
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "HTTP-Referer": "https://halalai.app",
+                    "X-Title": "HalalAI"
+                }
+            )
+
+            response.raise_for_status()
+            data = response.json()
+
+            answer = data["choices"][0]["message"]["content"]
+            print(
+                f"✅ OpenRouter response: "
+                f"{len(answer)} chars, "
+                f"tokens: {data['usage']['total_tokens']}"
+            )
+            print(f"=== LLM RESPONSE ===\n{answer}")
+
+            return answer
+
+        except httpx.HTTPError as e:
+            print(f"❌ OpenRouter API error: {e}")
+            raise
+        except KeyError as e:
+            print(f"❌ Unexpected OpenRouter response format: {e}")
+            raise ValueError(f"Invalid OpenRouter response: {e}")
+
+    async def close(self):
+        try:
+            await self.client.aclose()
+        except Exception as e:
+            pass  # Ignore close errors
+
+
+---
+Примечание: в dependencies.py вызов OpenRouterClient(api_key=key) не совпадает с __init__ OpenRouterClient (там только model, base_url); ключ передаётся в generate().

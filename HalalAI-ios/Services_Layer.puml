@@ -1,0 +1,242 @@
+@startuml Services Layer
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+' ===== AUTHENTICATION =====
+protocol AuthManager {
+    {abstract} var authState: AuthState
+    {abstract} var currentUser: User?
+    {abstract} var isAuthenticated: Bool
+    {abstract} var isGuest: Bool
+    {abstract} var authToken: String?
+    --
+    {abstract} + saveAuth(response: AuthResponse)
+    {abstract} + logout()
+    {abstract} + continueAsGuest()
+    {abstract} + refreshToken() async throws
+}
+
+class AuthManagerImpl {
+    - authState: AuthState
+    - currentUser: User?
+    - authToken: String?
+    --
+    + saveAuth(response: AuthResponse)
+    + logout()
+    + continueAsGuest()
+    + refreshToken() async throws
+    - loadStoredAuth()
+    - cleanUserDefaults()
+}
+
+protocol AuthService {
+    {abstract} var isLoading: Bool
+    {abstract} var errorMessage: String?
+    --
+    {abstract} + register(email: String, password: String) async throws -> AuthResponse
+    {abstract} + login(email: String, password: String) async throws -> AuthResponse
+    {abstract} + refreshToken(token: String) async throws -> AuthResponse
+}
+
+class AuthServiceImpl {
+    - networkClient: NetworkClient
+    --
+    + register(email: String, password: String) async throws -> AuthResponse
+    + login(email: String, password: String) async throws -> AuthResponse
+    + refreshToken(token: String) async throws -> AuthResponse
+}
+
+' ===== CHAT =====
+protocol ChatService {
+    {abstract} var messages: [ChatMessage]
+    {abstract} var chatState: ChatState
+    {abstract} var remoteModel: String
+    {abstract} var maxTokens: Int
+    {abstract} var temperature: Float
+    --
+    {abstract} + loadModels() async throws
+    {abstract} + sendMessage(_ text: String) async throws
+    {abstract} + retryLastMessage() async throws
+    {abstract} + clearChat()
+}
+
+class ChatServiceImpl {
+    - networkClient: NetworkClient
+    - authManager: AuthManager
+    - settingsStore: ChatSettingsStore
+    - messages: [ChatMessage]
+    - chatState: ChatState
+    --
+    + sendMessage(_ text: String) async throws
+    + retryLastMessage() async throws
+    + clearChat()
+    - sendRequestToBackend(messages: [ChatMessage]) async throws
+    - handleError(NetworkError)
+}
+
+class ChatSettingsStore {
+    - userApiKey: String?
+    - remoteModel: String
+    - maxTokens: Int
+    - temperature: Float
+    --
+    + persist()
+}
+
+' ===== VERSE & HOME =====
+protocol VerseService {
+    {abstract} var verseOfTheDay: Verse?
+    --
+    {abstract} + fetchVerseOfTheDay() async throws
+}
+
+class VerseServiceImpl {
+    - networkClient: NetworkClient
+    - verseOfTheDay: Verse?
+    --
+    + fetchVerseOfTheDay() async throws
+}
+
+' ===== PRAYER =====
+protocol PrayerTimeService {
+    {abstract} + calculateTimes(for: CLLocationCoordinate2D, date: Date, method: PrayerCalculationMethod) -> DailyPrayerTimes
+    {abstract} + nextPrayer(from: DailyPrayerTimes, date: Date) -> Prayer?
+}
+
+class PrayerTimeServiceImpl {
+    - calculationMethod: PrayerCalculationMethod
+    --
+    + calculateTimes(for: CLLocationCoordinate2D, date: Date, method: PrayerCalculationMethod) -> DailyPrayerTimes
+    + nextPrayer(from: DailyPrayerTimes, date: Date) -> Prayer?
+    - calculateUsingMethod(PrayerCalculationMethod)
+}
+
+class PrayerSettingsStore {
+    - settings: PrayerSettings
+    --
+    + updateCalculationMethod(PrayerCalculationMethod)
+    + updateNotificationSettings(PrayerNotificationSetting)
+}
+
+protocol PrayerNotificationService {
+    {abstract} + requestAuthorization() async -> Bool
+    {abstract} + scheduleNotifications(for: DailyPrayerTimes) async throws
+    {abstract} + cancelAllPrayerNotifications()
+}
+
+class PrayerNotificationServiceImpl {
+    - prayerTimeService: PrayerTimeService
+    - center: UNUserNotificationCenter
+    --
+    + requestAuthorization() async -> Bool
+    + scheduleNotifications(for: DailyPrayerTimes) async throws
+    + cancelAllPrayerNotifications()
+    - schedule(notification: UNNotificationRequest)
+}
+
+' ===== LOCATION =====
+protocol LocationService {
+    {abstract} var currentLocation: CLLocationCoordinate2D?
+    {abstract} var authorizationStatus: CLAuthorizationStatus
+    --
+    {abstract} + requestLocation() async throws -> CLLocationCoordinate2D
+}
+
+class LocationServiceImpl {
+    - manager: CLLocationManager
+    - currentLocation: CLLocationCoordinate2D?
+    --
+    + requestLocation() async throws -> CLLocationCoordinate2D
+    - locationManagerDidChangeAuthorization()
+    - locationManager(didUpdateLocations: [CLLocation])
+}
+
+' ===== SCANNER =====
+protocol IngredientService {
+    {abstract} + loadIngredients() async throws
+    {abstract} + analyzeText(_ text: String) -> ProductAnalysis
+}
+
+class IngredientServiceImpl {
+    - ingredients: [Ingredient]
+    - parser: IngredientCSVParser
+    - matcher: IngredientMatcher
+    --
+    + loadIngredients() async throws
+    + analyzeText(_ text: String) -> ProductAnalysis
+}
+
+struct IngredientCSVParser {
+    + parseFromBundle(filename: String) throws -> [Ingredient]
+}
+
+struct IngredientMatcher {
+    + analyze(_ text: String, against: [Ingredient]) -> [DetectedIngredient]
+    - matchesIngredientWithScore(String, Ingredient) -> Double
+}
+
+' ===== QURAN =====
+protocol QuranStorageService {
+    {abstract} var suras: [Sura]
+    {abstract} + loadQuranFromBundle() throws
+    {abstract} + saveProgress(suraIndex: Int, verseNumber: Int)
+}
+
+class QuranStorageServiceImpl {
+    - suras: [Sura]
+    - lastReadSuraIndex: Int
+    - lastReadVerseNumber: Int
+    --
+    + loadQuranFromBundle() throws
+    + saveProgress(suraIndex: Int, verseNumber: Int)
+    - parseCSV(filename: String) throws -> [Sura]
+}
+
+' ===== HALAL PLACES =====
+protocol HalalPlacesService {
+    {abstract} + searchNearby(coordinate: CLLocationCoordinate2D, radius: Double) async throws -> [HalalPlace]
+}
+
+class HalalPlacesServiceImpl {
+    - networkClient: NetworkClient
+    --
+    + searchNearby(coordinate: CLLocationCoordinate2D, radius: Double) async throws -> [HalalPlace]
+    - searchUsingMapKit(coordinate: CLLocationCoordinate2D) async throws -> [HalalPlace]
+}
+
+' ===== RELATIONSHIPS =====
+AuthManagerImpl ..|> AuthManager : implements
+AuthServiceImpl ..|> AuthService : implements
+AuthServiceImpl --> NetworkClient : uses
+AuthManagerImpl --> AuthService : depends on
+
+ChatServiceImpl ..|> ChatService : implements
+ChatServiceImpl --> NetworkClient : uses
+ChatServiceImpl --> AuthManager : depends on
+ChatServiceImpl --> ChatSettingsStore : uses
+
+VerseServiceImpl ..|> VerseService : implements
+VerseServiceImpl --> NetworkClient : uses
+
+PrayerTimeServiceImpl ..|> PrayerTimeService : implements
+PrayerNotificationServiceImpl ..|> PrayerNotificationService : implements
+PrayerNotificationServiceImpl --> PrayerTimeService : depends on
+PrayerSettingsStore --> PrayerTimeService : depends on
+
+LocationServiceImpl ..|> LocationService : implements
+
+IngredientServiceImpl ..|> IngredientService : implements
+IngredientServiceImpl --> IngredientCSVParser : uses
+IngredientServiceImpl --> IngredientMatcher : uses
+
+QuranStorageServiceImpl ..|> QuranStorageService : implements
+
+HalalPlacesServiceImpl ..|> HalalPlacesService : implements
+HalalPlacesServiceImpl --> NetworkClient : uses
+HalalPlacesServiceImpl --> LocationService : depends on
+
+@enduml

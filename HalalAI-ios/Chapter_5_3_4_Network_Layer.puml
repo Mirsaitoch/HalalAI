@@ -1,0 +1,87 @@
+@startuml Network Layer (5.3.4)
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "Network Client" {
+    class NetworkClient {
+        - session: URLSession
+        - baseURL: String
+        --
+        + send() async throws
+        + sendRaw() async throws
+    }
+}
+
+package "API Request Protocol" {
+    protocol APIRequest {
+        {abstract} associatedtype Response: Decodable
+        {abstract} var endpoint: Endpoint
+        {abstract} var body: Encodable?
+        {abstract} var token: String?
+        {abstract} var timeout: TimeInterval
+        {abstract} var expectedStatus: Int
+    }
+}
+
+package "Routing" {
+    enum Endpoint {
+        case login
+        case register
+        case refreshToken
+        case chat
+        case models
+        case verseOfTheDay
+        --
+        var path: String
+        var method: HTTPMethod
+    }
+
+    enum HTTPMethod {
+        case get
+        case post
+        case put
+        case delete
+    }
+}
+
+package "Error Handling" {
+    enum NetworkError {
+        case invalidURL
+        case invalidResponse
+        case serverError(statusCode: Int, data: Data)
+        case decodingError(Error)
+        case unknown(Error)
+    }
+}
+
+package "Configuration" {
+    class APIConfiguration {
+        + backendURL: String
+        + timeout: TimeInterval
+    }
+}
+
+package "Apple Framework" {
+    class URLSession
+}
+
+' ===== RELATIONSHIPS =====
+
+NetworkClient --> URLSession : uses
+NetworkClient --> APIRequest : processes
+NetworkClient --> Endpoint : routes to
+NetworkClient --> HTTPMethod : applies
+NetworkClient --> NetworkError : throws
+NetworkClient --> APIConfiguration : reads from
+
+APIRequest --> Endpoint : defines
+APIRequest --> HTTPMethod : specifies
+APIRequest --> NetworkError : produces
+
+Endpoint --> HTTPMethod : has method
+
+@enduml

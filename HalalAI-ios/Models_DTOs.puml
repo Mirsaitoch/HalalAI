@@ -1,0 +1,280 @@
+@startuml Models & DTOs
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+' ===== AUTH MODELS =====
+struct User {
+    - id: String
+    - email: String
+    - createdAt: Date
+}
+
+struct AuthResponse {
+    - token: String
+    - type: String
+    - userId: String
+    - email: String
+}
+
+enum AuthState {
+    case authenticated
+    case unauthenticated
+    case loading
+    case guest
+}
+
+enum AuthError {
+    case invalidCredentials
+    case userAlreadyExists
+    case networkError
+    case validationError
+    case unknown
+}
+
+struct LoginRequest {
+    - email: String
+    - password: String
+}
+
+struct RegisterRequest {
+    - email: String
+    - password: String
+}
+
+' ===== CHAT MODELS =====
+struct ChatMessage {
+    - id: String
+    - role: Role
+    - text: String
+    - date: Date
+    - model: String?
+}
+
+enum Role {
+    case user
+    case assistant
+}
+
+enum ChatState {
+    case idle
+    case typing
+    case error
+}
+
+enum ConnectionState {
+    case connected
+    case disconnected
+    case connecting
+}
+
+struct ChatRequest {
+    - messages: [ChatMessageDTO]
+    - maxTokens: Int
+    - temperature: Float
+    - useRag: Bool
+    - apiKey: String?
+    - remoteModel: String?
+}
+
+struct ChatResponse {
+    - reply: String
+}
+
+struct ChatMessageDTO {
+    - role: String
+    - content: String
+}
+
+struct ModelsResponse {
+    - defaultModel: String
+    - allowedModels: [String]
+}
+
+' ===== VERSE MODELS =====
+struct Verse {
+    - id: String
+    - suraIndex: Int
+    - suraTitle: String
+    - suraSubtitle: String
+    - verseNumber: Int
+    - text: String
+}
+
+' ===== PRAYER MODELS =====
+struct DailyPrayerTimes {
+    - date: Date
+    - fajr: Date
+    - sunrise: Date
+    - dhuhr: Date
+    - asr: Date
+    - maghrib: Date
+    - isha: Date
+    --
+    + time(for: Prayer) -> Date?
+    + allPrayers() -> [(Prayer, Date)]
+}
+
+enum Prayer {
+    case fajr
+    case sunrise
+    case dhuhr
+    case asr
+    case maghrib
+    case isha
+    --
+    + var localizedName: String
+    + var systemImage: String
+    + var notifiablePrayers: [Prayer]
+}
+
+enum PrayerCalculationMethod {
+    case russia
+    case tatarstan
+    case muslimWorldLeague
+    case isna
+    case egypt
+    case makkah
+    case karachi
+    case tehran
+}
+
+enum Madhab {
+    case shafi
+    case hanafi
+}
+
+struct PrayerSettings {
+    - calculationMethod: PrayerCalculationMethod
+    - madhab: Madhab
+    - customFajrAngle: Double?
+    - customIshaAngle: Double?
+    - notifications: [Prayer: PrayerNotificationSetting]
+}
+
+struct PrayerNotificationSetting {
+    - isEnabled: Bool
+    - offsetMinutes: Int
+}
+
+' ===== SCANNER MODELS =====
+struct Ingredient {
+    - id: String
+    - eCode: String?
+    - status: IngredientStatus
+    - nameRu: String
+    - nameEn: String
+    - note: String?
+}
+
+enum IngredientStatus {
+    case halal
+    case haram
+    case mushbooh
+    case unknown
+    --
+    + var displayName: String
+    + var color: Color
+}
+
+struct ProductAnalysis {
+    - ingredients: [DetectedIngredient]
+    - overallStatus: IngredientStatus
+    - haramIngredients: [Ingredient]
+    - mushboohIngredients: [Ingredient]
+    --
+    + var isHalal: Bool
+}
+
+struct DetectedIngredient {
+    - id: String
+    - name: String
+    - matchedIngredient: Ingredient?
+    - status: IngredientStatus
+}
+
+enum IngredientServiceError: Error {
+    case fileNotFound
+    case invalidFormat
+    case loadingFailed
+}
+
+' ===== QURAN MODELS =====
+struct Sura {
+    - id: String
+    - index: Int
+    - title: String
+    - subtitle: String
+    - verses: [QuranVerse]
+    --
+    + var displayTitle: String
+}
+
+struct QuranVerse {
+    - id: String
+    - verseNumber: Int
+    - text: String
+}
+
+enum QuranError: Error {
+    case fileNotFound
+    case encodingError
+    case emptyFile
+}
+
+' ===== HALALMAP MODELS =====
+struct HalalPlace {
+    - id: String
+    - name: String
+    - address: String
+    - coordinate: CLLocationCoordinate2D
+    - phoneNumber: String?
+    - url: String?
+    - mapItem: MKMapItem?
+    --
+    + func formattedDistance(from: CLLocationCoordinate2D) -> String?
+}
+
+' ===== API CONFIGURATION =====
+struct APIConfiguration {
+    - baseURL: String
+    - timeout: TimeInterval = 30
+}
+
+enum HTTPMethod: String {
+    case get = "GET"
+    case post = "POST"
+    case put = "PUT"
+    case delete = "DELETE"
+}
+
+enum NetworkError: Error {
+    case invalidURL
+    case invalidResponse
+    case serverError(Int)
+    case decodingError(String)
+    case unknown(String)
+}
+
+' ===== RELATIONSHIPS =====
+AuthResponse --> User : contains
+ChatMessage --> Role : has
+DailyPrayerTimes --> Prayer : contains multiple
+ProductAnalysis --> DetectedIngredient : contains multiple
+ProductAnalysis --> Ingredient : contains multiple
+ProductAnalysis --> IngredientStatus : has
+DetectedIngredient --> Ingredient : references
+DetectedIngredient --> IngredientStatus : has
+Sura --> QuranVerse : contains multiple
+HalalPlace --> CLLocationCoordinate2D : has location
+ChatRequest --> ChatMessageDTO : contains multiple
+ChatRequest --> ModelsResponse : uses
+PrayerSettings --> PrayerCalculationMethod : has
+PrayerSettings --> Madhab : has
+PrayerSettings --> PrayerNotificationSetting : contains multiple
+Ingredient --> IngredientStatus : has
+
+@enduml

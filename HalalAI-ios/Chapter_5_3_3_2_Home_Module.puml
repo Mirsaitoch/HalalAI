@@ -1,0 +1,201 @@
+@startuml Home Module (5.3.3.2)
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "Services" {
+    protocol VerseService {
+        {abstract} var verseOfTheDay: Verse?
+        --
+        {abstract} + fetchVerseOfTheDay() async throws
+    }
+
+    class VerseServiceImpl {
+        - networkClient: NetworkClient
+        - verseOfTheDay: Verse?
+        --
+        + init(networkClient: NetworkClient)
+        + fetchVerseOfTheDay() async throws
+    }
+
+    protocol PrayerTimeService {
+        {abstract} + calculateTimes(for: CLLocationCoordinate2D, date: Date) -> DailyPrayerTimes
+        {abstract} + nextPrayer(from: DailyPrayerTimes, date: Date) -> Prayer?
+    }
+
+    class PrayerTimeServiceImpl {
+        - calculationMethod: PrayerCalculationMethod
+        --
+        + init()
+        + calculateTimes(for: CLLocationCoordinate2D, date: Date) -> DailyPrayerTimes
+        + nextPrayer(from: DailyPrayerTimes, date: Date) -> Prayer?
+    }
+
+    protocol LocationService {
+        {abstract} var currentLocation: CLLocationCoordinate2D?
+        --
+        {abstract} + requestLocation() async throws -> CLLocationCoordinate2D
+    }
+
+    class LocationServiceImpl {
+        - manager: CLLocationManager
+        - currentLocation: CLLocationCoordinate2D?
+        --
+        + init()
+        + requestLocation() async throws -> CLLocationCoordinate2D
+    }
+}
+
+package "Data Models" {
+    struct Verse {
+        - id: String
+        - suraIndex: Int
+        - suraTitle: String
+        - suraSubtitle: String
+        - verseNumber: Int
+        - text: String
+    }
+
+    struct DailyPrayerTimes {
+        - date: Date
+        - fajr: Date
+        - sunrise: Date
+        - dhuhr: Date
+        - asr: Date
+        - maghrib: Date
+        - isha: Date
+        --
+        + time(for: Prayer) -> Date?
+        + allPrayers() -> [(Prayer, Date)]
+    }
+
+    enum Prayer {
+        case fajr
+        case sunrise
+        case dhuhr
+        case asr
+        case maghrib
+        case isha
+    }
+}
+
+package "UI Components" {
+    struct HomeView {
+        - verseService: VerseService
+        - locationService: LocationService
+        - prayerTimeService: PrayerTimeService
+        - authManager: AuthManager
+        --
+        - var body: some View
+        - var viewModel: HomeViewModel
+    }
+
+    class HomeViewModel {
+        - verseService: VerseService
+        - prayerCardViewModel: PrayerTimesCardViewModel
+        - authManager: AuthManager
+        --
+        + init(verseService: VerseService, prayerCardViewModel: PrayerTimesCardViewModel, authManager: AuthManager)
+        + loadData() async
+    }
+
+    struct VerseView {
+        - verseService: VerseService
+        --
+        - var body: some View
+    }
+
+    struct PrayerTimesCardView {
+        - viewModel: PrayerTimesCardViewModel
+        --
+        - var body: some View
+    }
+
+    class PrayerTimesCardViewModel {
+        - locationService: LocationService
+        - prayerTimeService: PrayerTimeService
+        - settingsStore: PrayerSettingsStore
+        - todayTimes: DailyPrayerTimes?
+        - nextPrayer: Prayer?
+        --
+        + init(locationService: LocationService, prayerTimeService: PrayerTimeService, settingsStore: PrayerSettingsStore)
+        + refresh() async
+        + recalculate() async
+    }
+
+    struct GuestBannerView {
+        - onLogin: () -> Void
+        --
+        - var body: some View
+    }
+}
+
+package "Dependencies" {
+    protocol AuthManager {
+        {abstract} var isGuest: Bool
+        {abstract} var isAuthenticated: Bool
+    }
+
+    class NetworkClient {
+        + send<T: APIRequest>(request: T) async throws -> T.Response
+    }
+
+    class PrayerSettingsStore {
+        - settings: PrayerSettings
+        --
+        + updateCalculationMethod(PrayerCalculationMethod)
+    }
+}
+
+' ===== RELATIONSHIPS =====
+
+' Service implementations
+VerseServiceImpl ..|> VerseService : implements
+VerseServiceImpl --> NetworkClient : uses
+
+PrayerTimeServiceImpl ..|> PrayerTimeService : implements
+
+LocationServiceImpl ..|> LocationService : implements
+
+' HomeView relationships
+HomeView --> VerseService : uses
+HomeView --> LocationService : uses
+HomeView --> PrayerTimeService : uses
+HomeView --> AuthManager : uses
+HomeView *-- HomeViewModel : contains
+
+' HomeViewModel relationships
+HomeViewModel --> VerseService : uses
+HomeViewModel *-- PrayerTimesCardViewModel : contains
+HomeViewModel --> AuthManager : checks
+
+' VerseView relationships
+VerseView --> VerseService : uses
+VerseView --> Verse : displays
+
+' PrayerTimesCardView relationships
+PrayerTimesCardView *-- PrayerTimesCardViewModel : contains
+
+' PrayerTimesCardViewModel relationships
+PrayerTimesCardViewModel --> LocationService : uses
+PrayerTimesCardViewModel --> PrayerTimeService : uses
+PrayerTimesCardViewModel --> PrayerSettingsStore : uses
+PrayerTimesCardViewModel --> DailyPrayerTimes : manages
+PrayerTimesCardViewModel --> Prayer : calculates
+
+' GuestBannerView relationships
+GuestBannerView --> AuthManager : checks
+
+' HomeView displays components
+HomeView --> VerseView : displays
+HomeView --> PrayerTimesCardView : displays
+HomeView --> GuestBannerView : displays
+
+' Data relationships
+VerseService --> Verse : returns
+PrayerTimeService --> DailyPrayerTimes : returns
+
+@enduml

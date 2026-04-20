@@ -1,0 +1,197 @@
+@startuml Authentication Module (5.3.3.1)
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "State Management" {
+    enum AuthState {
+        case authenticated
+        case unauthenticated
+        case loading
+        case guest
+    }
+
+    protocol AuthManager {
+        {abstract} var authState: AuthState
+        {abstract} var currentUser: User?
+        {abstract} var isAuthenticated: Bool
+        {abstract} var isGuest: Bool
+        {abstract} var authToken: String?
+        --
+        {abstract} + saveAuth(response: AuthResponse)
+        {abstract} + logout()
+        {abstract} + continueAsGuest()
+        {abstract} + refreshToken() async throws -> AuthResponse
+    }
+
+    class AuthManagerImpl {
+        - authState: AuthState
+        - currentUser: User?
+        - authToken: String?
+        --
+        + init()
+        + saveAuth(response: AuthResponse)
+        + logout()
+        + continueAsGuest()
+        + refreshToken() async throws -> AuthResponse
+    }
+}
+
+package "Service Layer" {
+    protocol AuthService {
+        {abstract} var isLoading: Bool
+        {abstract} var errorMessage: String?
+        --
+        {abstract} + register(email: String, password: String) async throws -> AuthResponse
+        {abstract} + login(email: String, password: String) async throws -> AuthResponse
+        {abstract} + refreshToken(token: String) async throws -> AuthResponse
+    }
+
+    class AuthServiceImpl {
+        - networkClient: NetworkClient
+        - isLoading: Bool
+        - errorMessage: String?
+        --
+        + init(networkClient: NetworkClient)
+        + register(email: String, password: String) async throws -> AuthResponse
+        + login(email: String, password: String) async throws -> AuthResponse
+        + refreshToken(token: String) async throws -> AuthResponse
+    }
+}
+
+package "Data Models" {
+    struct User {
+        - id: String
+        - email: String
+        - createdAt: Date
+    }
+
+    struct AuthResponse {
+        - token: String
+        - type: String
+        - userId: String
+        - email: String
+    }
+
+    struct LoginRequest {
+        - email: String
+        - password: String
+    }
+
+    struct RegisterRequest {
+        - email: String
+        - password: String
+    }
+}
+
+package "UI Layer" {
+    struct AuthFlowView {
+        - path: [AuthCoordinator]
+        --
+        - var body: some View
+    }
+
+    struct LoginView {
+        - authManager: AuthManager
+        - authService: AuthService
+        --
+        - var body: some View
+        - var viewModel: LoginViewModel
+    }
+
+    class LoginViewModel {
+        - email: String
+        - password: String
+        - showPassword: Bool
+        - isLoading: Bool
+        - errorMessage: String?
+        --
+        + init(authService: AuthService, authManager: AuthManager)
+        + login() async
+    }
+
+    struct RegisterView {
+        - authManager: AuthManager
+        - authService: AuthService
+        --
+        - var body: some View
+        - var viewModel: RegisterViewModel
+    }
+
+    class RegisterViewModel {
+        - email: String
+        - password: String
+        - confirmPassword: String
+        - showPassword: Bool
+        - showConfirmPassword: Bool
+        - isLoading: Bool
+        - errorMessage: String?
+        --
+        + init(authService: AuthService, authManager: AuthManager)
+        + register() async
+        - isValidEmail(String) -> Bool
+        - isPasswordValid(String) -> Bool
+        - passwordsMatch() -> Bool
+    }
+}
+
+package "Network Layer" {
+    struct NetworkClient {
+        + send<T: APIRequest>(request: T) async throws -> T.Response
+    }
+
+    enum Endpoint {
+        case login
+        case register
+        case refreshToken
+    }
+}
+
+' ===== RELATIONSHIPS =====
+
+' State Management
+AuthManagerImpl ..|> AuthManager : implements
+AuthManager --> AuthState : uses
+AuthManager --> User : manages
+
+' Service Layer
+AuthServiceImpl ..|> AuthService : implements
+AuthServiceImpl --> NetworkClient : uses
+AuthServiceImpl --> Endpoint : uses
+
+' UI Layer
+LoginView --> AuthManager : uses
+LoginView --> AuthService : uses
+LoginView *-- LoginViewModel : contains
+
+LoginViewModel --> AuthManager : updates state
+LoginViewModel --> AuthService : calls API
+LoginViewModel --> LoginRequest : creates
+
+RegisterView --> AuthManager : uses
+RegisterView --> AuthService : uses
+RegisterView *-- RegisterViewModel : contains
+
+RegisterViewModel --> AuthManager : updates state
+RegisterViewModel --> AuthService : calls API
+RegisterViewModel --> RegisterRequest : creates
+
+AuthFlowView --> LoginView : displays
+AuthFlowView --> RegisterView : displays
+
+' Data flow
+AuthServiceImpl --> AuthResponse : parses
+AuthServiceImpl --> User : returns
+LoginViewModel --> User : updates
+LoginViewModel --> AuthResponse : handles
+RegisterViewModel --> User : creates
+RegisterViewModel --> AuthResponse : handles
+
+' UI to Data
+LoginView --> User : displays
+RegisterView --> User : handles
+
+@enduml

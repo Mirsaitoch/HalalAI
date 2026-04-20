@@ -1,0 +1,128 @@
+@startuml Prayer Module (5.3.3.6)
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "Services" {
+    protocol PrayerTimeService {
+        {abstract} + calculateTimes(coordinate: CLLocationCoordinate2D, date: Date) -> DailyPrayerTimes
+        {abstract} + nextPrayer(from: DailyPrayerTimes, date: Date) -> Prayer?
+    }
+
+    class PrayerTimeServiceImpl {
+        - calculationMethod: PrayerCalculationMethod
+        - adhan: Adhan
+    }
+
+    protocol PrayerNotificationService {
+        {abstract} + requestAuthorization() async -> Bool
+        {abstract} + scheduleNotifications(for: DailyPrayerTimes) async throws
+        {abstract} + cancelAllPrayerNotifications()
+    }
+
+    class PrayerNotificationServiceImpl {
+        - prayerTimeService: PrayerTimeService
+    }
+
+    protocol LocationService {
+        {abstract} var currentLocation: CLLocationCoordinate2D?
+        {abstract} + requestLocation() async throws -> CLLocationCoordinate2D
+    }
+
+    class LocationServiceImpl
+}
+
+package "Data Models" {
+    struct DailyPrayerTimes {
+        - date: Date
+        - fajr: Date
+        - dhuhr: Date
+        - asr: Date
+        - maghrib: Date
+        - isha: Date
+    }
+
+    enum Prayer {
+        case fajr
+        case dhuhr
+        case asr
+        case maghrib
+        case isha
+    }
+
+    struct PrayerSettings {
+        - calculationMethod: PrayerCalculationMethod
+        - madhab: Madhab
+        - notifications: [Prayer: PrayerNotificationSetting]
+    }
+
+    enum PrayerCalculationMethod {
+        case russia
+        case tatarstan
+        case muslimWorldLeague
+    }
+}
+
+package "UI Components" {
+    struct PrayerTimesCardView {
+        - viewModel: PrayerTimesCardViewModel
+    }
+
+    class PrayerTimesCardViewModel {
+        - todayTimes: DailyPrayerTimes?
+        - nextPrayer: Prayer?
+    }
+
+    struct PrayerNotificationSettingsView {
+        - settingsStore: PrayerSettingsStore
+        - notificationService: PrayerNotificationService
+    }
+}
+
+package "Storage" {
+    class PrayerSettingsStore {
+        - settings: PrayerSettings
+    }
+
+    class UserNotifications
+}
+
+package "External Libraries" {
+    class Adhan {
+        + Coordinates
+        + PrayerTimes
+        + CalculationMethod
+        + Madhab
+    }
+}
+
+' ===== RELATIONSHIPS =====
+
+PrayerTimeServiceImpl ..|> PrayerTimeService : implements
+PrayerTimeServiceImpl --> Adhan : uses for calculation
+PrayerNotificationServiceImpl ..|> PrayerNotificationService : implements
+PrayerNotificationServiceImpl --> PrayerTimeService : uses
+LocationServiceImpl ..|> LocationService : implements
+
+PrayerTimesCardView *-- PrayerTimesCardViewModel : contains
+PrayerTimesCardViewModel --> PrayerTimeService : uses
+PrayerTimesCardViewModel --> LocationService : uses
+PrayerTimesCardViewModel --> PrayerSettingsStore : uses
+PrayerTimesCardViewModel --> DailyPrayerTimes : manages
+PrayerTimesCardViewModel --> Prayer : calculates
+
+PrayerNotificationSettingsView --> PrayerSettingsStore : uses
+PrayerNotificationSettingsView --> PrayerNotificationService : uses
+PrayerNotificationSettingsView --> PrayerSettings : manages
+
+PrayerSettingsStore --> UserNotifications : saves to
+PrayerNotificationService --> UserNotifications : schedules
+
+PrayerTimeService --> DailyPrayerTimes : returns
+PrayerTimeService --> Prayer : calculates
+PrayerSettings --> PrayerCalculationMethod : uses
+
+@enduml

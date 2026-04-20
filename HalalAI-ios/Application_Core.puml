@@ -1,0 +1,137 @@
+@startuml Application Core
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+' ===== APP ENTRY POINT =====
+struct HalalAIApp {
+    - body: Scene
+}
+
+struct RootView {
+    - authManager: AuthManager
+    --
+    - body: View
+}
+
+' ===== FACTORY & DI =====
+interface ScreenFactory {
+    {abstract} + makeLoginView() -> LoginView
+    {abstract} + makeRegisterView() -> RegisterView
+    {abstract} + makeRootView() -> RootView
+    {abstract} + makeHomeView() -> HomeView
+    {abstract} + makeChatView() -> ChatView
+    {abstract} + makeScannerView() -> ScannerView
+    {abstract} + makeQuranListView() -> QuranListView
+    {abstract} + makeSuraReaderView() -> SuraReaderView
+    {abstract} + makePrayerNotificationSettingsView() -> View
+    {abstract} + makeHalalMapView() -> HalalMapView
+    {abstract} + makeSettingsView() -> SettingsView
+}
+
+class ScreenFactoryImpl {
+    - dc: DependencyContainer
+    --
+    + makeLoginView() -> LoginView
+    + makeRegisterView() -> RegisterView
+    + makeRootView() -> RootView
+    + makeHomeView() -> HomeView
+    + makeChatView() -> ChatView
+    + makeScannerView() -> ScannerView
+    + makeQuranListView() -> QuranListView
+    + makeSuraReaderView() -> SuraReaderView
+    + makePrayerNotificationSettingsView() -> View
+    + makeHalalMapView() -> HalalMapView
+    + makeSettingsView() -> SettingsView
+}
+
+class DependencyContainer {
+    - authManager: AuthManager
+    - authService: AuthService
+    - chatService: ChatService
+    - verseService: VerseService
+    - quranStorage: QuranStorageService
+    - locationService: LocationService
+    - prayerTimeService: PrayerTimeService
+    - prayerSettingsStore: PrayerSettingsStore
+    - prayerNotificationService: PrayerNotificationService
+    - ingredientService: IngredientService
+    - halalPlacesService: HalalPlacesService
+    - networkClient: NetworkClient
+    --
+    + init()
+}
+
+' ===== NETWORK LAYER =====
+interface APIRequest {
+    {abstract} var endpoint: Endpoint
+    {abstract} var method: HTTPMethod
+    {abstract} var body: Data?
+    {abstract} var token: String?
+    {abstract} var timeout: TimeInterval
+    {abstract} var expectedStatus: Int
+}
+
+enum Endpoint {
+    case login(email, password)
+    case register(email, password)
+    case refreshToken(token)
+    case chat(message, options)
+    case models
+    case verseOfTheDay
+    case ingredients(text)
+    case halalPlaces(lat, lng)
+    --
+    + var path: String
+    + var method: HTTPMethod
+}
+
+enum HTTPMethod {
+    case get
+    case post
+    case put
+    case delete
+}
+
+struct NetworkClient {
+    + send<T: APIRequest>(request: T) -> async throws -> T.Response
+    + sendRaw(url: URL, method: HTTPMethod) -> async throws -> Data
+}
+
+enum NetworkError: Error {
+    case invalidURL
+    case invalidResponse
+    case serverError(Int)
+    case decodingError
+    case unknown
+}
+
+struct APIConfiguration {
+    - baseURL: String
+    - timeout: TimeInterval
+}
+
+' ===== RELATIONSHIPS =====
+HalalAIApp --> RootView : creates
+
+RootView --> ScreenFactory : uses
+ScreenFactory <|.. ScreenFactoryImpl : implements
+
+ScreenFactoryImpl *-- DependencyContainer : contains
+DependencyContainer --> ScreenFactory : provides
+
+DependencyContainer --> NetworkClient : creates
+DependencyContainer --> APIConfiguration : uses
+
+NetworkClient --> APIRequest : processes
+NetworkClient --> Endpoint : routes to
+NetworkClient --> HTTPMethod : uses
+NetworkClient --> NetworkError : throws
+
+APIRequest --> Endpoint : defines
+APIRequest --> HTTPMethod : specifies
+
+@enduml

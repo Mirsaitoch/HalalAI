@@ -1,0 +1,228 @@
+@startuml HalalAI Project Architecture
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "App Layer" {
+    class HalalAIApp
+    struct RootView
+    interface ScreenFactory
+    class ScreenFactoryImpl
+    class DependencyContainer
+}
+
+package "Navigation Layer" {
+    struct RouterView
+    class Coordinator
+    enum Step
+    enum AuthCoordinator
+    enum HomeCoordinator
+    enum ChatCoordinator
+    enum SettingsCoordinator
+    enum TabBarItem
+}
+
+package "Features" {
+    package "Auth" {
+        protocol AuthManager
+        class AuthManagerImpl
+        protocol AuthService
+        class AuthServiceImpl
+        struct LoginView
+        struct RegisterView
+    }
+
+    package "Chat" {
+        protocol ChatService
+        class ChatServiceImpl
+        class ChatSettingsStore
+        struct ChatView
+        struct MessageBubble
+        struct InputBar
+    }
+
+    package "Home" {
+        protocol VerseService
+        class VerseServiceImpl
+        struct HomeView
+        struct VerseView
+        struct PrayerTimesCardView
+    }
+
+    package "Prayer" {
+        protocol PrayerTimeService
+        class PrayerTimeServiceImpl
+        class PrayerSettingsStore
+        protocol PrayerNotificationService
+        class PrayerNotificationServiceImpl
+        struct PrayerNotificationSettingsView
+    }
+
+    package "Scanner" {
+        protocol IngredientService
+        class IngredientServiceImpl
+        struct ScannerView
+        struct CameraView
+        struct IngredientResultsView
+    }
+
+    package "Quran" {
+        protocol QuranStorageService
+        class QuranStorageServiceImpl
+        struct QuranListView
+        struct SuraReaderView
+    }
+
+    package "HalalMap" {
+        protocol HalalPlacesService
+        class HalalPlacesServiceImpl
+        struct HalalMapView
+    }
+
+    package "Settings" {
+        struct SettingsView
+    }
+}
+
+package "Core Layer" {
+    package "Network" {
+        interface APIRequest
+        enum Endpoint
+        enum HTTPMethod
+        struct NetworkClient
+        enum NetworkError
+        struct APIConfiguration
+    }
+
+    package "Location" {
+        protocol LocationService
+        class LocationServiceImpl
+    }
+
+    package "Components" {
+        struct GuestBannerView
+        struct ErrorView
+        struct GuestAuthPromptView
+    }
+
+    package "Extensions" {
+        class ViewExtensions
+        class HapticFeedback
+    }
+}
+
+package "Models & DTOs" {
+    struct AuthResponse
+    struct ChatMessage
+    struct Verse
+    struct DailyPrayerTimes
+    struct Ingredient
+    struct ProductAnalysis
+    struct Sura
+    struct HalalPlace
+}
+
+' App Layer relationships
+HalalAIApp --> RootView
+RootView --> ScreenFactory
+ScreenFactoryImpl ..|> ScreenFactory
+ScreenFactoryImpl --> DependencyContainer
+
+' Navigation relationships
+RouterView *-- Coordinator
+Coordinator --> Step
+Step ..> HomeCoordinator
+Step ..> ChatCoordinator
+Step ..> SettingsCoordinator
+Coordinator --> TabBarItem
+Coordinator ..> AuthCoordinator
+
+' DependencyContainer provides services
+DependencyContainer --> AuthManager
+DependencyContainer --> ChatService
+DependencyContainer --> VerseService
+DependencyContainer --> PrayerTimeService
+DependencyContainer --> PrayerNotificationService
+DependencyContainer --> IngredientService
+DependencyContainer --> QuranStorageService
+DependencyContainer --> HalalPlacesService
+DependencyContainer --> LocationService
+DependencyContainer --> NetworkClient
+
+' Auth feature relationships
+AuthManagerImpl ..|> AuthManager
+AuthServiceImpl ..|> AuthService
+AuthServiceImpl --> NetworkClient
+LoginView --> AuthManager
+LoginView --> AuthService
+RegisterView --> AuthManager
+RegisterView --> AuthService
+
+' Chat feature relationships
+ChatServiceImpl ..|> ChatService
+ChatServiceImpl --> NetworkClient
+ChatSettingsStore --> ChatService
+ChatView --> ChatService
+ChatView --> AuthManager
+MessageBubble --> ChatMessage
+InputBar --> ChatService
+
+' Home feature relationships
+VerseServiceImpl ..|> VerseService
+VerseServiceImpl --> NetworkClient
+HomeView --> VerseService
+HomeView --> PrayerTimeService
+HomeView --> LocationService
+VerseView --> Verse
+
+' Prayer feature relationships
+PrayerTimeServiceImpl ..|> PrayerTimeService
+PrayerTimeServiceImpl --> LocationService
+PrayerNotificationServiceImpl ..|> PrayerNotificationService
+PrayerNotificationServiceImpl --> PrayerTimeService
+PrayerSettingsStore --> DailyPrayerTimes
+PrayerTimesCardView --> PrayerTimeService
+PrayerTimesCardView --> LocationService
+PrayerNotificationSettingsView --> PrayerNotificationService
+
+' Scanner feature relationships
+IngredientServiceImpl ..|> IngredientService
+ScannerView --> IngredientService
+ScannerView --> AuthManager
+IngredientResultsView --> ProductAnalysis
+IngredientResultsView --> Ingredient
+
+' Quran feature relationships
+QuranStorageServiceImpl ..|> QuranStorageService
+QuranListView --> QuranStorageService
+SuraReaderView --> QuranStorageService
+SuraReaderView --> Sura
+
+' HalalMap feature relationships
+HalalPlacesServiceImpl ..|> HalalPlacesService
+HalalPlacesServiceImpl --> NetworkClient
+HalalMapView --> HalalPlacesService
+HalalMapView --> LocationService
+HalalMapView --> HalalPlace
+
+' Settings relationships
+SettingsView --> ChatService
+SettingsView --> AuthManager
+
+' Network layer
+NetworkClient --> APIRequest
+NetworkClient --> Endpoint
+NetworkClient --> HTTPMethod
+NetworkClient --> NetworkError
+NetworkClient --> APIConfiguration
+
+' Location relationships
+LocationServiceImpl ..|> LocationService
+
+' Component relationships
+GuestBannerView --> AuthManager
+
+@enduml

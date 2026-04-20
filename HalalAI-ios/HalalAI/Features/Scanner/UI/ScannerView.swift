@@ -89,8 +89,7 @@ struct ScannerView: View {
             
             Image(systemName: "camera.fill")
                 .font(.system(size: 70))
-                .foregroundStyle(.darkGreen
-                )
+                .foregroundStyle(.darkGreen)
             
             Text("Сфотографируйте или выберите в галерее состав продукта")
                 .font(.title2)

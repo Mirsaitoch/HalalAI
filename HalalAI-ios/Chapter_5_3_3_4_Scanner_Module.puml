@@ -1,0 +1,114 @@
+@startuml Scanner Module (5.3.3.4)
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+
+package "Service Layer" {
+    protocol IngredientService {
+        {abstract} + analyzeText(_ text: String) -> ProductAnalysis
+        {abstract} + loadIngredients() async throws
+    }
+
+    class IngredientServiceImpl {
+        - ingredients: [Ingredient]
+        - networkClient: NetworkClient
+        --
+        + analyzeText(_ text: String) -> ProductAnalysis
+        + loadIngredients() async throws
+    }
+}
+
+package "Data Models" {
+    struct Ingredient {
+        - id: String
+        - eCode: String?
+        - status: IngredientStatus
+        - nameRu: String
+        - nameEn: String
+    }
+
+    enum IngredientStatus {
+        case halal
+        case haram
+        case mushbooh
+        case unknown
+    }
+
+    struct ProductAnalysis {
+        - ingredients: [DetectedIngredient]
+        - overallStatus: IngredientStatus
+        - haramIngredients: [Ingredient]
+        --
+        var isHalal: Bool
+    }
+
+    struct DetectedIngredient {
+        - name: String
+        - status: IngredientStatus
+        - matchedIngredient: Ingredient?
+    }
+}
+
+package "UI Layer" {
+    struct ScannerView {
+        - ingredientService: IngredientService
+        - authManager: AuthManager
+        --
+        - var body: some View
+        - var viewModel: ScannerViewModel
+    }
+
+    class ScannerViewModel {
+        - manualInput: String
+        - analysis: ProductAnalysis?
+        - isLoading: Bool
+        --
+        + processImages(_ images: [UIImage]) async
+        + processManualInput() async
+        + recognizeText(from: UIImage) async
+    }
+
+    struct CameraView
+    struct IngredientResultsView
+}
+
+package "Dependencies" {
+    class NetworkClient {
+        + send<T: APIRequest>(request: T) async throws -> T.Response
+    }
+
+    protocol AuthManager {
+        {abstract} var isGuest: Bool
+        {abstract} var isAuthenticated: Bool
+    }
+
+    class VisionFramework {
+        + recognizeText(from: CGImage) throws -> String
+    }
+}
+
+' ===== RELATIONSHIPS =====
+
+IngredientServiceImpl ..|> IngredientService : implements
+IngredientServiceImpl --> NetworkClient : uses
+IngredientServiceImpl --> Ingredient : manages
+
+ScannerView --> IngredientService : uses
+ScannerView --> AuthManager : checks
+ScannerView *-- ScannerViewModel : contains
+
+ScannerViewModel --> IngredientService : calls
+ScannerViewModel --> VisionFramework : uses OCR
+ScannerViewModel --> ProductAnalysis : manages
+
+ScannerView --> CameraView : displays
+ScannerView --> IngredientResultsView : displays
+
+ProductAnalysis --> DetectedIngredient : contains
+ProductAnalysis --> IngredientStatus : has
+Ingredient --> IngredientStatus : has
+
+@enduml

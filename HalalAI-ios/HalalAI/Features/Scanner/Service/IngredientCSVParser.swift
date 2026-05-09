@@ -17,7 +17,10 @@ struct IngredientCSVParser {
 
         let data = try Data(contentsOf: url)
         let csvString = String(data: data, encoding: .utf8) ?? ""
+        return try parse(csvString: csvString)
+    }
 
+    func parse(csvString: String) throws -> [Ingredient] {
         let lines = csvString.components(separatedBy: .newlines)
             .filter { !$0.isEmpty }
 
@@ -36,7 +39,7 @@ struct IngredientCSVParser {
             let statusString = components[1]
             let nameRu = components[2].trimmingCharacters(in: .whitespacesAndNewlines)
             let nameEn = components[3].trimmingCharacters(in: .whitespacesAndNewlines)
-            let note = components[4].trimmingCharacters(in: .whitespacesAndNewlines)
+            let note = components.count > 4 ? components[4].trimmingCharacters(in: .whitespacesAndNewlines) : ""
 
             guard let status = IngredientStatus(rawValue: statusString) else { continue }
 

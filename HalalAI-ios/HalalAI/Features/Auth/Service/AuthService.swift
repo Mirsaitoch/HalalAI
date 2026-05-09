@@ -21,9 +21,9 @@ final class AuthServiceImpl: AuthService {
     var isLoading = false
     var errorMessage: String?
 
-    private let networkClient: NetworkClient
+    private let networkClient: any NetworkClientProtocol
 
-    init(networkClient: NetworkClient = NetworkClient()) {
+    init(networkClient: any NetworkClientProtocol = NetworkClient()) {
         self.networkClient = networkClient
     }
 
@@ -61,15 +61,19 @@ final class AuthServiceImpl: AuthService {
 
         do {
             return try await networkClient.send(request)
+        } catch let networkError as NetworkError {
+            let authError = mapToAuthError(networkError)
+            errorMessage = authError.errorDescription
+            throw authError
         } catch {
-            let authError = mapToAuthError(error)
+            let authError = AuthError.networkError(error.localizedDescription)
             errorMessage = authError.errorDescription
             throw authError
         }
     }
 
     /// Маппинг NetworkError → AuthError с сохранением бизнес-логики статус-кодов
-    private func mapToAuthError(_ error: NetworkError) -> AuthError {
+    func mapToAuthError(_ error: NetworkError) -> AuthError {
         switch error {
         case .invalidURL:
             return .networkError("Неверный URL бекенда")

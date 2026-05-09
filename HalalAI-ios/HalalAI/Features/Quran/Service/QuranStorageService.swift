@@ -62,7 +62,7 @@ final class QuranStorageServiceImpl: QuranStorageService {
 
     // MARK: - CSV parsing
 
-    private static func parseCSV(_ content: String) throws -> [Sura] {
+    static func parseCSV(_ content: String) throws -> [Sura] {
         let lines = content.components(separatedBy: .newlines)
         guard !lines.isEmpty else { throw QuranError.emptyFile }
         let columnCount = 5
@@ -115,7 +115,7 @@ final class QuranStorageServiceImpl: QuranStorageService {
     }
 
     /// Парсит одну строку CSV с учётом кавычек (поля в кавычках могут содержать запятые).
-    private static func parseCSVLine(_ line: String) -> [String] {
+    static func parseCSVLine(_ line: String) -> [String] {
         var result: [String] = []
         var current = ""
         var inQuotes = false

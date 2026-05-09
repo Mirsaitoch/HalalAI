@@ -7,7 +7,12 @@
 
 import Foundation
 
-struct NetworkClient: Sendable {
+protocol NetworkClientProtocol: Sendable {
+    func send<R: APIRequest>(_ request: R) async throws -> R.Response
+    func sendRaw<R: APIRequest>(_ request: R) async throws -> (Data, HTTPURLResponse)
+}
+
+struct NetworkClient: NetworkClientProtocol, Sendable {
 
     private let session: URLSession = .shared
     private var baseURL: String { APIConfiguration.backendURL }

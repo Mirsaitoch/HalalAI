@@ -18,9 +18,9 @@ protocol VerseService {
 final class VerseServiceImpl: VerseService {
     var verseOfTheDay: Verse?
 
-    private let networkClient: NetworkClient
+    private let networkClient: any NetworkClientProtocol
 
-    init(networkClient: NetworkClient = NetworkClient()) {
+    init(networkClient: any NetworkClientProtocol = NetworkClient()) {
         self.networkClient = networkClient
     }
 

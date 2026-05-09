@@ -62,9 +62,9 @@ final class ChatServiceImpl: ChatService {
     private var lastSendAt: Date?
     private let settingsStore: ChatSettingsStore
     private let authManager: AuthManager
-    private let networkClient: NetworkClient
+    private let networkClient: any NetworkClientProtocol
 
-    init(authManager: AuthManager, settingsStore: ChatSettingsStore, networkClient: NetworkClient = NetworkClient()) {
+    init(authManager: AuthManager, settingsStore: ChatSettingsStore, networkClient: any NetworkClientProtocol = NetworkClient()) {
         self.authManager = authManager
         self.settingsStore = settingsStore
         self.networkClient = networkClient

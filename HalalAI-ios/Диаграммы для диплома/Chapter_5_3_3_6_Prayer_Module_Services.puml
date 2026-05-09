@@ -1,0 +1,81 @@
+@startuml Chapter_5_3_3_6_Prayer_Module_Services
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+skinparam ranksep 35
+skinparam nodesep 15
+skinparam classAttributeIconSize 0
+
+' ============= Services =============
+package "Services" {
+    protocol PrayerTimeService {
+        + calculateTimes(coord, date)
+        + nextPrayer(from, date)
+    }
+
+    class PrayerTimeServiceImpl {
+        - calculationMethod: PrayerCalculationMethod
+        - adhan: Adhan
+        --
+        + calculateTimes(coord, date)
+        + nextPrayer(from, date)
+    }
+
+    protocol PrayerNotificationService {
+        + requestAuthorization()
+        + scheduleNotifications(for)
+        + cancelAllPrayerNotifications()
+    }
+
+    class PrayerNotificationServiceImpl {
+        - prayerTimeService: PrayerTimeService
+        --
+        + requestAuthorization()
+        + scheduleNotifications(for)
+        + cancelAllPrayerNotifications()
+    }
+
+    protocol LocationService {
+        + currentLocation: CLLocationCoordinate2D?
+        + requestLocation()
+    }
+
+    class LocationServiceImpl {
+        + currentLocation: CLLocationCoordinate2D?
+        --
+        + requestLocation()
+    }
+}
+
+' ============= External =============
+package "External" <<Frame>> {
+    class Adhan <<external>>
+    class UserNotifications <<external>>
+}
+
+' ===== RELATIONSHIPS =====
+' Realization (interface implementations)
+PrayerTimeServiceImpl ..|> PrayerTimeService
+PrayerNotificationServiceImpl ..|> PrayerNotificationService
+LocationServiceImpl ..|> LocationService
+
+' Association (fields)
+PrayerTimeServiceImpl --> Adhan
+PrayerNotificationServiceImpl --> PrayerTimeService
+
+' Dependency (used in methods only)
+PrayerNotificationService ..> UserNotifications
+
+' ============= Hidden links for vertical layout =============
+PrayerTimeService -[hidden]right- PrayerTimeServiceImpl
+PrayerTimeService -[hidden]down- PrayerNotificationService
+PrayerNotificationService -[hidden]right- PrayerNotificationServiceImpl
+PrayerNotificationService -[hidden]down- LocationService
+LocationService -[hidden]right- LocationServiceImpl
+LocationService -[hidden]down- Adhan
+Adhan -[hidden]right- UserNotifications
+
+@enduml

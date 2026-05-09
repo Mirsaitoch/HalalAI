@@ -1,0 +1,98 @@
+@startuml Chapter_5_3_3_1_Authentication_Module_UI
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+skinparam ranksep 40
+skinparam nodesep 20
+skinparam classAttributeIconSize 0
+
+' ============= UI Layer =============
+package "UI Layer" {
+    struct AuthFlowView {
+        - path: [AuthCoordinator]
+        --
+        - body: some View
+    }
+
+    struct LoginView {
+        - authManager: AuthManager
+        - authService: AuthService
+        --
+        - body: some View
+    }
+
+    class LoginViewModel {
+        - email: String
+        - password: String
+        - showPassword: Bool
+        - isLoading: Bool
+        - errorMessage: String?
+        --
+        + init(authService, authManager)
+        + login() async
+    }
+
+    struct RegisterView {
+        - authManager: AuthManager
+        - authService: AuthService
+        --
+        - body: some View
+    }
+
+    class RegisterViewModel {
+        - email: String
+        - password: String
+        - confirmPassword: String
+        - isLoading: Bool
+        - errorMessage: String?
+        --
+        + init(authService, authManager)
+        + register() async
+    }
+}
+
+' ============= External Dependencies =============
+package "External" <<Frame>> {
+    protocol AuthManager <<external>>
+    protocol AuthService <<external>>
+    struct User <<external>>
+    struct AuthResponse <<external>>
+}
+
+' ===== RELATIONSHIPS =====
+' Composition (View contains ViewModel)
+LoginView *-down- LoginViewModel
+RegisterView *-down- RegisterViewModel
+
+' Dependency (navigation creates views)
+AuthFlowView .down.> LoginView
+AuthFlowView .down.> RegisterView
+
+' Association (Views hold references as fields)
+LoginView -right-> AuthManager
+LoginView -right-> AuthService
+RegisterView -right-> AuthManager
+RegisterView -right-> AuthService
+
+' Association (ViewModels hold references as fields)
+LoginViewModel -right-> AuthManager
+LoginViewModel -right-> AuthService
+RegisterViewModel -right-> AuthManager
+RegisterViewModel -right-> AuthService
+
+' Dependency (used only in methods)
+LoginViewModel .right.> AuthResponse
+LoginViewModel .right.> User
+RegisterViewModel .right.> AuthResponse
+RegisterViewModel .right.> User
+
+' ============= Hidden links for vertical layout =============
+LoginViewModel -[hidden]down- RegisterView
+AuthManager -[hidden]down- AuthService
+AuthService -[hidden]down- User
+User -[hidden]down- AuthResponse
+
+@enduml

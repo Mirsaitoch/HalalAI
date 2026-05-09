@@ -1,60 +1,21 @@
-@startuml Chat Module (5.3.3.3)
+@startuml Chapter_5_3_3_3_Chat_Module
 
 !theme plain
 skinparam backgroundColor #FFFFFF
 skinparam classBackgroundColor #F5F5F5
 skinparam classBorderColor #333333
 skinparam arrowColor #666666
+skinparam ranksep 35
+skinparam nodesep 15
+skinparam classAttributeIconSize 0
 
-package "Service Layer" {
-    protocol ChatService {
-        {abstract} var messages: [ChatMessage]
-        {abstract} var remoteModel: String
-        --
-        {abstract} + sendMessage(_ text: String) async throws
-        {abstract} + clearChat()
-    }
-
-    class ChatServiceImpl {
-        - networkClient: NetworkClient
-        - authManager: AuthManager
-        --
-        + sendMessage(_ text: String) async throws
-        + clearChat()
-    }
-}
-
-package "Data Models" {
-    struct ChatMessage {
-        - id: String
-        - role: Role
-        - text: String
-        - date: Date
-        - model: String?
-    }
-
-    enum Role {
-        case user
-        case assistant
-    }
-
-    struct ChatRequest {
-        - messages: [ChatMessage]
-        - remoteModel: String?
-    }
-
-    struct ChatResponse {
-        - reply: String
-    }
-}
-
+' ============= UI Layer =============
 package "UI Layer" {
     struct ChatView {
         - chatService: ChatService
         - authManager: AuthManager
         --
-        - var body: some View
-        - var viewModel: ChatViewModel
+        - body: some View
     }
 
     class ChatViewModel {
@@ -68,41 +29,91 @@ package "UI Layer" {
     struct InputBar
 }
 
-package "Dependencies" {
-    class NetworkClient {
-        + send<T: APIRequest>(request: T) async throws -> T.Response
+' ============= Service Layer =============
+package "Service Layer" {
+    protocol ChatService {
+        + messages: [ChatMessage]
+        + remoteModel: String
+        --
+        + sendMessage(text)
+        + clearChat()
     }
 
-    protocol AuthManager {
-        {abstract} var authToken: String?
-        {abstract} var isAuthenticated: Bool
+    class ChatServiceImpl {
+        + messages: [ChatMessage]
+        + remoteModel: String
+        - networkClient: NetworkClient
+        - authManager: AuthManager
+        --
+        + sendMessage(text)
+        + clearChat()
     }
 }
 
+' ============= Data Models =============
+package "Data Models" {
+    struct ChatMessage {
+        - id: String
+        - role: Role
+        - text: String
+        - date: Date
+    }
+
+    enum Role {
+        user
+        assistant
+    }
+
+    struct ChatRequest {
+        - messages: [ChatMessage]
+        - remoteModel: String?
+    }
+
+    struct ChatResponse {
+        - reply: String
+    }
+}
+
+' ============= Dependencies =============
+package "External" <<Frame>> {
+    class NetworkClient <<external>>
+    protocol AuthManager <<external>>
+}
+
 ' ===== RELATIONSHIPS =====
+' Composition (View contains ViewModel)
+ChatView *-down- ChatViewModel
 
-ChatServiceImpl ..|> ChatService : implements
-ChatServiceImpl --> NetworkClient : uses
-ChatServiceImpl --> AuthManager : uses
+' Realization (interface implementation)
+ChatServiceImpl ..|> ChatService
 
-ChatView --> ChatService : uses
-ChatView --> AuthManager : uses
-ChatView *-- ChatViewModel : contains
+' Association (fields)
+ChatView --> ChatService
+ChatView --> AuthManager
+ChatViewModel --> ChatService
+ChatServiceImpl --> NetworkClient
+ChatServiceImpl --> AuthManager
+ChatService --> ChatMessage
+MessageBubble --> ChatMessage
 
-ChatViewModel --> ChatService : calls API
-ChatViewModel --> ChatRequest : creates
-ChatViewModel --> ChatMessage : manages
+' Dependency (used in methods/views only)
+ChatView ..> MessageBubble
+ChatView ..> InputBar
+ChatViewModel ..> ChatRequest
+ChatService ..> ChatResponse
+ChatServiceImpl ..> ChatRequest
+MessageBubble ..> Role
 
-ChatView --> MessageBubble : displays
-ChatView --> InputBar : uses
-
-MessageBubble --> ChatMessage : displays
-MessageBubble --> Role : uses
-
-InputBar --> ChatViewModel : notifies
-
-ChatService --> ChatMessage : manages
-ChatService --> ChatResponse : parses
-ChatServiceImpl --> ChatRequest : sends to backend
+' ============= Hidden links for vertical layout =============
+ChatView -[hidden]down- MessageBubble
+MessageBubble -[hidden]right- InputBar
+ChatViewModel -[hidden]down- ChatServiceImpl
+ChatService -[hidden]down- ChatMessage
+ChatMessage -[hidden]right- ChatRequest
+Role -[hidden]right- ChatResponse
+ChatMessage -[hidden]down- Role
+ChatRequest -[hidden]down- ChatResponse
+ChatResponse -[hidden]down- NetworkClient
+NetworkClient -[hidden]right- AuthManager
 
 @enduml

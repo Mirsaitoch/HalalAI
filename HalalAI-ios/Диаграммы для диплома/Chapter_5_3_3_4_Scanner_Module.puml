@@ -1,26 +1,54 @@
-@startuml Scanner Module (5.3.3.4)
+@startuml Chapter_5_3_3_4_Scanner_Module
 
 !theme plain
 skinparam backgroundColor #FFFFFF
 skinparam classBackgroundColor #F5F5F5
 skinparam classBorderColor #333333
 skinparam arrowColor #666666
+skinparam ranksep 30
+skinparam nodesep 15
+skinparam classAttributeIconSize 0
 
+' ============= UI Layer =============
+package "UI Layer" {
+    struct ScannerView {
+        - ingredientService: IngredientService
+        - authManager: AuthManager
+        --
+        - body: some View
+    }
+
+    class ScannerViewModel {
+        - manualInput: String
+        - analysis: ProductAnalysis?
+        - isLoading: Bool
+        --
+        + processImages(images) async
+        + processManualInput() async
+        + recognizeText(from) async
+    }
+
+    struct CameraView
+    struct IngredientResultsView
+}
+
+' ============= Service Layer =============
 package "Service Layer" {
     protocol IngredientService {
-        {abstract} + analyzeText(_ text: String) -> ProductAnalysis
-        {abstract} + loadIngredients() async throws
+        + analyzeText(text)
+        + loadIngredients()
     }
 
     class IngredientServiceImpl {
         - ingredients: [Ingredient]
         - networkClient: NetworkClient
         --
-        + analyzeText(_ text: String) -> ProductAnalysis
-        + loadIngredients() async throws
+        + analyzeText(text)
+        + loadIngredients()
     }
 }
 
+' ============= Data Models =============
 package "Data Models" {
     struct Ingredient {
         - id: String
@@ -31,10 +59,10 @@ package "Data Models" {
     }
 
     enum IngredientStatus {
-        case halal
-        case haram
-        case mushbooh
-        case unknown
+        halal
+        haram
+        mushbooh
+        unknown
     }
 
     struct ProductAnalysis {
@@ -42,7 +70,7 @@ package "Data Models" {
         - overallStatus: IngredientStatus
         - haramIngredients: [Ingredient]
         --
-        var isHalal: Bool
+        + isHalal: Bool
     }
 
     struct DetectedIngredient {
@@ -52,63 +80,50 @@ package "Data Models" {
     }
 }
 
-package "UI Layer" {
-    struct ScannerView {
-        - ingredientService: IngredientService
-        - authManager: AuthManager
-        --
-        - var body: some View
-        - var viewModel: ScannerViewModel
-    }
-
-    class ScannerViewModel {
-        - manualInput: String
-        - analysis: ProductAnalysis?
-        - isLoading: Bool
-        --
-        + processImages(_ images: [UIImage]) async
-        + processManualInput() async
-        + recognizeText(from: UIImage) async
-    }
-
-    struct CameraView
-    struct IngredientResultsView
-}
-
-package "Dependencies" {
-    class NetworkClient {
-        + send<T: APIRequest>(request: T) async throws -> T.Response
-    }
-
-    protocol AuthManager {
-        {abstract} var isGuest: Bool
-        {abstract} var isAuthenticated: Bool
-    }
-
-    class VisionFramework {
-        + recognizeText(from: CGImage) throws -> String
-    }
+' ============= External =============
+package "External" <<Frame>> {
+    class NetworkClient <<external>>
+    protocol AuthManager <<external>>
+    class VisionFramework <<external>>
 }
 
 ' ===== RELATIONSHIPS =====
+' Realization (interface implementation)
+IngredientServiceImpl ..|> IngredientService
 
-IngredientServiceImpl ..|> IngredientService : implements
-IngredientServiceImpl --> NetworkClient : uses
-IngredientServiceImpl --> Ingredient : manages
+' Composition (View contains ViewModel)
+ScannerView *-- ScannerViewModel
 
-ScannerView --> IngredientService : uses
-ScannerView --> AuthManager : checks
-ScannerView *-- ScannerViewModel : contains
+' Association (fields)
+ScannerView --> IngredientService
+ScannerView --> AuthManager
+ScannerViewModel --> IngredientService
+ScannerViewModel --> ProductAnalysis
+IngredientServiceImpl --> NetworkClient
+IngredientServiceImpl --> Ingredient
+ProductAnalysis --> DetectedIngredient
+ProductAnalysis --> IngredientStatus
+Ingredient --> IngredientStatus
+DetectedIngredient --> IngredientStatus
+DetectedIngredient --> Ingredient
 
-ScannerViewModel --> IngredientService : calls
-ScannerViewModel --> VisionFramework : uses OCR
-ScannerViewModel --> ProductAnalysis : manages
+' Dependency (used in methods/views only)
+ScannerView ..> CameraView
+ScannerView ..> IngredientResultsView
+ScannerViewModel ..> VisionFramework
 
-ScannerView --> CameraView : displays
-ScannerView --> IngredientResultsView : displays
-
-ProductAnalysis --> DetectedIngredient : contains
-ProductAnalysis --> IngredientStatus : has
-Ingredient --> IngredientStatus : has
+' ============= Hidden links for vertical layout =============
+ScannerView -[hidden]down- ScannerViewModel
+ScannerViewModel -[hidden]down- CameraView
+CameraView -[hidden]right- IngredientResultsView
+IngredientResultsView -[hidden]down- IngredientService
+IngredientService -[hidden]right- IngredientServiceImpl
+IngredientServiceImpl -[hidden]down- ProductAnalysis
+ProductAnalysis -[hidden]right- DetectedIngredient
+DetectedIngredient -[hidden]down- Ingredient
+Ingredient -[hidden]right- IngredientStatus
+IngredientStatus -[hidden]down- NetworkClient
+NetworkClient -[hidden]right- VisionFramework
+VisionFramework -[hidden]right- AuthManager
 
 @enduml

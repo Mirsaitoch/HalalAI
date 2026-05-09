@@ -1,0 +1,104 @@
+@startuml Chapter_5_3_3_6_Prayer_Module_UI
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+skinparam ranksep 35
+skinparam nodesep 15
+skinparam classAttributeIconSize 0
+
+' ============= UI Components =============
+package "UI Components" {
+    struct PrayerTimesCardView {
+        - viewModel: PrayerTimesCardViewModel
+    }
+
+    class PrayerTimesCardViewModel {
+        - todayTimes: DailyPrayerTimes?
+        - nextPrayer: Prayer?
+    }
+
+    struct PrayerNotificationSettingsView {
+        - settingsStore: PrayerSettingsStore
+        - notificationService: PrayerNotificationService
+    }
+}
+
+' ============= Storage =============
+package "Storage" {
+    class PrayerSettingsStore {
+        - settings: PrayerSettings
+    }
+}
+
+' ============= Data Models =============
+package "Data Models" {
+    struct DailyPrayerTimes {
+        - date: Date
+        - fajr: Date
+        - dhuhr: Date
+        - asr: Date
+        - maghrib: Date
+        - isha: Date
+    }
+
+    enum Prayer {
+        fajr
+        dhuhr
+        asr
+        maghrib
+        isha
+    }
+
+    struct PrayerSettings {
+        - calculationMethod: PrayerCalculationMethod
+        - madhab: Madhab
+        - notifications: [Prayer: Setting]
+    }
+
+    enum PrayerCalculationMethod {
+        russia
+        tatarstan
+        muslimWorldLeague
+    }
+}
+
+' ============= External services (only references) =============
+protocol PrayerTimeService <<external>>
+protocol PrayerNotificationService <<external>>
+protocol LocationService <<external>>
+
+' ===== RELATIONSHIPS =====
+' Composition (View contains ViewModel)
+PrayerTimesCardView *-- PrayerTimesCardViewModel
+
+' Association (fields)
+PrayerSettingsStore --> PrayerSettings
+PrayerSettings --> PrayerCalculationMethod
+PrayerSettings --> Prayer
+PrayerTimesCardViewModel --> PrayerTimeService
+PrayerTimesCardViewModel --> LocationService
+PrayerTimesCardViewModel --> PrayerSettingsStore
+PrayerTimesCardViewModel --> DailyPrayerTimes
+PrayerTimesCardViewModel --> Prayer
+PrayerNotificationSettingsView --> PrayerSettingsStore
+PrayerNotificationSettingsView --> PrayerNotificationService
+
+' Dependency (used in methods only)
+PrayerNotificationSettingsView ..> PrayerSettings
+
+' ============= Hidden links for vertical layout =============
+PrayerTimesCardView -[hidden]right- PrayerTimesCardViewModel
+PrayerTimesCardViewModel -[hidden]down- PrayerNotificationSettingsView
+PrayerNotificationSettingsView -[hidden]down- PrayerSettingsStore
+PrayerSettingsStore -[hidden]down- DailyPrayerTimes
+DailyPrayerTimes -[hidden]right- Prayer
+PrayerSettings -[hidden]right- PrayerCalculationMethod
+DailyPrayerTimes -[hidden]down- PrayerSettings
+PrayerCalculationMethod -[hidden]down- PrayerTimeService
+PrayerTimeService -[hidden]right- PrayerNotificationService
+PrayerNotificationService -[hidden]right- LocationService
+
+@enduml

@@ -1,0 +1,113 @@
+@startuml Chapter_5_3_3_1_Authentication_Module_Logic
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #666666
+skinparam ranksep 40
+skinparam nodesep 20
+skinparam classAttributeIconSize 0
+
+' ============= State Management =============
+package "State Management" {
+    enum AuthState {
+        authenticated
+        unauthenticated
+        loading
+        guest
+    }
+
+    protocol AuthManager {
+        + authState: AuthState
+        + currentUser: User?
+        + authToken: String?
+        --
+        + saveAuth(response)
+        + logout()
+        + continueAsGuest()
+        + refreshToken()
+    }
+
+    class AuthManagerImpl
+}
+
+' ============= Service Layer =============
+package "Service Layer" {
+    protocol AuthService {
+        + isLoading: Bool
+        + errorMessage: String?
+        --
+        + register(email, password)
+        + login(email, password)
+        + refreshToken(token)
+    }
+
+    class AuthServiceImpl {
+        - networkClient: NetworkClient
+    }
+}
+
+' ============= Network Layer =============
+package "Network Layer" {
+    struct NetworkClient {
+        + send(request)
+    }
+
+    enum Endpoint {
+        login
+        register
+        refreshToken
+    }
+}
+
+' ============= Data Models =============
+package "Data Models" {
+    struct User {
+        - id: String
+        - email: String
+        - createdAt: Date
+    }
+
+    struct AuthResponse {
+        - token: String
+        - userId: String
+        - email: String
+    }
+
+    struct LoginRequest {
+        - email: String
+        - password: String
+    }
+
+    struct RegisterRequest {
+        - email: String
+        - password: String
+    }
+}
+
+' ===== RELATIONSHIPS =====
+' Realization (interface implementation)
+AuthManagerImpl -down-|> AuthManager
+AuthServiceImpl -down-|> AuthService
+
+' Association (fields)
+AuthManager -right-> AuthState
+AuthManager -right-> User
+AuthServiceImpl -down-> NetworkClient
+
+' Dependency (used in methods only)
+AuthServiceImpl .right.> Endpoint
+AuthServiceImpl .down.> AuthResponse
+AuthServiceImpl .down.> LoginRequest
+AuthServiceImpl .down.> RegisterRequest
+
+' ============= Hidden links for vertical layout =============
+AuthManagerImpl -[hidden]down- AuthServiceImpl
+AuthService -[hidden]down- NetworkClient
+NetworkClient -[hidden]down- User
+User -[hidden]right- AuthResponse
+AuthResponse -[hidden]right- LoginRequest
+LoginRequest -[hidden]right- RegisterRequest
+
+@enduml

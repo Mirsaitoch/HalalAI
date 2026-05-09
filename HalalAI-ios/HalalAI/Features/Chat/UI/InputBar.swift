@@ -35,7 +35,8 @@ struct InputBar: View {
             TextField("Напишите вопрос…", text: $messageText)
                 .textFieldStyle(.roundedBorder)
                 .disableAutocorrection(true)
-            
+                .accessibilityIdentifier("chat_input_field")
+
             // Кнопка отправки
             Button(action: {
                 HapticFeedback.light()
@@ -46,6 +47,7 @@ struct InputBar: View {
                     .foregroundStyle(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .blue)
             }
             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("chat_send_button")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

@@ -37,6 +37,7 @@ struct ScannerView: View {
                     }
                     .font(.title2)
                     .labelStyle(.iconOnly)
+                    .accessibilityIdentifier("scanner_mode_toggle")
                 }
                 .animation(.easeInOut, value: vm.showManualInput)
                 .foregroundStyle(.darkGreen)
@@ -110,7 +111,8 @@ struct ScannerView: View {
                     .background(Color.darkGreen)
                     .clipShape(.rect(cornerRadius: 12))
                 }
-                
+                .accessibilityIdentifier("scanner_camera_button")
+
                 Button(action: viewModel.openPhotoLibrary) {
                     HStack {
                         Image(systemName: "photo.on.rectangle")
@@ -127,6 +129,7 @@ struct ScannerView: View {
                     )
                     .clipShape(.rect(cornerRadius: 12))
                 }
+                .accessibilityIdentifier("scanner_gallery_button")
             }
             .padding(.horizontal, 40)
             .padding(.top, 20)
@@ -155,7 +158,8 @@ struct ScannerView: View {
                 .background(Color.white)
                 .clipShape(.rect(cornerRadius: 12))
                 .padding(.horizontal)
-            
+                .accessibilityIdentifier("scanner_manual_input")
+
             Button(action: {
                 viewModel.processManualInput()
             }) {
@@ -172,6 +176,7 @@ struct ScannerView: View {
             }
             .padding(.horizontal)
             .disabled(viewModel.manualInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("scanner_check_button")
             
             Spacer()
         }

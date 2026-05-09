@@ -65,6 +65,7 @@ struct RegisterView: View {
                                     placeholder: "Email",
                                     text: $vm.email
                                 )
+                                .accessibilityIdentifier("register_email_field")
 
                                 VStack(alignment: .leading, spacing: 6) {
                                     AuthTextField(
@@ -73,11 +74,13 @@ struct RegisterView: View {
                                         text: $vm.password,
                                         isSecure: true
                                     )
+                                    .accessibilityIdentifier("register_password_field")
                                     if !vm.password.isEmpty && vm.password.count < 8 {
                                         Text("Пароль должен содержать минимум 8 символов")
                                             .font(.caption)
                                             .foregroundStyle(.red)
                                             .padding(.horizontal, 4)
+                                            .accessibilityIdentifier("register_password_error")
                                     }
                                 }
 
@@ -88,11 +91,13 @@ struct RegisterView: View {
                                         text: $vm.confirmPassword,
                                         isSecure: true
                                     )
+                                    .accessibilityIdentifier("register_confirm_password_field")
                                     if !vm.confirmPassword.isEmpty && vm.password != vm.confirmPassword {
                                         Text("Пароли не совпадают")
                                             .font(.caption)
                                             .foregroundStyle(.red)
                                             .padding(.horizontal, 4)
+                                            .accessibilityIdentifier("register_password_mismatch_error")
                                     }
                                 }
                             }
@@ -118,6 +123,7 @@ struct RegisterView: View {
                             }
                             .disabled(!vm.isFormValid || vm.authService.isLoading)
                             .opacity((!vm.isFormValid || vm.authService.isLoading) ? 0.6 : 1.0)
+                            .accessibilityIdentifier("register_button")
 
                             // Login link
                             HStack(spacing: 4) {
@@ -128,8 +134,9 @@ struct RegisterView: View {
                                         .fontWeight(.semibold)
                                         .foregroundStyle(.darkGreen)
                                 }
+                                .accessibilityIdentifier("register_login_link")
                             }
-                            
+
                             Button(action: {
                                 vm.authManager.continueAsGuest()
                             }) {
@@ -137,6 +144,7 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
+                            .accessibilityIdentifier("register_guest_button")
                         }
                         .padding(.horizontal, 28)
                         .padding(.top, 36)

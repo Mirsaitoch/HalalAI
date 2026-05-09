@@ -91,6 +91,12 @@ final class AuthManagerImpl: AuthManager {
     // MARK: - Private Methods
     
     private func loadStoredAuth() {
+        if ProcessInfo.processInfo.arguments.contains("--uitesting") {
+            cleanUserDefaults()
+            authState = .unauthenticated
+            return
+        }
+
         guard let token = UserDefaults.standard.string(forKey: tokenKey),
               !token.isEmpty,
               let userData = UserDefaults.standard.data(forKey: userKey),

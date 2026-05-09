@@ -58,6 +58,7 @@ struct HomeView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("home_scanner_button")
 
                 HStack(spacing: 8) {
                     Button {
@@ -73,6 +74,7 @@ struct HomeView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("home_chat_button")
 
                     Button {
                         coordinator.nextStep(step: .home(.halalMap))
@@ -85,8 +87,9 @@ struct HomeView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("home_map_button")
                 }
-                
+
                 Button {
                     withAnimation {
                         coordinator.nextStep(step: .home(.quran))
@@ -100,6 +103,7 @@ struct HomeView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("home_quran_button")
             }
             .scrollIndicators(.hidden)
         }

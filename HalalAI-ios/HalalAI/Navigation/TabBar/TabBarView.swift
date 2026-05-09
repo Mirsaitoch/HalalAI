@@ -63,5 +63,6 @@ struct TabBarIcon: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(tab.model.name)
+        .accessibilityIdentifier("tab_\(tab.model.name.lowercased())")
     }
 }

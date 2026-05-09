@@ -65,6 +65,7 @@ struct LoginView: View {
                                     placeholder: "Email",
                                     text: $vm.email
                                 )
+                                .accessibilityIdentifier("login_email_field")
 
                                 AuthTextField(
                                     icon: "lock.fill",
@@ -72,6 +73,7 @@ struct LoginView: View {
                                     text: $vm.password,
                                     isSecure: true
                                 )
+                                .accessibilityIdentifier("login_password_field")
                             }
 
                             // Login button
@@ -95,6 +97,7 @@ struct LoginView: View {
                             }
                             .disabled(vm.isDisable)
                             .opacity(vm.isDisable ? 0.6 : 1.0)
+                            .accessibilityIdentifier("login_button")
 
                             // Register link
                             HStack(spacing: 4) {
@@ -105,6 +108,7 @@ struct LoginView: View {
                                         .fontWeight(.semibold)
                                         .foregroundStyle(.darkGreen)
                                 }
+                                .accessibilityIdentifier("login_register_link")
                             }
 
                             // Guest login
@@ -115,6 +119,7 @@ struct LoginView: View {
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
+                            .accessibilityIdentifier("login_guest_button")
                         }
                         .padding(.horizontal, 28)
                         .padding(.top, 36)

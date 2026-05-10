@@ -279,8 +279,9 @@ extension PrayerNotificationSettingsView {
 
         func onAppear() async {
             await checkNotificationStatus()
-            if notificationsAuthorized == false {
-                notificationsAuthorized = await notificationService.requestAuthorization()
+            if notificationsAuthorized == nil {
+                let granted = await notificationService.requestAuthorization()
+                notificationsAuthorized = granted
             }
         }
 

@@ -44,9 +44,13 @@ struct HomeViewModelTests {
         )
 
         let authManager = MockAuthManager()
+        let notificationService = MockPrayerNotificationService()
         let vm = HomeView.ViewModel(
             verseService: verseService,
             prayerCardViewModel: prayerVM,
+            notificationService: notificationService,
+            locationService: locationService,
+            settingsStore: settingsStore,
             authManager: authManager
         )
         return (vm, verseService, authManager)

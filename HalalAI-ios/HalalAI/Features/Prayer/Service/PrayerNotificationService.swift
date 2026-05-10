@@ -12,17 +12,29 @@ import CoreLocation
 protocol PrayerNotificationService: AnyObject {
     func requestAuthorization() async -> Bool
     func scheduleNotifications(settings: PrayerSettings, location: CLLocation) async
+    func rescheduleIfNeeded(settings: PrayerSettings, location: CLLocation?) async
     func cancelAllPrayerNotifications() async
     func sendTestNotification() async
 }
 
-final class PrayerNotificationServiceImpl: PrayerNotificationService {
+final class PrayerNotificationServiceImpl: NSObject, PrayerNotificationService, UNUserNotificationCenterDelegate {
 
     private let prayerTimeService: PrayerTimeService
     private let center = UNUserNotificationCenter.current()
 
     init(prayerTimeService: PrayerTimeService) {
         self.prayerTimeService = prayerTimeService
+        super.init()
+        center.delegate = self
+    }
+
+    // MARK: - UNUserNotificationCenterDelegate
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        [.banner, .sound]
     }
 
     // MARK: - Authorization
@@ -72,6 +84,19 @@ final class PrayerNotificationServiceImpl: PrayerNotificationService {
                 )
             }
         }
+    }
+
+    func rescheduleIfNeeded(settings: PrayerSettings, location: CLLocation?) async {
+        let status = await center.notificationSettings()
+        guard status.authorizationStatus == .authorized else { return }
+        guard let location else { return }
+
+        let hasEnabled = Prayer.notifiablePrayers.contains {
+            settings.notificationSetting(for: $0).isEnabled
+        }
+        guard hasEnabled else { return }
+
+        await scheduleNotifications(settings: settings, location: location)
     }
 
     func cancelAllPrayerNotifications() async {

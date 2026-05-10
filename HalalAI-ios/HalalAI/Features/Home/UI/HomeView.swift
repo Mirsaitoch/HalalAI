@@ -16,6 +16,7 @@ struct HomeView: View {
         locationService: LocationService,
         prayerTimeService: PrayerTimeService,
         settingsStore: PrayerSettingsStore,
+        notificationService: PrayerNotificationService,
         authManager: AuthManager
     ) {
         let prayerCardVM = PrayerTimesCardView.ViewModel(
@@ -27,6 +28,9 @@ struct HomeView: View {
             initialValue: ViewModel(
                 verseService: verseService,
                 prayerCardViewModel: prayerCardVM,
+                notificationService: notificationService,
+                locationService: locationService,
+                settingsStore: settingsStore,
                 authManager: authManager
             )
         )
@@ -110,6 +114,9 @@ struct HomeView: View {
         .padding(.horizontal, 24)
         .background {
             Color.greenBackground.ignoresSafeArea()
+        }
+        .task {
+            await viewModel.rescheduleNotifications()
         }
     }
 }

@@ -240,6 +240,14 @@ final class MockVerseService: VerseService {
 
 // MARK: - MockPrayerTimeService
 
+final class MockPrayerNotificationService: PrayerNotificationService {
+    func requestAuthorization() async -> Bool { true }
+    func scheduleNotifications(settings: PrayerSettings, location: CLLocation) async {}
+    func rescheduleIfNeeded(settings: PrayerSettings, location: CLLocation?) async {}
+    func cancelAllPrayerNotifications() async {}
+    func sendTestNotification() async {}
+}
+
 final class MockPrayerTimeService: PrayerTimeService {
     var calculateResult: DailyPrayerTimes?
     var nextPrayerResult: (Prayer, Date)?

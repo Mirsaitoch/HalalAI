@@ -15,16 +15,33 @@ extension HomeView {
         var prayerCardViewModel: PrayerTimesCardView.ViewModel
         var authManager: AuthManager
 
+        private let notificationService: PrayerNotificationService
+        private let locationService: LocationService
+        private let settingsStore: PrayerSettingsStore
+
         init(
             verseService: VerseService,
             prayerCardViewModel: PrayerTimesCardView.ViewModel,
+            notificationService: PrayerNotificationService,
+            locationService: LocationService,
+            settingsStore: PrayerSettingsStore,
             authManager: AuthManager
         ) {
             self.verseService = verseService
             self.prayerCardViewModel = prayerCardViewModel
+            self.notificationService = notificationService
+            self.locationService = locationService
+            self.settingsStore = settingsStore
             self.authManager = authManager
         }
-        
+
+        func rescheduleNotifications() async {
+            await notificationService.rescheduleIfNeeded(
+                settings: settingsStore.settings,
+                location: locationService.currentLocation
+            )
+        }
+
         deinit {
             print("deinit HomeViewModel")
         }

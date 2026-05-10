@@ -63,6 +63,7 @@ final class ScreenFactoryImpl {
             locationService: dc.locationService,
             prayerTimeService: dc.prayerTimeService,
             settingsStore: dc.prayerSettingsStore,
+            notificationService: dc.prayerNotificationService,
             authManager: dc.authManager
         )
     }

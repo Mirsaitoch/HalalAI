@@ -1,101 +1,219 @@
 package com.halalai.backend.security;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.util.ReflectionTestUtils;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class JwtTokenProviderTest {
 
-    private JwtTokenProvider tokenProvider;
-    private static final String SECRET = "test-secret-key-must-be-at-least-32-characters-long";
-    private static final Long EXPIRATION = 3600000L;
-
-    @BeforeEach
-    void setUp() {
-        tokenProvider = new JwtTokenProvider();
-        ReflectionTestUtils.setField(tokenProvider, "secret", SECRET);
-        ReflectionTestUtils.setField(tokenProvider, "expiration", EXPIRATION);
-    }
-
     @Test
-    void testGenerateToken() {
-        String token = tokenProvider.generateToken("user@example.com", 1L);
+    void generateToken_andValidateToken_happyPath() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF"); // 32 bytes
+        setField(sut, "expiration", 60_000L);
+
+        var token = sut.generateToken("a@b.com", 123L);
         assertNotNull(token);
-        assertFalse(token.isEmpty());
+
+        var userDetails = User.withUsername("a@b.com").password("x").authorities("ROLE_USER").build();
+        assertTrue(sut.validateToken(token, userDetails));
+        assertEquals("a@b.com", sut.getUsernameFromToken(token));
     }
 
     @Test
-    void testGetUsernameFromToken() {
-        String email = "user@example.com";
-        String token = tokenProvider.generateToken(email, 1L);
-        String extracted = tokenProvider.getUsernameFromToken(token);
-        assertEquals(email, extracted);
+    void validateToken_returnsFalse_whenUsernameMismatch() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 60_000L);
+
+        var token = sut.generateToken("a@b.com", 1L);
+        var other = User.withUsername("x@y.com").password("x").authorities("ROLE_USER").build();
+        assertFalse(sut.validateToken(token, other));
     }
 
     @Test
-    void testValidateToken() {
-        String email = "user@example.com";
-        String token = tokenProvider.generateToken(email, 1L);
+    void isTokenExpired_returnsTrue_forExpiredToken() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 1L);
 
-        UserDetails userDetails = User.builder()
-                .username(email)
-                .password("password")
-                .authorities("ROLE_USER")
-                .build();
+        var token = sut.generateToken("a@b.com", 1L);
+        Thread.sleep(5);
 
-        assertTrue(tokenProvider.validateToken(token, userDetails));
+        assertTrue(sut.isTokenExpired(token));
     }
 
     @Test
-    void testValidateTokenWithWrongEmail() {
-        String token = tokenProvider.generateToken("user@example.com", 1L);
+    void getUsernameFromExpiredToken_returnsSubject_evenWhenExpired() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 1L);
 
-        UserDetails userDetails = User.builder()
-                .username("other@example.com")
-                .password("password")
-                .authorities("ROLE_USER")
-                .build();
+        var token = sut.generateToken("a@b.com", 7L);
+        Thread.sleep(5);
 
-        assertFalse(tokenProvider.validateToken(token, userDetails));
+        assertEquals("a@b.com", sut.getUsernameFromExpiredToken(token));
     }
 
     @Test
-    void testGetUsernameFromExpiredToken() {
-        ReflectionTestUtils.setField(tokenProvider, "expiration", -1000L);
-        String token = tokenProvider.generateToken("user@example.com", 1L);
+    void getUserIdFromExpiredToken_returnsUserId_evenWhenExpired() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 1L);
 
-        ReflectionTestUtils.setField(tokenProvider, "expiration", EXPIRATION);
+        var token = sut.generateToken("a@b.com", 777L);
+        Thread.sleep(5);
 
-        String email = tokenProvider.getUsernameFromExpiredToken(token);
-        assertEquals("user@example.com", email);
+        assertEquals(777L, sut.getUserIdFromExpiredToken(token));
     }
 
     @Test
-    void testGetUserIdFromExpiredToken() {
-        ReflectionTestUtils.setField(tokenProvider, "expiration", -1000L);
-        String token = tokenProvider.generateToken("user@example.com", 123L);
-        ReflectionTestUtils.setField(tokenProvider, "expiration", EXPIRATION);
+    void getUsernameFromExpiredToken_throwsForMalformedToken() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 60_000L);
 
-        Long userId = tokenProvider.getUserIdFromExpiredToken(token);
-        assertEquals(123L, userId);
+        assertThrows(Exception.class, () -> sut.getUsernameFromExpiredToken("not-a-jwt"));
     }
 
     @Test
-    void testIsTokenExpired() {
-        ReflectionTestUtils.setField(tokenProvider, "expiration", -1000L);
-        String expiredToken = tokenProvider.generateToken("user@example.com", 1L);
-        ReflectionTestUtils.setField(tokenProvider, "expiration", EXPIRATION);
+    void validateToken_returnsFalse_whenSignatureInvalid() throws Exception {
+        var sut1 = new JwtTokenProvider();
+        setField(sut1, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut1, "expiration", 60_000L);
+        var token = sut1.generateToken("a@b.com", 1L);
 
-        assertTrue(tokenProvider.isTokenExpired(expiredToken));
+        var sut2 = new JwtTokenProvider();
+        setField(sut2, "secret", "DIFFERENT_SECRET_0123456789ABCDEF0123");
+        setField(sut2, "expiration", 60_000L);
+
+        var userDetails = User.withUsername("a@b.com").password("x").authorities("ROLE_USER").build();
+        assertFalse(sut2.validateToken(token, userDetails));
     }
 
     @Test
-    void testIsTokenNotExpired() {
-        String token = tokenProvider.generateToken("user@example.com", 1L);
-        assertFalse(tokenProvider.isTokenExpired(token));
+    void getUsernameFromToken_throwsExpiredJwtException_whenExpired() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 1L);
+
+        var token = sut.generateToken("a@b.com", 1L);
+        Thread.sleep(5);
+
+        assertThrows(io.jsonwebtoken.ExpiredJwtException.class, () -> sut.getUsernameFromToken(token));
+    }
+
+    @Test
+    void getUsernameFromToken_throwsMalformedJwtException_forGarbage() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 60_000L);
+
+        assertThrows(io.jsonwebtoken.MalformedJwtException.class, () -> sut.getUsernameFromToken("abc.def.ghi"));
+    }
+
+    @Test
+    void getUserIdFromExpiredToken_returnsNull_whenUserIdNotNumber() throws Exception {
+        var sut = new JwtTokenProvider();
+        var secret = "0123456789ABCDEF0123456789ABCDEF";
+        setField(sut, "secret", secret);
+        setField(sut, "expiration", 1L);
+
+        var key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        var now = new Date();
+        var expired = new Date(now.getTime() - 5);
+
+        var token = Jwts.builder()
+                .claim("userId", "not-a-number")
+                .subject("a@b.com")
+                .issuedAt(now)
+                .expiration(expired)
+                .signWith(key)
+                .compact();
+
+        assertNull(sut.getUserIdFromExpiredToken(token));
+    }
+
+    @Test
+    void getUserIdFromExpiredToken_returnsNull_onMalformedToken() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 60_000L);
+
+        assertNull(sut.getUserIdFromExpiredToken("not-a-jwt"));
+    }
+
+    @Test
+    void getUsernameFromExpiredToken_worksForNonExpiredToken() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 60_000L);
+
+        var token = sut.generateToken("live@b.com", 5L);
+        assertEquals("live@b.com", sut.getUsernameFromExpiredToken(token));
+    }
+
+    @Test
+    void getUserIdFromExpiredToken_worksForNonExpiredToken() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 60_000L);
+
+        var token = sut.generateToken("live@b.com", 555L);
+        assertEquals(555L, sut.getUserIdFromExpiredToken(token));
+    }
+
+    @Test
+    void isTokenExpired_returnsTrue_onParsingError() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 60_000L);
+
+        assertTrue(sut.isTokenExpired("not-a-jwt"));
+    }
+
+    @Test
+    void getUsernameFromToken_throwsAndHitsGenericCatch_whenTokenNull() throws Exception {
+        var sut = new JwtTokenProvider();
+        setField(sut, "secret", "0123456789ABCDEF0123456789ABCDEF");
+        setField(sut, "expiration", 60_000L);
+
+        assertThrows(IllegalArgumentException.class, () -> sut.getUsernameFromToken(null));
+    }
+
+    @Test
+    void getUserIdFromExpiredToken_returnsNull_whenUserIdNotNumber_andTokenNotExpired() throws Exception {
+        var sut = new JwtTokenProvider();
+        var secret = "0123456789ABCDEF0123456789ABCDEF";
+        setField(sut, "secret", secret);
+        setField(sut, "expiration", 60_000L);
+
+        var key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        var now = new Date();
+        var notExpired = new Date(now.getTime() + 60_000L);
+
+        var token = Jwts.builder()
+                .claim("userId", "not-a-number")
+                .subject("a@b.com")
+                .issuedAt(now)
+                .expiration(notExpired)
+                .signWith(key)
+                .compact();
+
+        assertNull(sut.getUserIdFromExpiredToken(token));
+    }
+
+    private static void setField(Object target, String fieldName, Object value) throws Exception {
+        Field f = target.getClass().getDeclaredField(fieldName);
+        f.setAccessible(true);
+        f.set(target, value);
     }
 }

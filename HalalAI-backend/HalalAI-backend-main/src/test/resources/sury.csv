@@ -1,0 +1,6 @@
+sura_index,sura_title,sura_subtitle,verse_number,text
+1,Al-Fatiha,,1,"In the name of Allah, the Entirely Merciful, the Especially Merciful."
+
+bad_line_without_enough_fields
+2,Al-Baqara,,not_a_number,"This should be skipped because verse_number is invalid"
+3,Al-Imran,,2,

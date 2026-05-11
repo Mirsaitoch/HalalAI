@@ -11,8 +11,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -252,5 +254,105 @@ class LLMServiceTest {
         assertThrows(IllegalArgumentException.class, () -> {
             llmService.generateCompletion(null, null, null, null, null, null);
         });
+    }
+
+    @Test
+    void testGenerateCompletionWithTemperatureAndRag() throws Exception {
+        List<Map<String, String>> messages = List.of(
+                Map.of("role", "user", "content", "Вопрос")
+        );
+
+        String responseJson = """
+                {
+                    "reply": "Ответ",
+                    "used_remote": false,
+                    "remote_error": ""
+                }
+                """;
+
+        JsonNode responseNode = objectMapper.readTree(responseJson);
+        ResponseEntity<JsonNode> responseEntity = new ResponseEntity<>(responseNode, HttpStatus.OK);
+
+        when(restTemplate.exchange(anyString(), any(), any(), eq(JsonNode.class)))
+                .thenReturn(responseEntity);
+
+        ChatResponse response = llmService.generateCompletion(
+                messages,
+                null,
+                null,
+                null,
+                0.5,
+                true
+        );
+
+        assertEquals("Ответ", response.reply());
+        assertFalse(response.usedRemote());
+        assertNull(response.remoteError());
+    }
+
+    @Test
+    void testGenerateCompletionNullBody_throwsRuntime() {
+        List<Map<String, String>> messages = List.of(
+                Map.of("role", "user", "content", "Вопрос")
+        );
+
+        when(restTemplate.exchange(anyString(), any(), any(), eq(JsonNode.class)))
+                .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
+
+        assertThrows(RuntimeException.class, () -> llmService.generateCompletion(messages, null, null, null, null, null));
+    }
+
+    @Test
+    void testGenerateCompletionRemoteErrorNonEmpty_propagates() throws Exception {
+        List<Map<String, String>> messages = List.of(
+                Map.of("role", "user", "content", "Вопрос")
+        );
+
+        String responseJson = """
+                {
+                    "reply": "Ответ",
+                    "used_remote": true,
+                    "remote_error": "upstream failed"
+                }
+                """;
+
+        JsonNode responseNode = objectMapper.readTree(responseJson);
+        when(restTemplate.exchange(anyString(), any(), any(), eq(JsonNode.class)))
+                .thenReturn(new ResponseEntity<>(responseNode, HttpStatus.OK));
+
+        ChatResponse response = llmService.generateCompletion(messages, null, null, null, null, null);
+        assertEquals("upstream failed", response.remoteError());
+    }
+
+    @Test
+    void testGenerateCompletionHttpClientErrorNon503_throwsResponseStatusException() {
+        List<Map<String, String>> messages = List.of(
+                Map.of("role", "user", "content", "Вопрос")
+        );
+
+        HttpClientErrorException exception = new HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Bad Request",
+                "body".getBytes(),
+                java.nio.charset.StandardCharsets.UTF_8
+        );
+
+        when(restTemplate.exchange(anyString(), any(), any(), eq(JsonNode.class)))
+                .thenThrow(exception);
+
+        assertThrows(ResponseStatusException.class, () -> llmService.generateCompletion(messages, null, null, null, null, null));
+    }
+
+    @Test
+    void testGenerateCompletionResourceAccessException_branch() {
+        List<Map<String, String>> messages = List.of(
+                Map.of("role", "user", "content", "Вопрос")
+        );
+
+        when(restTemplate.exchange(anyString(), any(), any(), eq(JsonNode.class)))
+                .thenThrow(new ResourceAccessException("timeout"));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> llmService.generateCompletion(messages, null, null, null, null, null));
+        assertTrue(ex.getMessage().contains("Не удалось подключиться"));
     }
 }

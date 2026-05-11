@@ -151,4 +151,15 @@ class AuthServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> authService.refreshToken(oldToken));
     }
+
+    @Test
+    void testRefreshTokenWithMismatchedUserId() {
+        String oldToken = "old-token";
+
+        when(tokenProvider.getUsernameFromExpiredToken(oldToken)).thenReturn("test@example.com");
+        when(tokenProvider.getUserIdFromExpiredToken(oldToken)).thenReturn(999L); // mismatched
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser)); // id=1
+
+        assertThrows(IllegalArgumentException.class, () -> authService.refreshToken(oldToken));
+    }
 }

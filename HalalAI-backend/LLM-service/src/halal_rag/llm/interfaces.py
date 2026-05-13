@@ -16,4 +16,4 @@ class ILLMClient(ABC):
         model: str | None = None
     ) -> str:
         """Generate response using LLM"""
-        pass
+        ...

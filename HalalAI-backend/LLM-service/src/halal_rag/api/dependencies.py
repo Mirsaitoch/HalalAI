@@ -43,7 +43,7 @@ class DependencyContainer:
                 key = api_key or os.getenv("OPEN_ROUTER_KEY")
                 if not key:
                     raise ValueError("OPEN_ROUTER_KEY must be provided or set as environment variable")
-                cls._llm_client = OpenRouterClient(api_key=key)
+                cls._llm_client = OpenRouterClient()
                 print("✓ OpenRouter client initialized")
             except Exception as e:
                 print(f"⚠️  Failed to initialize OpenRouter client: {e}")

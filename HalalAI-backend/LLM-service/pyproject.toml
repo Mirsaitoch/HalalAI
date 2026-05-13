@@ -70,13 +70,14 @@ disallow_incomplete_defs = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+norecursedirs = ["_legacy_obsolete_halal_ai", ".git", ".venv", "fixtures"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
 addopts = [
     "--verbose",
-    "--cov=src/halal_ai",
+    "--cov=src/halal_rag",
     "--cov-report=term-missing",
     "--cov-report=html",
 ]

@@ -1,49 +1,17 @@
-"""Shared test fixtures."""
+"""Общие фикстуры для тестов halal_rag."""
 
-import json
-from pathlib import Path
 import pytest
 
 
-@pytest.fixture(scope="session")
-def quran_documents():
-    """Load Quran documents from JSONL."""
-    docs = []
-    data_file = Path(__file__).parent.parent / "data" / "quran_ru.jsonl"
+@pytest.fixture(autouse=True)
+def reset_dependency_container():
+    """Сбрасывает синглтон контейнера между тестами (ленивый импорт для coverage)."""
+    from halal_rag.api import dependencies
 
-    with open(data_file, 'r', encoding='utf-8') as f:
-        for line in f:
-            docs.append(json.loads(line))
-
-    return docs
-
-
-@pytest.fixture
-def quran_sample():
-    """Small sample of Quran for quick tests."""
-    return [
-        {
-            'id': 'sura_2_verse_173',
-            'sura': 2,
-            'verse': '173',
-            'title': 'АЛЬ-БАКАРА',
-            'subtitle': '«КОРОВА»',
-            'text': 'Он запретил вам мертвечину, кровь, мясо свиньи и то, над чем было призвано имя, отличное от имени Аллаха. Но тому, кто будет вынужден и не будет ни преступником, ни нарушителем границ, не будет греха. Воистину, Аллах — Прощающий, Милосердный.'
-        },
-        {
-            'id': 'sura_5_verse_3',
-            'sura': 5,
-            'verse': '3',
-            'title': 'АЛЬ-МАИДА',
-            'subtitle': '«ТРАПЕЗА»',
-            'text': 'Запрещена вам мертвечина, кровь, мясо свиньи, а также животное, над которым призвано имя, отличное от имени Аллаха; животное, задушенное, поражённое ударом, упавшее с высоты, забодённое рогом, и то, что съела дикое животное, кроме того, что вы зарезали надлежащим образом, и то, что принесено в жертву идолам. И (запрещено вам) гадать по стрелам. Это — нечестие.'
-        },
-        {
-            'id': 'sura_16_verse_115',
-            'sura': 16,
-            'verse': '115',
-            'title': 'АН-НАХЛ',
-            'subtitle': '«ПЧЁЛЫ»',
-            'text': 'Он запретил вам только мертвечину, кровь, мясо свиньи и животное, над которым не было произнесено имя Аллаха. Но если кто-то будет вынужден (есть это) без намерения грешить и не выходя за границы необходимого, то для него нет греха. Воистину, Аллах — Прощающий, Милосердный.'
-        },
-    ]
+    dependencies.DependencyContainer._rag = None
+    dependencies.DependencyContainer._llm_client = None
+    dependencies.DependencyContainer._chat_service = None
+    yield
+    dependencies.DependencyContainer._rag = None
+    dependencies.DependencyContainer._llm_client = None
+    dependencies.DependencyContainer._chat_service = None

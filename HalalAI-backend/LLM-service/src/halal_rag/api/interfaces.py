@@ -10,4 +10,4 @@ class IChatService(ABC):
     @abstractmethod
     async def process_chat(self, request: ChatRequest) -> ChatResponse:
         """Process chat request end-to-end"""
-        pass
+        ...

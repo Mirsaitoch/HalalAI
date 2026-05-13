@@ -80,11 +80,18 @@ class OpenRouterClient(ILLMClient):
             response.raise_for_status()
             data = response.json()
 
-            answer = data["choices"][0]["message"]["content"]
+            try:
+                answer = data["choices"][0]["message"]["content"]
+            except (KeyError, IndexError, TypeError) as e:
+                print(f"❌ Unexpected OpenRouter response format: {e}")
+                raise ValueError(f"Invalid OpenRouter response: {e}") from e
+
+            usage = data.get("usage") or {}
+            total_tokens = usage.get("total_tokens", "n/a")
             print(
                 f"✅ OpenRouter response: "
                 f"{len(answer)} chars, "
-                f"tokens: {data['usage']['total_tokens']}"
+                f"tokens: {total_tokens}"
             )
             print(f"=== LLM RESPONSE ===\n{answer}")
 
@@ -93,9 +100,6 @@ class OpenRouterClient(ILLMClient):
         except httpx.HTTPError as e:
             print(f"❌ OpenRouter API error: {e}")
             raise
-        except KeyError as e:
-            print(f"❌ Unexpected OpenRouter response format: {e}")
-            raise ValueError(f"Invalid OpenRouter response: {e}")
 
     async def close(self):
         try:

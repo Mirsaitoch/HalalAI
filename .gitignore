@@ -357,9 +357,9 @@ data/
 *.onnx
 *.safetensors
 
-### Large model directories ###
-**/models/
-**/model/
-**/results/
-**/embeddings/
-**/*-embeddings/
+### Large model directories (only LLM service) ###
+HalalAI-backend/LLM-service/**/models/
+HalalAI-backend/LLM-service/**/model/
+HalalAI-backend/LLM-service/**/results/
+HalalAI-backend/LLM-service/**/embeddings/
+HalalAI-backend/LLM-service/**/*-embeddings/

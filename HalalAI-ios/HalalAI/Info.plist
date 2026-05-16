@@ -22,6 +22,25 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Нам нужен доступ к камере, чтобы отсканировать состав продуктов</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Для расчёта точного времени намаза нужен доступ к вашему местоположению.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Нам нужен доступ к фото библиотеке, чтобы выбрать фото состава продукта</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -39,24 +58,5 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>localhost</key>
-			<dict>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-				<key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-		</dict>
-	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Нам нужен доступ к камере, чтобы отсканировать состав продуктов</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Нам нужен доступ к фото библиотеке, чтобы выбрать фото состава продукта</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Для расчёта точного времени намаза нужен доступ к вашему местоположению.</string>
 </dict>
 </plist>

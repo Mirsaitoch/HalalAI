@@ -50,7 +50,7 @@ struct HomeView: View {
                 PrayerTimesCardView(viewModel: viewModel.prayerCardViewModel)
 
                 Button {
-                    guard !viewModel.authManager.isGuest else { return }
+//                    guard !viewModel.authManager.isGuest else { return }
                     coordinator.nextStep(step: .home(.scanner))
                 } label: {
                     ImageTextComponent(
@@ -58,7 +58,7 @@ struct HomeView: View {
                         image: .scan,
                         title: "Сканировать состав",
                         description: "Проверь ингредиенты на халяльность",
-                        locked: viewModel.authManager.isGuest
+//                        locked: viewModel.authManager.isGuest
                     )
                 }
                 .buttonStyle(.plain)

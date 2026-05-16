@@ -58,11 +58,11 @@ struct ScannerView: View {
         .sheet(isPresented: $vm.showResults) {
             IngredientResultsView(analysis: vm.analysis)
         }
-        .overlay {
-            if vm.authManager.isGuest {
-                GuestAuthPromptView(featureName: "сканирование продуктов", authManager: vm.authManager)
-            }
-        }
+//        .overlay {
+//            if vm.authManager.isGuest {
+//                GuestAuthPromptView(featureName: "сканирование продуктов", authManager: vm.authManager)
+//            }
+//        }
         .overlay {
             if vm.isLoading {
                 ZStack {

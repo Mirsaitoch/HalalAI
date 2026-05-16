@@ -9,6 +9,7 @@ import SwiftUI
 
 struct VerseView: View {
     @State var verseService: VerseService
+    @Environment(LanguageStore.self) private var lang
 
     var body: some View {
         VStack {
@@ -16,11 +17,11 @@ struct VerseView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     // Информация о суре
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Аят дня")
+                        Text(lang.t("quran.verse_of_day"))
                             .font(.headline)
                         HStack {
                             Text(verse.suraTitle)
-                            Text("Сура \(verse.suraIndex):\(verse.verseNumber)")
+                            Text("\(lang.t("quran.sura_prefix")) \(verse.suraIndex):\(verse.verseNumber)")
                         }
                         .font(.caption)
                     }

@@ -54,20 +54,28 @@ struct ImageTextComponent: View {
         .opacity(locked ? 0.6 : 1)
         .overlay(alignment: .topTrailing) {
             if locked {
-                HStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                    Text("Нужен аккаунт")
-                        .font(.system(size: 11, weight: .semibold))
-                }
-                .foregroundColor(.darkGreen)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(.white)
-                .clipShape(Capsule())
-                .padding(10)
+                LockedBadgeView()
             }
         }
+    }
+}
+
+private struct LockedBadgeView: View {
+    @Environment(LanguageStore.self) private var lang
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 11, weight: .semibold))
+            Text(lang.t("guest.account_needed"))
+                .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundColor(.darkGreen)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.white)
+        .clipShape(Capsule())
+        .padding(10)
     }
 }
 

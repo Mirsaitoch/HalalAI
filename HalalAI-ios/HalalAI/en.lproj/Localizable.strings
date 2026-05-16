@@ -1,0 +1,194 @@
+/* Tabs */
+"tab.home" = "Home";
+"tab.chat" = "Chat";
+"tab.settings" = "Settings";
+
+/* Common */
+"common.back" = "Back";
+"common.error" = "Error";
+"common.ok" = "OK";
+"common.loading" = "Loading…";
+"common.connection_error" = "Connection error";
+"common.retry" = "Retry";
+"common.copy" = "Copy";
+"guest.account_needed" = "Account required";
+
+/* Auth — Login */
+"auth.login.subtitle" = "Sign in to your account";
+"auth.login.email" = "Email";
+"auth.login.password" = "Password";
+"auth.login.button" = "Sign in";
+"auth.login.no_account" = "No account?";
+"auth.login.register" = "Register";
+"auth.login.guest" = "Continue without account";
+
+/* Auth — Register */
+"auth.register.subtitle" = "Create a new account";
+"auth.register.confirm_password" = "Confirm password";
+"auth.register.password_hint" = "Password must be at least 8 characters";
+"auth.register.password_mismatch" = "Passwords do not match";
+"auth.register.button" = "Register";
+"auth.register.has_account" = "Already have an account?";
+"auth.register.guest" = "Continue without registration";
+
+/* Guest */
+"guest.title" = "Authorization required";
+"guest.subtitle_prefix" = "Sign in\nto use ";
+"guest.sign_in" = "Sign in";
+"guest.banner.title" = "Sign in";
+"guest.banner.subtitle" = "To use chat and scanner";
+
+/* Settings */
+"settings.title" = "Settings";
+"settings.account" = "Account";
+"settings.not_authorized" = "Not authorized";
+"settings.api_key" = "Provider API key";
+"settings.api_key.placeholder" = "Enter key";
+"settings.api_key.show" = "Show key";
+"settings.api_key.clear" = "Clear key";
+"settings.api_key.hint" = "If you provide an API key (e.g., OpenAI or compatible), answers will be generated via a remote model. Without a key, the local HalalAI model is used.";
+"settings.data_sources" = "Data sources";
+"settings.rag_description" = "The RAG system forms context from the Translation of the Meanings of the Holy Quran by E.R. Kuliev.";
+"settings.open_source" = "Open source";
+"settings.logout" = "Log out";
+"settings.login" = "Sign in or register";
+"settings.language" = "Interface language";
+
+/* Chat */
+"chat.model_settings" = "Model settings";
+"chat.clear" = "Clear chat";
+"chat.options" = "Options";
+"chat.feature_name" = "AI Chat";
+"chat.empty.greeting" = "Assalamu Alaikum 👋";
+"chat.empty.subtitle" = "I am HalalAI, your halal assistant.";
+"chat.empty.q1" = "What is halal?";
+"chat.empty.q1_message" = "What is halal?";
+"chat.empty.q2" = "Halal meat";
+"chat.empty.q2_message" = "Tell me about halal meat";
+"chat.empty.q3" = "Dairy products";
+"chat.empty.q3_message" = "Which dairy products are halal?";
+"chat.empty.q4" = "Popular brands";
+"chat.empty.q4_message" = "What are popular halal brands?";
+
+/* Scanner */
+"scanner.title" = "Ingredient Scan";
+"scanner.manual_toggle" = "Manual input";
+"scanner.description" = "Take a photo or select product ingredients from gallery";
+"scanner.camera" = "Take photo";
+"scanner.gallery" = "Select from gallery";
+"scanner.processing" = "Processing image...";
+"scanner.enter_ingredients" = "Enter product ingredients";
+"scanner.check" = "Check";
+
+/* Results */
+"results.title" = "Analysis results";
+"results.close" = "Close";
+"results.error" = "Analysis error";
+"results.product_status" = "Product status";
+"results.contains_haram" = "Product contains prohibited ingredients";
+"results.contains_mushbooh" = "Product contains questionable ingredients";
+"results.haram_section" = "Prohibited ingredients";
+"results.mushbooh_section" = "Questionable ingredients";
+"results.all_section" = "All ingredients";
+"results.no_matches" = "No matches found in the ingredient database.";
+"results.collapse" = "Collapse";
+"results.expand" = "Expand";
+
+/* Ingredient statuses */
+"ingredient.status.halal" = "Halal";
+"ingredient.status.haram" = "Haram";
+"ingredient.status.mushbooh" = "Questionable";
+"ingredient.status.unknown" = "Unknown";
+
+/* Home */
+"home.scan.title" = "Scan ingredients";
+"home.scan.subtitle" = "Check ingredients for halal status";
+"home.chat.title" = "Chat with AI";
+"home.chat.subtitle" = "Ask a question";
+"home.map.title" = "Find establishment";
+"home.map.subtitle" = "Halal places nearby";
+"home.quran.title" = "Study Islam";
+"home.quran.subtitle" = "Surahs and Verses from the Quran";
+
+/* Prayer */
+"prayer.title" = "Prayer times";
+"prayer.allow_location" = "Allow geolocation";
+"prayer.no_location" = "No geolocation access";
+"prayer.next" = "Next: ";
+"prayer.determining_location" = "Determining location...";
+"prayer.all_passed" = "All prayers have passed";
+"prayer.notification_settings" = "Notification settings";
+"prayer.today" = "Today";
+"prayer.tomorrow" = "Tomorrow";
+"prayer.yesterday" = "Yesterday";
+
+/* Prayer names */
+"prayer.name.fajr" = "Fajr";
+"prayer.name.sunrise" = "Shuruq";
+"prayer.name.dhuhr" = "Dhuhr";
+"prayer.name.asr" = "Asr";
+"prayer.name.maghrib" = "Maghrib";
+"prayer.name.isha" = "Isha";
+
+/* Prayer notification settings */
+"prayer.settings.method_section" = "Calculation method";
+"prayer.settings.method_picker" = "Method";
+"prayer.settings.method_hint" = "Select calculation method according to your region or preferences.";
+"prayer.settings.angles_section" = "Fajr and Isha angles";
+"prayer.settings.angles_hint" = "Sun angle below horizon (degrees). Default — selected method value.";
+"prayer.settings.madhab_section" = "Madhab (Asr time)";
+"prayer.settings.madhab_picker" = "Madhab";
+"prayer.settings.notifications_section" = "Notifications";
+"prayer.settings.notifications_disabled" = "Notifications disabled";
+"prayer.settings.notifications_allow" = "Allow in Settings → HalalAI → Notifications";
+"prayer.settings.open_settings" = "Open settings";
+"prayer.settings.test_button" = "Test notification (in 5 sec)";
+"prayer.settings.test_hint" = "Will send a test notification in 5 seconds.";
+"prayer.settings.at_prayer" = "At prayer time";
+"prayer.settings.before_5" = "5 minutes before";
+"prayer.settings.before_10" = "10 minutes before";
+"prayer.settings.before_15" = "15 minutes before";
+"prayer.settings.before_30" = "30 minutes before";
+"prayer.settings.when_notify" = "When to notify";
+"prayer.settings.reset" = "Reset";
+"prayer.settings.default" = "default";
+
+/* Prayer calculation methods */
+"prayer.method.russia" = "SRM Russia";
+"prayer.method.tatarstan" = "SRM Tatarstan";
+"prayer.method.mwl" = "Muslim World League";
+"prayer.method.isna" = "ISNA (North America)";
+"prayer.method.egypt" = "Egyptian";
+"prayer.method.makkah" = "Umm al-Qura (Mecca)";
+"prayer.method.karachi" = "Karachi";
+"prayer.method.tehran" = "Tehran";
+
+/* Madhab */
+"prayer.madhab.shafi" = "Shafi / Maliki / Hanbali";
+"prayer.madhab.hanafi" = "Hanafi";
+
+/* Map */
+"map.title" = "Halal places";
+"map.searching" = "Searching for halal places...";
+"map.directions" = "Get directions";
+
+/* Remote model */
+"model.section" = "Remote model";
+"model.select" = "Select model";
+"model.custom" = "Use custom model";
+"model.placeholder" = "Enter model name (e.g., meta-llama/llama-3.3-70b-instruct:free)";
+"model.format_hint" = "Specify model name in provider/model format.";
+"model.manual_hint" = "Enter model name manually. List not loaded yet.";
+"model.token_hint" = "Token generation limit. Server accepts up to 6144.";
+"model.temperature_hint" = "Controls response randomness. 0 = deterministic, 2.0 = maximum randomness.";
+"model.rag" = "Use RAG (semantic search)";
+"model.rag_hint" = "RAG retrieves relevant Quran verses for context. Disable for responses without context.";
+"model.refresh" = "Refresh model list";
+
+/* Quran */
+"quran.title" = "Quran";
+"quran.loading" = "Loading Quran…";
+"quran.continue_reading" = "Continue reading";
+"quran.sura_prefix" = "Surah";
+"quran.verse_of_day" = "Verse of the day";
+"quran.font_size" = "Font size";

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(Coordinator.self) var coordinator
+    @Environment(LanguageStore.self) private var lang
     @State private var viewModel: ViewModel
 
     init(
@@ -40,25 +41,23 @@ struct HomeView: View {
         VStack {
             ScrollView(showsIndicators: false) {
                 VerseView(verseService: viewModel.verseService)
-                
+
                 if viewModel.authManager.isGuest {
                     GuestBannerView {
                         viewModel.authManager.logout()
                     }
                 }
-                
+
                 PrayerTimesCardView(viewModel: viewModel.prayerCardViewModel)
 
                 Button {
-//                    guard !viewModel.authManager.isGuest else { return }
                     coordinator.nextStep(step: .home(.scanner))
                 } label: {
                     ImageTextComponent(
                         componentSize: .large,
                         image: .scan,
-                        title: "Сканировать состав",
-                        description: "Проверь ингредиенты на халяльность",
-//                        locked: viewModel.authManager.isGuest
+                        title: lang.t("home.scan.title"),
+                        description: lang.t("home.scan.subtitle")
                     )
                 }
                 .buttonStyle(.plain)
@@ -72,8 +71,8 @@ struct HomeView: View {
                         ImageTextComponent(
                             componentSize: .medium,
                             image: .quran,
-                            title: "Чат с AI",
-                            description: "Задай вопрос",
+                            title: lang.t("home.chat.title"),
+                            description: lang.t("home.chat.subtitle"),
                             locked: viewModel.authManager.isGuest
                         )
                     }
@@ -86,8 +85,8 @@ struct HomeView: View {
                         ImageTextComponent(
                             componentSize: .medium,
                             image: .map,
-                            title: "Найти заведение",
-                            description: "Халяль места рядом"
+                            title: lang.t("home.map.title"),
+                            description: lang.t("home.map.subtitle")
                         )
                     }
                     .buttonStyle(.plain)
@@ -102,8 +101,8 @@ struct HomeView: View {
                     ImageTextComponent(
                         componentSize: .large,
                         image: .mosque,
-                        title: "Изучай Ислам",
-                        description: "Суры и Аяты из Корана"
+                        title: lang.t("home.quran.title"),
+                        description: lang.t("home.quran.subtitle")
                     )
                 }
                 .buttonStyle(.plain)

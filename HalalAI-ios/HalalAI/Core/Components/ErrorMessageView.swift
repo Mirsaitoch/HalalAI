@@ -10,6 +10,7 @@ import SwiftUI
 struct ErrorMessageView: View {
     let message: String
     let onRetry: () -> Void
+    @Environment(LanguageStore.self) private var lang
 
     var body: some View {
         HStack {
@@ -17,7 +18,7 @@ struct ErrorMessageView: View {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
-                    Text("Ошибка соединения")
+                    Text(lang.t("common.connection_error"))
                         .font(.headline)
                         .foregroundStyle(.red)
                 }
@@ -29,7 +30,7 @@ struct ErrorMessageView: View {
 
                 HStack {
                     Button(action: onRetry) {
-                        Text("Повторить отправку")
+                        Text(lang.t("common.retry"))
                             .font(.subheadline)
                             .foregroundStyle(.blue)
                             .padding(.horizontal, 16)
@@ -40,7 +41,7 @@ struct ErrorMessageView: View {
                             }
                     }
 
-                    Button("Копировать", systemImage: "doc.on.doc") {
+                    Button(lang.t("common.copy"), systemImage: "doc.on.doc") {
                         UIPasteboard.general.string = message
                     }
                     .font(.subheadline)

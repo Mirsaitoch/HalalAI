@@ -11,6 +11,7 @@ import UserNotifications
 struct PrayerNotificationSettingsView: View {
     @State private var viewModel: ViewModel
     @Environment(Coordinator.self) var coordinator
+    @Environment(LanguageStore.self) private var lang
 
     init(
         settingsStore: PrayerSettingsStore,
@@ -37,11 +38,11 @@ struct PrayerNotificationSettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Color.greenBackground.ignoresSafeArea())
-        .navigationTitle("Время намаза")
+        .navigationTitle(lang.t("prayer.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Назад", systemImage: "arrow.left") {
+                Button(lang.t("common.back"), systemImage: "arrow.left") {
                     coordinator.dismiss()
                 }
                 .labelStyle(.iconOnly)
@@ -55,8 +56,8 @@ struct PrayerNotificationSettingsView: View {
     // MARK: - Sections
 
     private var calculationSection: some View {
-        Section(header: Text("Метод расчёта")) {
-            Picker("Метод", selection: $viewModel.settings.calculationMethod) {
+        Section(header: Text(lang.t("prayer.settings.method_section"))) {
+            Picker(lang.t("prayer.settings.method_picker"), selection: $viewModel.settings.calculationMethod) {
                 ForEach(PrayerCalculationMethod.allCases, id: \.self) { method in
                     Text(method.localizedName).tag(method)
                 }
@@ -66,43 +67,47 @@ struct PrayerNotificationSettingsView: View {
                 viewModel.onSettingsChanged()
             }
 
-            Text("Выберите метод расчёта в соответствии с вашим регионом или предпочтениями.")
+            Text(lang.t("prayer.settings.method_hint"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
     }
 
     private var anglesSection: some View {
-        Section(header: Text("Углы Фаджр и Иша")) {
+        Section(header: Text(lang.t("prayer.settings.angles_section"))) {
             AngleStepper(
-                label: "Фаджр",
+                label: lang.t("prayer.name.fajr"),
                 defaultAngle: viewModel.settings.calculationMethod.fajrAngle,
                 value: Binding(
                     get: { viewModel.settings.customFajrAngle ?? viewModel.settings.calculationMethod.fajrAngle },
                     set: { viewModel.settings.customFajrAngle = $0; viewModel.onSettingsChanged() }
                 ),
                 isCustom: viewModel.settings.customFajrAngle != nil,
-                onReset: { viewModel.settings.customFajrAngle = nil; viewModel.onSettingsChanged() }
+                onReset: { viewModel.settings.customFajrAngle = nil; viewModel.onSettingsChanged() },
+                resetLabel: lang.t("prayer.settings.reset"),
+                defaultLabel: lang.t("prayer.settings.default")
             )
             AngleStepper(
-                label: "Иша",
+                label: lang.t("prayer.name.isha"),
                 defaultAngle: viewModel.settings.calculationMethod.ishaAngle,
                 value: Binding(
                     get: { viewModel.settings.customIshaAngle ?? viewModel.settings.calculationMethod.ishaAngle },
                     set: { viewModel.settings.customIshaAngle = $0; viewModel.onSettingsChanged() }
                 ),
                 isCustom: viewModel.settings.customIshaAngle != nil,
-                onReset: { viewModel.settings.customIshaAngle = nil; viewModel.onSettingsChanged() }
+                onReset: { viewModel.settings.customIshaAngle = nil; viewModel.onSettingsChanged() },
+                resetLabel: lang.t("prayer.settings.reset"),
+                defaultLabel: lang.t("prayer.settings.default")
             )
-            Text("Угол солнца ниже горизонта (градусы). По умолчанию — значение выбранного метода.")
+            Text(lang.t("prayer.settings.angles_hint"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
     }
 
     private var madhabSection: some View {
-        Section(header: Text("Мазхаб (время Аср)")) {
-            Picker("Мазхаб", selection: $viewModel.settings.madhab) {
+        Section(header: Text(lang.t("prayer.settings.madhab_section"))) {
+            Picker(lang.t("prayer.settings.madhab_picker"), selection: $viewModel.settings.madhab) {
                 ForEach(Madhab.allCases, id: \.self) { madhab in
                     Text(madhab.localizedName).tag(madhab)
                 }
@@ -115,20 +120,20 @@ struct PrayerNotificationSettingsView: View {
     }
 
     private var notificationSection: some View {
-        Section(header: Text("Уведомления")) {
+        Section(header: Text(lang.t("prayer.settings.notifications_section"))) {
             if viewModel.notificationsAuthorized == false {
                 HStack {
                     Image(systemName: "bell.slash")
                         .foregroundStyle(.orange)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Уведомления отключены")
+                        Text(lang.t("prayer.settings.notifications_disabled"))
                             .fontWeight(.medium)
-                        Text("Разрешите в Настройках → HalalAI → Уведомления")
+                        Text(lang.t("prayer.settings.notifications_allow"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
-                Button("Открыть настройки") {
+                Button(lang.t("prayer.settings.open_settings")) {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
@@ -139,8 +144,17 @@ struct PrayerNotificationSettingsView: View {
             ForEach(Prayer.notifiablePrayers, id: \.self) { prayer in
                 PrayerNotificationRow(
                     prayer: prayer,
+                    prayerName: lang.t("prayer.name.\(prayer.rawValue)"),
                     setting: viewModel.bindingSetting(for: prayer),
-                    onChanged: viewModel.onSettingsChanged
+                    onChanged: viewModel.onSettingsChanged,
+                    offsetOptions: [
+                        (lang.t("prayer.settings.at_prayer"), 0),
+                        (lang.t("prayer.settings.before_5"), 5),
+                        (lang.t("prayer.settings.before_10"), 10),
+                        (lang.t("prayer.settings.before_15"), 15),
+                        (lang.t("prayer.settings.before_30"), 30),
+                    ],
+                    whenNotifyLabel: lang.t("prayer.settings.when_notify")
                 )
             }
         }
@@ -153,14 +167,14 @@ struct PrayerNotificationSettingsView: View {
             } label: {
                 HStack {
                     Spacer()
-                    Label("Тестовое уведомление (через 5 сек)", systemImage: "bell.badge.waveform")
+                    Label(lang.t("prayer.settings.test_button"), systemImage: "bell.badge.waveform")
                     Spacer()
                 }
             }
             .foregroundStyle(Color.greenForeground)
             .disabled(viewModel.notificationsAuthorized == false)
 
-            Text("Отправит уведомление через 5 секунд для проверки работы.")
+            Text(lang.t("prayer.settings.test_hint"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -175,6 +189,8 @@ private struct AngleStepper: View {
     @Binding var value: Double
     let isCustom: Bool
     let onReset: () -> Void
+    var resetLabel: String = "Reset"
+    var defaultLabel: String = "default"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -182,11 +198,11 @@ private struct AngleStepper: View {
                 Text(label)
                 Spacer()
                 if isCustom {
-                    Button("Сбросить", action: onReset)
+                    Button(resetLabel, action: onReset)
                         .font(.caption)
                         .foregroundStyle(Color.greenForeground)
                 } else {
-                    Text("по умолчанию")
+                    Text(defaultLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -203,7 +219,7 @@ private struct AngleStepper: View {
                             .fontWeight(isCustom ? .semibold : .regular)
                             .foregroundStyle(isCustom ? Color.greenForeground : .primary)
                         if !isCustom {
-                            Text("(по умолчанию \(defaultAngle.formatted(.number.precision(.fractionLength(1))))°)")
+                            Text("(\(defaultLabel) \(defaultAngle.formatted(.number.precision(.fractionLength(1))))°)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -219,28 +235,23 @@ private struct AngleStepper: View {
 
 private struct PrayerNotificationRow: View {
     let prayer: Prayer
+    let prayerName: String
     @Binding var setting: PrayerNotificationSetting
     let onChanged: () -> Void
-
-    private let offsetOptions: [(label: String, minutes: Int)] = [
-        ("Ровно в намаз", 0),
-        ("За 5 минут",    5),
-        ("За 10 минут",  10),
-        ("За 15 минут",  15),
-        ("За 30 минут",  30),
-    ]
+    let offsetOptions: [(label: String, minutes: Int)]
+    let whenNotifyLabel: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Toggle(isOn: $setting.isEnabled) {
-                Label(prayer.localizedName, systemImage: prayer.systemImage)
+                Label(prayerName, systemImage: prayer.systemImage)
                     .foregroundStyle(.primary)
             }
             .toggleStyle(SwitchToggleStyle(tint: .green))
             .onChange(of: setting.isEnabled) { _, _ in onChanged() }
 
             if setting.isEnabled {
-                Picker("Когда уведомлять", selection: $setting.offsetMinutes) {
+                Picker(whenNotifyLabel, selection: $setting.offsetMinutes) {
                     ForEach(offsetOptions, id: \.minutes) { option in
                         Text(option.label).tag(option.minutes)
                     }

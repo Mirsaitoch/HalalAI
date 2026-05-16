@@ -7,6 +7,7 @@ import SwiftUI
 
 struct QuranListView: View {
     @Environment(Coordinator.self) var coordinator
+    @Environment(LanguageStore.self) private var lang
     @State private var viewModel: ViewModel
 
     init(quranStorage: QuranStorageService) {
@@ -18,17 +19,17 @@ struct QuranListView: View {
             if let msg = viewModel.errorMessage {
                 ErrorView(message: msg)
             } else if viewModel.isLoading {
-                ProgressView("Загрузка Корана…")
+                ProgressView(lang.t("quran.loading"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 listContent
             }
         }
-        .navigationTitle("Коран")
+        .navigationTitle(lang.t("quran.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Назад", systemImage: "arrow.left") {
+                Button(lang.t("common.back"), systemImage: "arrow.left") {
                     coordinator.dismiss()
                 }
                 .labelStyle(.iconOnly)
@@ -65,11 +66,11 @@ struct QuranListView: View {
                 Image(systemName: "book.fill")
                     .font(.title2)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Продолжить чтение")
+                    Text(lang.t("quran.continue_reading"))
                         .font(.headline)
                     if let s = viewModel.quranStorage.lastReadSuraIndex,
                        let name = viewModel.suras.first(where: { $0.index == s })?.displayTitle {
-                        Text("Сура \(name)")
+                        Text("\(lang.t("quran.sura_prefix")) \(name)")
                             .font(.subheadline)
                             .opacity(0.9)
                     }

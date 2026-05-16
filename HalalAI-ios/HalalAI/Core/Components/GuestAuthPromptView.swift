@@ -8,6 +8,7 @@ import SwiftUI
 struct GuestAuthPromptView: View {
     let featureName: String
     let authManager: AuthManager
+    @Environment(LanguageStore.self) private var lang
 
     var body: some View {
         ZStack {
@@ -20,12 +21,12 @@ struct GuestAuthPromptView: View {
                     .foregroundStyle(.darkGreen)
 
                 VStack(spacing: 8) {
-                    Text("Нужна авторизация")
+                    Text(lang.t("guest.title"))
                         .font(.title2)
                         .bold()
                         .foregroundStyle(.darkGreen)
 
-                    Text("Войдите в аккаунт,\nчтобы использовать \(featureName)")
+                    Text(lang.t("guest.subtitle_prefix") + featureName)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -34,7 +35,7 @@ struct GuestAuthPromptView: View {
                 Button(action: {
                     authManager.logout()
                 }) {
-                    Text("Войти")
+                    Text(lang.t("guest.sign_in"))
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)

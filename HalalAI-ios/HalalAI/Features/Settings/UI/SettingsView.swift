@@ -9,15 +9,17 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var viewModel: ViewModel
+    @Environment(LanguageStore.self) private var lang
 
     init(chatService: ChatService, authManager: AuthManager) {
         _viewModel = State(initialValue: ViewModel(chatService: chatService, authManager: authManager))
     }
-    
+
     var body: some View {
         @Bindable var vm = viewModel
         VStack {
             Form {
+                languageSection
                 if vm.authManager.isGuest {
                     guestLoginSection
                 } else {
@@ -46,7 +48,7 @@ struct SettingsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .navigationTitle("Настройки")
+            .navigationTitle(lang.t("settings.title"))
             .navigationBarTitleDisplayMode(.inline)
             .background(Color.greenBackground.ignoresSafeArea())
         }
@@ -65,36 +67,48 @@ struct SettingsView: View {
             vm.chatService.temperature = newValue
         }
     }
-    
+
     // MARK: - Subviews
-    
+
+    private var languageSection: some View {
+        Section(header: Text(lang.t("settings.language"))) {
+            @Bindable var ls = lang
+            Picker(lang.t("settings.language"), selection: $ls.currentLanguage) {
+                ForEach(AppLanguage.allCases, id: \.self) { language in
+                    Text(language.displayName).tag(language)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
     private var accountSection: some View {
-        Section(header: Text("Аккаунт")) {
+        Section(header: Text(lang.t("settings.account"))) {
             if let user = viewModel.authManager.currentUser {
                 HStack {
-                    Text("Email")
+                    Text(lang.t("auth.login.email"))
                     Spacer()
                     Text(user.email)
                         .foregroundStyle(.secondary)
                 }
             } else {
-                Text("Не авторизован")
+                Text(lang.t("settings.not_authorized"))
                     .foregroundStyle(.secondary)
             }
         }
     }
-    
+
     private var apiKeySection: some View {
         @Bindable var vm = viewModel
-        return Section(header: Text("API ключ провайдера")) {
+        return Section(header: Text(lang.t("settings.api_key"))) {
             Group {
                 if vm.isApiKeyVisible {
-                    TextField("Введите ключ", text: Binding(
+                    TextField(lang.t("settings.api_key.placeholder"), text: Binding(
                         get: { vm.chatService.userApiKey },
                         set: { vm.chatService.userApiKey = $0 }
                     ))
                 } else {
-                    SecureField("Введите ключ", text: Binding(
+                    SecureField(lang.t("settings.api_key.placeholder"), text: Binding(
                         get: { vm.chatService.userApiKey },
                         set: { vm.chatService.userApiKey = $0 }
                     ))
@@ -104,39 +118,39 @@ struct SettingsView: View {
             .disableAutocorrection(true)
             .font(.system(.body, design: .monospaced))
 
-            Toggle("Показать ключ", isOn: $vm.isApiKeyVisible)
+            Toggle(lang.t("settings.api_key.show"), isOn: $vm.isApiKeyVisible)
                 .toggleStyle(SwitchToggleStyle(tint: .green))
 
             if !vm.chatService.userApiKey.isEmpty {
                 Button(role: .destructive) {
                     vm.chatService.userApiKey = ""
                 } label: {
-                    Label("Очистить ключ", systemImage: "trash")
+                    Label(lang.t("settings.api_key.clear"), systemImage: "trash")
                 }
             }
 
-            Text("Если указать API ключ (например, OpenAI или совместимый), ответы будут генерироваться через удалённую модель. Без ключа применяется локальная модель HalalAI.")
+            Text(lang.t("settings.api_key.hint"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
         }
     }
-    
+
     private var dataSourcesSection: some View {
-        Section(header: Text("Источники данных")) {
-            Text("Система RAG формирует контекст из «Перевода смыслов Священного Корана» Э.Р. Кулиева.")
+        Section(header: Text(lang.t("settings.data_sources"))) {
+            Text(lang.t("settings.rag_description"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .padding(.vertical, 4)
-            
+
             if let url = URL(string: "https://xn----8sbemuhsaeiwd9h5a9c.xn--p1ai/chitat-koran-na-russkom/elmir-kuliev/") {
-                Link("Открыть источник", destination: url)
+                Link(lang.t("settings.open_source"), destination: url)
                     .font(.footnote)
                     .foregroundStyle(.blue)
             }
         }
     }
-    
+
     private var logoutSection: some View {
         Section {
             Button(role: .destructive) {
@@ -144,7 +158,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Spacer()
-                    Label("Выйти из аккаунта", systemImage: "rectangle.portrait.and.arrow.right")
+                    Label(lang.t("settings.logout"), systemImage: "rectangle.portrait.and.arrow.right")
                     Spacer()
                 }
             }
@@ -156,12 +170,12 @@ struct SettingsView: View {
             Button {
                 viewModel.authManager.logout()
             } label: {
-                Label("Войти или зарегистрироваться", systemImage: "person.crop.circle")
+                Label(lang.t("settings.login"), systemImage: "person.crop.circle")
                     .frame(alignment: .leading)
             }
             .foregroundStyle(.darkGreen)
         } header: {
-            Text("Аккаунт")
+            Text(lang.t("settings.account"))
         }
     }
 }

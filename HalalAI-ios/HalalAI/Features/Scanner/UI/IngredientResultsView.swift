@@ -10,43 +10,40 @@ import SwiftUI
 struct IngredientResultsView: View {
     let analysis: ProductAnalysis?
     @Environment(\.dismiss) private var dismiss
-    
+    @Environment(LanguageStore.self) private var lang
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.greenBackground.ignoresSafeArea()
-                
+
                 if let analysis = analysis {
                     ScrollView {
                         VStack(spacing: 20) {
-                            // Общий статус
                             overallStatusCard(analysis)
-                            
-                            // Харам ингредиенты
+
                             if !analysis.haramIngredients.isEmpty {
                                 haramIngredientsCard(analysis.haramIngredients)
                             }
-                            
-                            // Сомнительные ингредиенты
+
                             if !analysis.mushboohIngredients.isEmpty {
                                 mushboohIngredientsCard(analysis.mushboohIngredients)
                             }
-                            
-                            // Все ингредиенты
+
                             allIngredientsCard(analysis.ingredients)
                         }
                         .padding()
                     }
                 } else {
-                    Text("Ошибка анализа")
+                    Text(lang.t("results.error"))
                         .foregroundStyle(.gray)
                 }
             }
-            .navigationTitle("Результаты анализа")
+            .navigationTitle(lang.t("results.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Закрыть") {
+                    Button(lang.t("results.close")) {
                         dismiss()
                     }
                     .foregroundStyle(.darkGreen)
@@ -54,31 +51,31 @@ struct IngredientResultsView: View {
             }
         }
     }
-    
+
     private func overallStatusCard(_ analysis: ProductAnalysis) -> some View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: analysis.isHalal ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.largeTitle)
                     .foregroundStyle(analysis.overallStatus.color)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Статус продукта")
+                    Text(lang.t("results.product_status"))
                         .font(.subheadline)
                         .foregroundStyle(.gray)
-                    Text(analysis.overallStatus.displayName)
+                    Text(lang.t("ingredient.status.\(analysis.overallStatus.rawValue)"))
                         .font(.title2)
                         .bold()
                         .foregroundStyle(analysis.overallStatus.color)
                 }
-                
+
                 Spacer()
             }
-            
+
             if !analysis.isHalal {
-                Text(analysis.overallStatus == .haram 
-                     ? "Продукт содержит запрещенные ингредиенты"
-                     : "Продукт содержит сомнительные ингредиенты")
+                Text(analysis.overallStatus == .haram
+                     ? lang.t("results.contains_haram")
+                     : lang.t("results.contains_mushbooh"))
                     .font(.subheadline)
                     .foregroundStyle(.gray)
                     .multilineTextAlignment(.center)
@@ -89,17 +86,17 @@ struct IngredientResultsView: View {
         .clipShape(.rect(cornerRadius: 16))
         .shadow(radius: 4)
     }
-    
+
     private func haramIngredientsCard(_ ingredients: [DetectedIngredient]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.red)
-                Text("Запрещенные ингредиенты")
+                Text(lang.t("results.haram_section"))
                     .font(.headline)
                     .foregroundStyle(.red)
             }
-            
+
             ForEach(ingredients) { ingredient in
                 IngredientRowView(ingredient: ingredient)
             }
@@ -109,17 +106,17 @@ struct IngredientResultsView: View {
         .clipShape(.rect(cornerRadius: 16))
         .shadow(radius: 4)
     }
-    
+
     private func mushboohIngredientsCard(_ ingredients: [DetectedIngredient]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "questionmark.circle.fill")
                     .foregroundStyle(.orange)
-                Text("Сомнительные ингредиенты")
+                Text(lang.t("results.mushbooh_section"))
                     .font(.headline)
                     .foregroundStyle(.orange)
             }
-            
+
             ForEach(ingredients) { ingredient in
                 IngredientRowView(ingredient: ingredient)
             }
@@ -129,15 +126,15 @@ struct IngredientResultsView: View {
         .clipShape(.rect(cornerRadius: 16))
         .shadow(radius: 4)
     }
-    
+
     private func allIngredientsCard(_ ingredients: [DetectedIngredient]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Все ингредиенты")
+            Text(lang.t("results.all_section"))
                 .font(.headline)
                 .foregroundStyle(.darkGreen)
-            
+
             if ingredients.isEmpty {
-                Text("В тексте не найдено совпадений с базой ингредиентов.")
+                Text(lang.t("results.no_matches"))
                     .font(.subheadline)
                     .foregroundStyle(.gray)
             } else {
@@ -151,7 +148,6 @@ struct IngredientResultsView: View {
         .clipShape(.rect(cornerRadius: 16))
         .shadow(radius: 4)
     }
-    
 }
 
 // MARK: - Ingredient Row View
@@ -160,21 +156,22 @@ struct IngredientRowView: View {
     let ingredient: DetectedIngredient
     var showStatus: Bool = false
     @State private var isExpanded = false
-    
+    @Environment(LanguageStore.self) private var lang
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Circle()
                     .fill(ingredient.status.color)
                     .frame(width: 8, height: 8)
-                
+
                 Text(ingredient.name)
                     .font(.body)
-                
+
                 Spacer()
-                
+
                 if showStatus {
-                    Text(ingredient.status.displayName)
+                    Text(lang.t("ingredient.status.\(ingredient.status.rawValue)"))
                         .font(.caption)
                         .foregroundStyle(ingredient.status.color)
                         .padding(.horizontal, 8)
@@ -186,10 +183,12 @@ struct IngredientRowView: View {
                         .font(.caption)
                         .foregroundStyle(.gray)
                 }
-                
-                // Кнопка раскрытия, если есть note
+
                 if ingredient.matchedIngredient?.note != nil {
-                    Button(isExpanded ? "Свернуть" : "Развернуть", systemImage: isExpanded ? "chevron.up" : "chevron.down") {
+                    Button(
+                        isExpanded ? lang.t("results.collapse") : lang.t("results.expand"),
+                        systemImage: isExpanded ? "chevron.up" : "chevron.down"
+                    ) {
                         withAnimation {
                             isExpanded.toggle()
                         }
@@ -199,8 +198,7 @@ struct IngredientRowView: View {
                     .labelStyle(.iconOnly)
                 }
             }
-            
-            // Раскрывающееся поле с note
+
             if isExpanded, let note = ingredient.matchedIngredient?.note, !note.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Divider()
@@ -215,4 +213,3 @@ struct IngredientRowView: View {
         .padding(.vertical, 4)
     }
 }
-

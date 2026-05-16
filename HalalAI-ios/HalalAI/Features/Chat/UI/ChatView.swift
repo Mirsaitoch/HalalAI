@@ -10,11 +10,12 @@ import SwiftUI
 struct ChatView: View {
     @State private var viewModel: ViewModel
     @Environment(Coordinator.self) var coordinator
+    @Environment(LanguageStore.self) private var lang
 
     init(chatService: ChatService, authManager: AuthManager) {
         _viewModel = State(initialValue: ViewModel(chatService: chatService, authManager: authManager))
     }
-    
+
     var body: some View {
         @Bindable var vm = viewModel
         VStack(spacing: 0) {
@@ -33,14 +34,12 @@ struct ChatView: View {
                                             removal: .opacity
                                         ))
                                 }
-                                
-                                // Индикатор печати
+
                                 if vm.chatService.chatState == .typing {
                                     TypingIndicator()
                                         .id("typing")
                                 }
-                                
-                                // Сообщение об ошибке
+
                                 if case .error(let errorMessage) = vm.chatService.chatState {
                                     ErrorMessageView(
                                         message: errorMessage,
@@ -57,12 +56,11 @@ struct ChatView: View {
                     }
                 }
             }
-            
+
             InputBar(
                 messageText: $vm.messageText,
                 onSend: vm.sendMessage,
                 onMicrophoneTap: {
-                    // TODO: Реализовать голосовой ввод, пока кнопка скрыта
                     print("Микрофон нажат")
                 }
             )
@@ -77,16 +75,16 @@ struct ChatView: View {
                         Button(action: {
                             coordinator.currentSelectedTab = .settings
                         }) {
-                            Label("Настройки модели", systemImage: "gearshape")
+                            Label(lang.t("chat.model_settings"), systemImage: "gearshape")
                         }
-                        
+
                         Button(action: {
                             vm.chatService.clearChat()
                         }) {
-                            Label("Очистить чат", systemImage: "trash")
+                            Label(lang.t("chat.clear"), systemImage: "trash")
                         }
                     } label: {
-                        Label("Опции", systemImage: "ellipsis.circle")
+                        Label(lang.t("chat.options"), systemImage: "ellipsis.circle")
                             .labelStyle(.iconOnly)
                     }
                 }
@@ -97,10 +95,8 @@ struct ChatView: View {
         }
         .overlay {
             if vm.authManager.isGuest {
-                GuestAuthPromptView(featureName: "ИИ-чат", authManager: vm.authManager)
+                GuestAuthPromptView(featureName: lang.t("chat.feature_name"), authManager: vm.authManager)
             }
         }
     }
 }
-
-

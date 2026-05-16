@@ -17,9 +17,10 @@ struct RemoteModelSettingsSection: View {
     var availableModels: [String]
     var defaultRemoteModel: String
     var onRefreshModels: () -> Void
+    @Environment(LanguageStore.self) private var lang
 
     var body: some View {
-        Section(header: Text("Удалённая модель")) {
+        Section(header: Text(lang.t("model.section"))) {
             modelPickerContent
             maxTokensContent
             temperatureContent
@@ -33,7 +34,7 @@ struct RemoteModelSettingsSection: View {
     @ViewBuilder
     private var modelPickerContent: some View {
         if !availableModels.isEmpty {
-            Picker("Выберите модель", selection: $remoteModel) {
+            Picker(lang.t("model.select"), selection: $remoteModel) {
                 ForEach(availableModels, id: \.self) { model in
                     Text(model).tag(model)
                 }
@@ -41,36 +42,36 @@ struct RemoteModelSettingsSection: View {
             .pickerStyle(.menu)
             .font(.system(.body, design: .monospaced))
 
-            Text("Доступно \(availableModels.count) моделей. По умолчанию: \(defaultRemoteModel)")
+            Text("\(availableModels.count) \(lang.t("model.select")). \(defaultRemoteModel)")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
-            Toggle("Использовать custom модель", isOn: $useCustomModel)
+            Toggle(lang.t("model.custom"), isOn: $useCustomModel)
                 .toggleStyle(SwitchToggleStyle(tint: .green))
 
             if useCustomModel {
                 TextField(
-                    "Введите имя модели (например, meta-llama/llama-3.3-70b-instruct:free)",
+                    lang.t("model.placeholder"),
                     text: $remoteModel
                 )
                 .textInputAutocapitalization(.never)
                 .disableAutocorrection(true)
                 .font(.system(.body, design: .monospaced))
 
-                Text("Укажите имя модели в формате провайдера/модель.")
+                Text(lang.t("model.format_hint"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         } else {
             TextField(
-                "Введите имя модели (например, meta-llama/llama-3.3-70b-instruct:free)",
+                lang.t("model.placeholder"),
                 text: $remoteModel
             )
             .textInputAutocapitalization(.never)
             .disableAutocorrection(true)
             .font(.system(.body, design: .monospaced))
 
-            Text("Введите имя модели вручную. Список пока не загружен.")
+            Text(lang.t("model.manual_hint"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -105,7 +106,7 @@ struct RemoteModelSettingsSection: View {
                 }
             )
 
-            Text("Лимит токенов для генерации. Сервер принимает до 6144.")
+            Text(lang.t("model.token_hint"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -140,7 +141,7 @@ struct RemoteModelSettingsSection: View {
                 }
             )
 
-            Text("Контролирует случайность ответов. 0 = детерминированно, 2.0 = максимально случайно.")
+            Text(lang.t("model.temperature_hint"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -150,10 +151,10 @@ struct RemoteModelSettingsSection: View {
 
     private var ragToggleContent: some View {
         Group {
-            Toggle("Использовать RAG (семантический поиск)", isOn: $useRag)
+            Toggle(lang.t("model.rag"), isOn: $useRag)
                 .toggleStyle(SwitchToggleStyle(tint: .green))
 
-            Text("RAG извлекает релевантные аяты из Корана для контекста. Выключите для ответов без контекста.")
+            Text(lang.t("model.rag_hint"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -162,7 +163,7 @@ struct RemoteModelSettingsSection: View {
     // MARK: - Refresh
 
     private var refreshButton: some View {
-        Button("Обновить список моделей", action: onRefreshModels)
+        Button(lang.t("model.refresh"), action: onRefreshModels)
             .font(.footnote)
     }
 }

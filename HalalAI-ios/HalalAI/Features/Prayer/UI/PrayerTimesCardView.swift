@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PrayerTimesCardView: View {
     @Environment(Coordinator.self) var coordinator
+    @Environment(LanguageStore.self) private var lang
     var viewModel: ViewModel
 
     var body: some View {
@@ -35,6 +36,21 @@ struct PrayerTimesCardView: View {
         }
     }
 
+    // MARK: - Day title (localized)
+
+    private var localizedDayTitle: String {
+        let offset = viewModel.effectiveDayOffset
+        switch offset {
+        case 0: return lang.t("prayer.today")
+        case 1: return lang.t("prayer.tomorrow")
+        case -1: return lang.t("prayer.yesterday")
+        default:
+            let start = Calendar(identifier: .gregorian).startOfDay(for: Date.now)
+            guard let day = Calendar(identifier: .gregorian).date(byAdding: .day, value: offset, to: start) else { return "" }
+            return day.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(lang.currentLanguage.locale)).capitalized
+        }
+    }
+
     @ViewBuilder
     private var dayPickerRow: some View {
         switch viewModel.locationService.authorizationStatus {
@@ -53,7 +69,7 @@ struct PrayerTimesCardView: View {
 
                     Spacer()
 
-                    Text(viewModel.displayedDayTitle)
+                    Text(localizedDayTitle)
                         .font(.subheadline.weight(.medium))
 
                     Spacer()
@@ -83,7 +99,7 @@ struct PrayerTimesCardView: View {
     private var cardHeader: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Время намаза")
+                Text(lang.t("prayer.title"))
                     .font(.headline)
                     .foregroundStyle(.darkGreen)
 
@@ -92,18 +108,18 @@ struct PrayerTimesCardView: View {
                     Button {
                         viewModel.locationService.requestLocation()
                     } label: {
-                        Label("Разрешить геолокацию", systemImage: "location")
+                        Label(lang.t("prayer.allow_location"), systemImage: "location")
                             .font(.subheadline)
                             .foregroundStyle(.darkGreen)
                     }
                 case .denied, .restricted:
-                    Text("Нет доступа к геолокации")
+                    Text(lang.t("prayer.no_location"))
                         .font(.subheadline)
                         .foregroundStyle(.darkGreen)
                 case .authorizedWhenInUse, .authorizedAlways:
                     if let (prayer, time) = viewModel.nextPrayer {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Следующий: \(prayer.localizedName)")
+                            Text(lang.t("prayer.next") + lang.t("prayer.name.\(prayer.rawValue)"))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                             HStack(spacing: 6) {
@@ -121,11 +137,11 @@ struct PrayerTimesCardView: View {
                             }
                         }
                     } else if viewModel.displayedTimes == nil {
-                        Text("Определяем местоположение…")
+                        Text(lang.t("prayer.determining_location"))
                             .font(.subheadline)
                             .foregroundStyle(.darkGreen)
                     } else {
-                        Text("Все намазы прошли")
+                        Text(lang.t("prayer.all_passed"))
                             .font(.subheadline)
                             .foregroundStyle(.darkGreen)
                     }
@@ -136,7 +152,7 @@ struct PrayerTimesCardView: View {
 
             Spacer()
 
-            Button("Настройки уведомлений", systemImage: "bell.badge") {
+            Button(lang.t("prayer.notification_settings"), systemImage: "bell.badge") {
                 coordinator.nextStep(step: .home(.prayerSettings))
             }
             .font(.title3)
@@ -156,6 +172,7 @@ struct PrayerTimesCardView: View {
             ForEach(Prayer.allCases, id: \.self) { prayer in
                 PrayerRowView(
                     prayer: prayer,
+                    prayerName: lang.t("prayer.name.\(prayer.rawValue)"),
                     time: times.time(for: prayer),
                     isNext: viewModel.isNextPrayerRow(prayer: prayer, time: times.time(for: prayer))
                 )
@@ -174,10 +191,10 @@ struct PrayerTimesCardView: View {
         guard diff > 0 else { return "" }
         let h = diff / 3600
         let m = (diff % 3600) / 60
-        if h > 0 {
-            return "через \(h)ч \(m)м"
+        if lang.currentLanguage == .russian {
+            return h > 0 ? "через \(h)ч \(m)м" : "через \(m)м"
         } else {
-            return "через \(m)м"
+            return h > 0 ? "in \(h)h \(m)m" : "in \(m)m"
         }
     }
 }
@@ -186,6 +203,7 @@ struct PrayerTimesCardView: View {
 
 private struct PrayerRowView: View {
     let prayer: Prayer
+    let prayerName: String
     let time: Date
     let isNext: Bool
 
@@ -195,7 +213,7 @@ private struct PrayerRowView: View {
                 .frame(width: 24)
                 .foregroundStyle(isNext ? .darkGreen : .secondary)
 
-            Text(prayer.localizedName)
+            Text(prayerName)
                 .foregroundStyle(isNext ? .darkGreen : .secondary)
                 .fontWeight(isNext ? .semibold : .regular)
 

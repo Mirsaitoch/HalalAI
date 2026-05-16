@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct HalalAIApp: App {
+    @State private var languageStore = LanguageStore()
+
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -16,6 +18,7 @@ struct HalalAIApp: App {
                 screenFactory.makeRootView()
                     .preferredColorScheme(.light)
             }
+            .environment(languageStore)
         }
     }
 }

@@ -8,6 +8,7 @@ import MapKit
 
 struct HalalMapView: View {
     @Environment(Coordinator.self) var coordinator
+    @Environment(LanguageStore.self) private var lang
     @State private var viewModel: ViewModel
 
     init(placesService: HalalPlacesService, locationService: LocationService) {
@@ -33,7 +34,7 @@ struct HalalMapView: View {
             }
 
             if viewModel.isLoading {
-                ProgressView("Поиск халяль мест...")
+                ProgressView(lang.t("map.searching"))
                     .padding()
                     .background(.ultraThinMaterial, in: .rect(cornerRadius: 12))
             }
@@ -51,11 +52,11 @@ struct HalalMapView: View {
                 }
             }
         }
-        .navigationTitle("Халяль места")
+        .navigationTitle(lang.t("map.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Назад", systemImage: "chevron.left") {
+                Button(lang.t("common.back"), systemImage: "chevron.left") {
                     coordinator.dismiss()
                 }
                 .tint(.darkGreen)
@@ -82,6 +83,7 @@ struct HalalMapView: View {
 private struct PlaceDetailSheet: View {
     let place: HalalPlace
     let viewModel: HalalMapView.ViewModel
+    @Environment(LanguageStore.self) private var lang
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -105,7 +107,7 @@ private struct PlaceDetailSheet: View {
                     .foregroundStyle(.secondary)
             }
 
-            Button("Построить маршрут", systemImage: "arrow.triangle.turn.up.right.diamond") {
+            Button(lang.t("map.directions"), systemImage: "arrow.triangle.turn.up.right.diamond") {
                 viewModel.openInAppleMaps(place: place)
             }
             .buttonStyle(.borderedProminent)

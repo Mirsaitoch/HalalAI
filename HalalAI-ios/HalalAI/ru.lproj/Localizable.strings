@@ -1,0 +1,194 @@
+/* Tabs */
+"tab.home" = "Главная";
+"tab.chat" = "Чат";
+"tab.settings" = "Настройки";
+
+/* Common */
+"common.back" = "Назад";
+"common.error" = "Ошибка";
+"common.ok" = "OK";
+"common.loading" = "Загрузка…";
+"common.connection_error" = "Ошибка соединения";
+"common.retry" = "Повторить отправку";
+"common.copy" = "Копировать";
+"guest.account_needed" = "Нужен аккаунт";
+
+/* Auth — Login */
+"auth.login.subtitle" = "Войдите в свой аккаунт";
+"auth.login.email" = "Email";
+"auth.login.password" = "Пароль";
+"auth.login.button" = "Войти";
+"auth.login.no_account" = "Нет аккаунта?";
+"auth.login.register" = "Зарегистрироваться";
+"auth.login.guest" = "Продолжить без аккаунта";
+
+/* Auth — Register */
+"auth.register.subtitle" = "Создайте новый аккаунт";
+"auth.register.confirm_password" = "Подтвердите пароль";
+"auth.register.password_hint" = "Пароль должен содержать минимум 8 символов";
+"auth.register.password_mismatch" = "Пароли не совпадают";
+"auth.register.button" = "Зарегистрироваться";
+"auth.register.has_account" = "Уже есть аккаунт?";
+"auth.register.guest" = "Продолжить без регистрации";
+
+/* Guest */
+"guest.title" = "Нужна авторизация";
+"guest.subtitle_prefix" = "Войдите в аккаунт,\nчтобы использовать ";
+"guest.sign_in" = "Войти";
+"guest.banner.title" = "Войдите в аккаунт";
+"guest.banner.subtitle" = "Чтобы использовать чат и сканер";
+
+/* Settings */
+"settings.title" = "Настройки";
+"settings.account" = "Аккаунт";
+"settings.not_authorized" = "Не авторизован";
+"settings.api_key" = "API ключ провайдера";
+"settings.api_key.placeholder" = "Введите ключ";
+"settings.api_key.show" = "Показать ключ";
+"settings.api_key.clear" = "Очистить ключ";
+"settings.api_key.hint" = "Если указать API ключ (например, OpenAI или совместимый), ответы будут генерироваться через удалённую модель. Без ключа применяется локальная модель HalalAI.";
+"settings.data_sources" = "Источники данных";
+"settings.rag_description" = "Система RAG формирует контекст из «Перевода смыслов Священного Корана» Э.Р. Кулиева.";
+"settings.open_source" = "Открыть источник";
+"settings.logout" = "Выйти из аккаунта";
+"settings.login" = "Войти или зарегистрироваться";
+"settings.language" = "Язык интерфейса";
+
+/* Chat */
+"chat.model_settings" = "Настройки модели";
+"chat.clear" = "Очистить чат";
+"chat.options" = "Опции";
+"chat.feature_name" = "ИИ-чат";
+"chat.empty.greeting" = "Ассаламу алейкум 👋";
+"chat.empty.subtitle" = "Я — HalalAI, ваш халяль-помощник.";
+"chat.empty.q1" = "Что такое халяль?";
+"chat.empty.q1_message" = "Что такое халяль?";
+"chat.empty.q2" = "Халяль мясо";
+"chat.empty.q2_message" = "Расскажи о халяль мясе";
+"chat.empty.q3" = "Молочные продукты";
+"chat.empty.q3_message" = "Какие молочные продукты халяль?";
+"chat.empty.q4" = "Популярные бренды";
+"chat.empty.q4_message" = "Какие популярные халяль бренды?";
+
+/* Scanner */
+"scanner.title" = "Сканирование состава";
+"scanner.manual_toggle" = "Ввод вручную";
+"scanner.description" = "Сфотографируйте или выберите в галерее состав продукта";
+"scanner.camera" = "Сфотографировать";
+"scanner.gallery" = "Выбрать из галереи";
+"scanner.processing" = "Обработка изображения...";
+"scanner.enter_ingredients" = "Введите состав продукта";
+"scanner.check" = "Проверить";
+
+/* Results */
+"results.title" = "Результаты анализа";
+"results.close" = "Закрыть";
+"results.error" = "Ошибка анализа";
+"results.product_status" = "Статус продукта";
+"results.contains_haram" = "Продукт содержит запрещенные ингредиенты";
+"results.contains_mushbooh" = "Продукт содержит сомнительные ингредиенты";
+"results.haram_section" = "Запрещенные ингредиенты";
+"results.mushbooh_section" = "Сомнительные ингредиенты";
+"results.all_section" = "Все ингредиенты";
+"results.no_matches" = "В тексте не найдено совпадений с базой ингредиентов.";
+"results.collapse" = "Свернуть";
+"results.expand" = "Развернуть";
+
+/* Ingredient statuses */
+"ingredient.status.halal" = "Халяль";
+"ingredient.status.haram" = "Харам";
+"ingredient.status.mushbooh" = "Сомнительно";
+"ingredient.status.unknown" = "Неизвестно";
+
+/* Home */
+"home.scan.title" = "Сканировать состав";
+"home.scan.subtitle" = "Проверь ингредиенты на халяльность";
+"home.chat.title" = "Чат с AI";
+"home.chat.subtitle" = "Задай вопрос";
+"home.map.title" = "Найти заведение";
+"home.map.subtitle" = "Халяль места рядом";
+"home.quran.title" = "Изучай Ислам";
+"home.quran.subtitle" = "Суры и Аяты из Корана";
+
+/* Prayer */
+"prayer.title" = "Время намаза";
+"prayer.allow_location" = "Разрешить геолокацию";
+"prayer.no_location" = "Нет доступа к геолокации";
+"prayer.next" = "Следующий: ";
+"prayer.determining_location" = "Определяем местоположение…";
+"prayer.all_passed" = "Все намазы прошли";
+"prayer.notification_settings" = "Настройки уведомлений";
+"prayer.today" = "Сегодня";
+"prayer.tomorrow" = "Завтра";
+"prayer.yesterday" = "Вчера";
+
+/* Prayer names */
+"prayer.name.fajr" = "Фаджр";
+"prayer.name.sunrise" = "Шурук";
+"prayer.name.dhuhr" = "Зухр";
+"prayer.name.asr" = "Аср";
+"prayer.name.maghrib" = "Магриб";
+"prayer.name.isha" = "Иша";
+
+/* Prayer notification settings */
+"prayer.settings.method_section" = "Метод расчёта";
+"prayer.settings.method_picker" = "Метод";
+"prayer.settings.method_hint" = "Выберите метод расчёта в соответствии с вашим регионом или предпочтениями.";
+"prayer.settings.angles_section" = "Углы Фаджр и Иша";
+"prayer.settings.angles_hint" = "Угол солнца ниже горизонта (градусы). По умолчанию — значение выбранного метода.";
+"prayer.settings.madhab_section" = "Мазхаб (время Аср)";
+"prayer.settings.madhab_picker" = "Мазхаб";
+"prayer.settings.notifications_section" = "Уведомления";
+"prayer.settings.notifications_disabled" = "Уведомления отключены";
+"prayer.settings.notifications_allow" = "Разрешите в Настройках → HalalAI → Уведомления";
+"prayer.settings.open_settings" = "Открыть настройки";
+"prayer.settings.test_button" = "Тестовое уведомление (через 5 сек)";
+"prayer.settings.test_hint" = "Отправит уведомление через 5 секунд для проверки работы.";
+"prayer.settings.at_prayer" = "Ровно в намаз";
+"prayer.settings.before_5" = "За 5 минут";
+"prayer.settings.before_10" = "За 10 минут";
+"prayer.settings.before_15" = "За 15 минут";
+"prayer.settings.before_30" = "За 30 минут";
+"prayer.settings.when_notify" = "Когда уведомлять";
+"prayer.settings.reset" = "Сбросить";
+"prayer.settings.default" = "по умолчанию";
+
+/* Prayer calculation methods */
+"prayer.method.russia" = "ДУМ России";
+"prayer.method.tatarstan" = "ДУМ Республики Татарстан";
+"prayer.method.mwl" = "Мировая Исламская Лига";
+"prayer.method.isna" = "ISNA (Северная Америка)";
+"prayer.method.egypt" = "Египетский";
+"prayer.method.makkah" = "Умм аль-Кура (Мекка)";
+"prayer.method.karachi" = "Карачи";
+"prayer.method.tehran" = "Тегеран";
+
+/* Madhab */
+"prayer.madhab.shafi" = "Шафии / Маликии / Ханбали";
+"prayer.madhab.hanafi" = "Ханафи";
+
+/* Map */
+"map.title" = "Халяль места";
+"map.searching" = "Поиск халяль мест...";
+"map.directions" = "Построить маршрут";
+
+/* Remote model */
+"model.section" = "Удалённая модель";
+"model.select" = "Выберите модель";
+"model.custom" = "Использовать custom модель";
+"model.placeholder" = "Введите имя модели (например, meta-llama/llama-3.3-70b-instruct:free)";
+"model.format_hint" = "Укажите имя модели в формате провайдера/модель.";
+"model.manual_hint" = "Введите имя модели вручную. Список пока не загружен.";
+"model.token_hint" = "Лимит токенов для генерации. Сервер принимает до 6144.";
+"model.temperature_hint" = "Контролирует случайность ответов. 0 = детерминированно, 2.0 = максимально случайно.";
+"model.rag" = "Использовать RAG (семантический поиск)";
+"model.rag_hint" = "RAG извлекает релевантные аяты из Корана для контекста. Выключите для ответов без контекста.";
+"model.refresh" = "Обновить список моделей";
+
+/* Quran */
+"quran.title" = "Коран";
+"quran.loading" = "Загрузка Корана…";
+"quran.continue_reading" = "Продолжить чтение";
+"quran.sura_prefix" = "Сура";
+"quran.verse_of_day" = "Аят дня";
+"quran.font_size" = "Размер текста";

@@ -10,29 +10,29 @@ import SwiftUI
 struct ScannerView: View {
     @State private var viewModel: ViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(LanguageStore.self) private var lang
 
     init(ingredientService: IngredientService, authManager: AuthManager) {
         _viewModel = State(initialValue: ViewModel(ingredientService: ingredientService, authManager: authManager))
     }
-    
+
     var body: some View {
         @Bindable var vm = viewModel
         ZStack {
             Color.greenBackground.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
-                // Заголовок
                 HStack {
-                    Button("Назад", systemImage: "chevron.left") {
+                    Button(lang.t("common.back"), systemImage: "chevron.left") {
                         dismiss()
                     }
                     .font(.title2)
                     .labelStyle(.iconOnly)
                     Spacer()
-                    Text("Сканирование состава")
+                    Text(lang.t("scanner.title"))
                         .font(.headline)
                     Spacer()
-                    Button("Ввод вручную", systemImage: vm.showManualInput ? "camera" : "keyboard") {
+                    Button(lang.t("scanner.manual_toggle"), systemImage: vm.showManualInput ? "camera" : "keyboard") {
                         vm.showManualInput.toggle()
                     }
                     .font(.title2)
@@ -42,7 +42,7 @@ struct ScannerView: View {
                 .animation(.easeInOut, value: vm.showManualInput)
                 .foregroundStyle(.darkGreen)
                 .padding()
-                
+
                 if vm.showManualInput {
                     manualInputView
                 } else {
@@ -58,11 +58,6 @@ struct ScannerView: View {
         .sheet(isPresented: $vm.showResults) {
             IngredientResultsView(analysis: vm.analysis)
         }
-//        .overlay {
-//            if vm.authManager.isGuest {
-//                GuestAuthPromptView(featureName: "сканирование продуктов", authManager: vm.authManager)
-//            }
-//        }
         .overlay {
             if vm.isLoading {
                 ZStack {
@@ -72,7 +67,7 @@ struct ScannerView: View {
                         ProgressView()
                             .scaleEffect(1.5)
                             .foregroundStyle(.white)
-                        Text("Обработка изображения...")
+                        Text(lang.t("scanner.processing"))
                             .foregroundStyle(.black)
                             .font(.headline)
                     }
@@ -83,16 +78,16 @@ struct ScannerView: View {
             }
         }
     }
-    
+
     private var scannerView: some View {
         VStack(spacing: 20) {
             Spacer()
-            
+
             Image(systemName: "camera.fill")
                 .font(.system(size: 70))
                 .foregroundStyle(.darkGreen)
-            
-            Text("Сфотографируйте или выберите в галерее состав продукта")
+
+            Text(lang.t("scanner.description"))
                 .font(.title2)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.darkGreen)
@@ -102,7 +97,7 @@ struct ScannerView: View {
                 Button(action: viewModel.openCamera) {
                     HStack {
                         Image(systemName: "camera.fill")
-                        Text("Сфотографировать")
+                        Text(lang.t("scanner.camera"))
                     }
                     .font(.headline)
                     .foregroundStyle(.white)
@@ -116,7 +111,7 @@ struct ScannerView: View {
                 Button(action: viewModel.openPhotoLibrary) {
                     HStack {
                         Image(systemName: "photo.on.rectangle")
-                        Text("Выбрать из галереи")
+                        Text(lang.t("scanner.gallery"))
                     }
                     .font(.headline)
                     .foregroundStyle(.darkGreen)
@@ -133,25 +128,25 @@ struct ScannerView: View {
             }
             .padding(.horizontal, 40)
             .padding(.top, 20)
-            
+
             Spacer()
         }
     }
-    
+
     private var manualInputView: some View {
         VStack(spacing: 20) {
             Spacer()
-            
+
             Image(systemName: "keyboard.fill")
                 .font(.system(size: 70))
                 .foregroundStyle(.darkGreen)
-        
-            Text("Введите состав продукта")
+
+            Text(lang.t("scanner.enter_ingredients"))
                 .font(.title2)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.darkGreen)
                 .padding(.horizontal)
-            
+
             TextEditor(text: $viewModel.manualInput)
                 .frame(height: 200)
                 .padding()
@@ -165,7 +160,7 @@ struct ScannerView: View {
             }) {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
-                    Text("Проверить")
+                    Text(lang.t("scanner.check"))
                 }
                 .font(.headline)
                 .foregroundStyle(.white)
@@ -177,12 +172,9 @@ struct ScannerView: View {
             .padding(.horizontal)
             .disabled(viewModel.manualInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .accessibilityIdentifier("scanner_check_button")
-            
+
             Spacer()
         }
         .padding()
     }
 }
-
-
-

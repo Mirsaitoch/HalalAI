@@ -3,11 +3,11 @@
 //  HalalAI
 //
 
-
 import SwiftUI
 
 struct LoginView: View {
     @State private var viewModel: ViewModel
+    @Environment(LanguageStore.self) private var lang
     private let onShowRegister: (() -> Void)?
 
     init(
@@ -36,7 +36,7 @@ struct LoginView: View {
                         .bold()
                         .foregroundStyle(.white)
 
-                    Text("Войдите в свой аккаунт")
+                    Text(lang.t("auth.login.subtitle"))
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.8))
                 }
@@ -46,7 +46,6 @@ struct LoginView: View {
 
                 // White card
                 ZStack(alignment: .top) {
-                    // Background extends to bottom edge
                     UnevenRoundedRectangle(
                         topLeadingRadius: 32,
                         bottomLeadingRadius: 0,
@@ -56,27 +55,25 @@ struct LoginView: View {
                     .fill(Color(.systemBackground))
                     .ignoresSafeArea(edges: .bottom)
 
-                    // ScrollView moves with keyboard
                     ScrollView {
                         VStack(spacing: 20) {
                             VStack(spacing: 14) {
                                 AuthTextField(
                                     icon: "envelope.fill",
-                                    placeholder: "Email",
+                                    placeholder: lang.t("auth.login.email"),
                                     text: $vm.email
                                 )
                                 .accessibilityIdentifier("login_email_field")
 
                                 AuthTextField(
                                     icon: "lock.fill",
-                                    placeholder: "Пароль",
+                                    placeholder: lang.t("auth.login.password"),
                                     text: $vm.password,
                                     isSecure: true
                                 )
                                 .accessibilityIdentifier("login_password_field")
                             }
 
-                            // Login button
                             Button(action: {
                                 Task { await vm.login() }
                             }) {
@@ -85,7 +82,7 @@ struct LoginView: View {
                                         ProgressView()
                                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     } else {
-                                        Text("Войти")
+                                        Text(lang.t("auth.login.button"))
                                             .fontWeight(.semibold)
                                     }
                                 }
@@ -99,23 +96,21 @@ struct LoginView: View {
                             .opacity(vm.isDisable ? 0.6 : 1.0)
                             .accessibilityIdentifier("login_button")
 
-                            // Register link
                             HStack(spacing: 4) {
-                                Text("Нет аккаунта?")
+                                Text(lang.t("auth.login.no_account"))
                                     .foregroundStyle(.secondary)
                                 Button(action: { onShowRegister?() }) {
-                                    Text("Зарегистрироваться")
+                                    Text(lang.t("auth.login.register"))
                                         .fontWeight(.semibold)
                                         .foregroundStyle(.darkGreen)
                                 }
                                 .accessibilityIdentifier("login_register_link")
                             }
 
-                            // Guest login
                             Button(action: {
                                 vm.authManager.continueAsGuest()
                             }) {
-                                Text("Продолжить без аккаунта")
+                                Text(lang.t("auth.login.guest"))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -129,8 +124,8 @@ struct LoginView: View {
                 }
             }
         }
-        .alert("Ошибка", isPresented: $vm.showError) {
-            Button("OK", role: .cancel) { }
+        .alert(lang.t("common.error"), isPresented: $vm.showError) {
+            Button(lang.t("common.ok"), role: .cancel) { }
         } message: {
             Text(vm.errorMessage)
         }

@@ -7,6 +7,7 @@ import SwiftUI
 
 struct GuestBannerView: View {
     let onLogin: () -> Void
+    @Environment(LanguageStore.self) private var lang
 
     var body: some View {
         Button(action: onLogin) {
@@ -16,11 +17,11 @@ struct GuestBannerView: View {
                     .foregroundStyle(.darkGreen)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Войдите в аккаунт")
+                    Text(lang.t("guest.banner.title"))
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.darkGreen)
-                    Text("Чтобы использовать чат и сканер")
+                    Text(lang.t("guest.banner.subtitle"))
                         .font(.caption)
                         .foregroundStyle(.darkGreen)
                 }

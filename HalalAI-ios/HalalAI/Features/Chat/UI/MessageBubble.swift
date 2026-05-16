@@ -10,6 +10,7 @@ import SwiftUI
 struct MessageBubble: View {
     let message: ChatMessage
     @State private var isPressed = false
+    @Environment(LanguageStore.self) private var lang
     
     var body: some View {
         HStack {
@@ -49,7 +50,7 @@ struct MessageBubble: View {
                             Button(action: {
                                 UIPasteboard.general.string = message.text
                             }) {
-                                Label("Копировать", systemImage: "doc.on.doc")
+                                Label(lang.t("common.copy"), systemImage: "doc.on.doc")
                             }
                         }
                 } else {
@@ -66,7 +67,7 @@ struct MessageBubble: View {
                             Button(action: {
                                 UIPasteboard.general.string = message.text
                             }) {
-                                Label("Копировать", systemImage: "doc.on.doc")
+                                Label(lang.t("common.copy"), systemImage: "doc.on.doc")
                             }
                         }
                 }

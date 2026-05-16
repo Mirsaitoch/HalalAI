@@ -3,11 +3,11 @@
 //  HalalAI
 //
 
-
 import SwiftUI
 
 struct RegisterView: View {
     @State private var viewModel: ViewModel
+    @Environment(LanguageStore.self) private var lang
     private let onShowLogin: (() -> Void)?
 
     init(
@@ -25,7 +25,6 @@ struct RegisterView: View {
             Color.darkGreen.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Header
                 VStack(spacing: 12) {
                     Image(systemName: "moon.stars.fill")
                         .font(.largeTitle)
@@ -36,7 +35,7 @@ struct RegisterView: View {
                         .bold()
                         .foregroundStyle(.white)
 
-                    Text("Создайте новый аккаунт")
+                    Text(lang.t("auth.register.subtitle"))
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.8))
                 }
@@ -44,9 +43,7 @@ struct RegisterView: View {
                 .padding(.top, 70)
                 .padding(.bottom, 40)
 
-                // White card
                 ZStack(alignment: .top) {
-                    // Background extends to bottom edge
                     UnevenRoundedRectangle(
                         topLeadingRadius: 32,
                         bottomLeadingRadius: 0,
@@ -56,13 +53,12 @@ struct RegisterView: View {
                     .fill(Color(.systemBackground))
                     .ignoresSafeArea(edges: .bottom)
 
-                    // ScrollView moves with keyboard
                     ScrollView {
                         VStack(spacing: 20) {
                             VStack(spacing: 14) {
                                 AuthTextField(
                                     icon: "envelope.fill",
-                                    placeholder: "Email",
+                                    placeholder: lang.t("auth.login.email"),
                                     text: $vm.email
                                 )
                                 .accessibilityIdentifier("register_email_field")
@@ -70,13 +66,13 @@ struct RegisterView: View {
                                 VStack(alignment: .leading, spacing: 6) {
                                     AuthTextField(
                                         icon: "lock.fill",
-                                        placeholder: "Пароль",
+                                        placeholder: lang.t("auth.login.password"),
                                         text: $vm.password,
                                         isSecure: true
                                     )
                                     .accessibilityIdentifier("register_password_field")
                                     if !vm.password.isEmpty && vm.password.count < 8 {
-                                        Text("Пароль должен содержать минимум 8 символов")
+                                        Text(lang.t("auth.register.password_hint"))
                                             .font(.caption)
                                             .foregroundStyle(.red)
                                             .padding(.horizontal, 4)
@@ -87,13 +83,13 @@ struct RegisterView: View {
                                 VStack(alignment: .leading, spacing: 6) {
                                     AuthTextField(
                                         icon: "lock.fill",
-                                        placeholder: "Подтвердите пароль",
+                                        placeholder: lang.t("auth.register.confirm_password"),
                                         text: $vm.confirmPassword,
                                         isSecure: true
                                     )
                                     .accessibilityIdentifier("register_confirm_password_field")
                                     if !vm.confirmPassword.isEmpty && vm.password != vm.confirmPassword {
-                                        Text("Пароли не совпадают")
+                                        Text(lang.t("auth.register.password_mismatch"))
                                             .font(.caption)
                                             .foregroundStyle(.red)
                                             .padding(.horizontal, 4)
@@ -102,7 +98,6 @@ struct RegisterView: View {
                                 }
                             }
 
-                            // Register button
                             Button(action: {
                                 Task { await vm.register() }
                             }) {
@@ -111,7 +106,7 @@ struct RegisterView: View {
                                         ProgressView()
                                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     } else {
-                                        Text("Зарегистрироваться")
+                                        Text(lang.t("auth.register.button"))
                                             .fontWeight(.semibold)
                                     }
                                 }
@@ -125,12 +120,11 @@ struct RegisterView: View {
                             .opacity((!vm.isFormValid || vm.authService.isLoading) ? 0.6 : 1.0)
                             .accessibilityIdentifier("register_button")
 
-                            // Login link
                             HStack(spacing: 4) {
-                                Text("Уже есть аккаунт?")
+                                Text(lang.t("auth.register.has_account"))
                                     .foregroundStyle(.secondary)
                                 Button(action: { onShowLogin?() }) {
-                                    Text("Войти")
+                                    Text(lang.t("auth.login.button"))
                                         .fontWeight(.semibold)
                                         .foregroundStyle(.darkGreen)
                                 }
@@ -140,7 +134,7 @@ struct RegisterView: View {
                             Button(action: {
                                 vm.authManager.continueAsGuest()
                             }) {
-                                Text("Продолжить без регистрации")
+                                Text(lang.t("auth.register.guest"))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -154,8 +148,8 @@ struct RegisterView: View {
                 }
             }
         }
-        .alert("Ошибка", isPresented: $vm.showError) {
-            Button("OK", role: .cancel) { }
+        .alert(lang.t("common.error"), isPresented: $vm.showError) {
+            Button(lang.t("common.ok"), role: .cancel) { }
         } message: {
             Text(vm.errorMessage)
         }

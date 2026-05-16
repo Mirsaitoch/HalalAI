@@ -8,6 +8,7 @@ import SwiftUI
 
 struct SuraReaderView: View {
     @Environment(Coordinator.self) var coordinator
+    @Environment(LanguageStore.self) private var lang
     @State private var viewModel: ViewModel
 
     init(suraIndex: Int, quranStorage: QuranStorageService) {
@@ -19,19 +20,19 @@ struct SuraReaderView: View {
             if let s = viewModel.sura {
                 readerContent(sura: s)
             } else {
-                ProgressView("Загрузка…")
+                ProgressView(lang.t("common.loading"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Назад", systemImage: "arrow.left") {
+                Button(lang.t("common.back"), systemImage: "arrow.left") {
                     coordinator.dismiss()
                 }
                 .labelStyle(.iconOnly)
             }
         }
-        .navigationTitle(viewModel.sura?.displayTitle ?? "Сура")
+        .navigationTitle(viewModel.sura?.displayTitle ?? lang.t("quran.sura_prefix"))
         .navigationBarTitleDisplayMode(.inline)
         .background(Color.greenBackground.ignoresSafeArea())
         .onAppear { viewModel.loadSura() }
@@ -58,7 +59,7 @@ struct SuraReaderView: View {
 
     private var fontControls: some View {
         HStack {
-            Text("Размер текста")
+            Text(lang.t("quran.font_size"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Slider(value: $viewModel.fontSize, in: 14...28, step: 1)

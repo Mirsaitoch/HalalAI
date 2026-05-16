@@ -9,32 +9,33 @@ import SwiftUI
 
 struct EmptyChatView: View {
     @State private var isAnimating = false
+    @Environment(LanguageStore.self) private var lang
     var chatService: ChatService
-    
+
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
             VStack(spacing: 16) {
-                Text("Ассаламу алейкум 👋")
+                Text(lang.t("chat.empty.greeting"))
                     .font(.title2)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
-                
-                Text("Я — HalalAI, ваш халяль-помощник.")
+
+                Text(lang.t("chat.empty.subtitle"))
                     .font(.headline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             Spacer()
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 ScrollView(.horizontal) {
                     HStack {
                         Spacer()
-                        QuickQuestionButton(text: "Что такое халяль?", onTap: { chatService.sendMessage("Что такое халяль?") })
-                        QuickQuestionButton(text: "Халяль мясо", onTap: { chatService.sendMessage("Расскажи о халяль мясе") })
-                        QuickQuestionButton(text: "Молочные продукты", onTap: { chatService.sendMessage("Какие молочные продукты халяль?") })
-                        QuickQuestionButton(text: "Популярные бренды", onTap: { chatService.sendMessage("Какие популярные халяль бренды?") })
+                        QuickQuestionButton(text: lang.t("chat.empty.q1"), onTap: { chatService.sendMessage(lang.t("chat.empty.q1_message")) })
+                        QuickQuestionButton(text: lang.t("chat.empty.q2"), onTap: { chatService.sendMessage(lang.t("chat.empty.q2_message")) })
+                        QuickQuestionButton(text: lang.t("chat.empty.q3"), onTap: { chatService.sendMessage(lang.t("chat.empty.q3_message")) })
+                        QuickQuestionButton(text: lang.t("chat.empty.q4"), onTap: { chatService.sendMessage(lang.t("chat.empty.q4_message")) })
                         Spacer()
                     }
                 }
@@ -51,7 +52,7 @@ struct QuickQuestionButton: View {
     let text: String
     let onTap: () -> Void
     @State private var isPressed = false
-    
+
     var body: some View {
         Button(action: {
             HapticFeedback.light()
@@ -69,7 +70,6 @@ struct QuickQuestionButton: View {
         }
         .scaleEffect(isPressed ? 0.95 : 1.0)
         .onLongPressGesture(minimumDuration: 0) {
-            // Действие при долгом нажатии
         } onPressingChanged: { pressing in
             isPressed = pressing
         }

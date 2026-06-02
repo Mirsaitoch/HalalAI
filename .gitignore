@@ -357,6 +357,16 @@ data/
 *.onnx
 *.safetensors
 
+### LaTeX build artifacts ###
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+*.toc
+*.idx
+*.out
+
 ### Large model directories (only LLM service) ###
 HalalAI-backend/LLM-service/**/models/
 HalalAI-backend/LLM-service/**/model/

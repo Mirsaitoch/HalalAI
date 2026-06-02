@@ -22,7 +22,7 @@ COPY data/ data/
 RUN pip install --no-cache-dir -e . --no-deps
 
 # Скачиваем модель эмбеддингов при сборке — контейнер стартует мгновенно
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2')"
 
 EXPOSE 8000
 

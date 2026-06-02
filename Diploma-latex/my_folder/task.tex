@@ -1,0 +1,98 @@
+%%%% Начало оформления заголовка - оставить без изменений !!! %%%%
+\input{my_folder/task_settings}	% настройки - начало 
+
+
+{\centering%
+	
+	\Ministry\\
+	\SPbPU\\
+	\institute
+\par}
+}\intervalS% завершает input
+
+				\noindent
+				\begin{minipage}{\linewidth}
+				\vspace{\mfloatsep} % интервал 	
+				\begin{tabularx}{\linewidth}{Xl}
+					&УТВЕРЖДАЮ      \\
+					&\HeadTitle     \\			
+					&\underline{\hspace*{0.1\textheight}} \Head     \\
+					&<<\underline{\hspace*{0.05\textheight}}>> \underline{\hspace*{0.1\textheight}} \approveYear г.  \\  
+				\end{tabularx}
+				\vspace{\mfloatsep} % интервал 	
+				\end{minipage}
+
+\intervalS{\centering\bfseries%
+
+				ЗАДАНИЕ\\
+				на выполнение %с 2020 года 
+				%по выполнению % до 2020 года
+				выпускной квалификационной работы
+
+
+\intervalS\normalfont%
+
+				студенту \uline{\AuthorFullDat{}, гр.~\group}
+
+
+\par}\intervalS%
+%%%%
+%%%% Конец оформления заголовка  %%%%
+ 	
+	
+	
+\begin{enumerate}[1.]
+	\item Тема работы: {\expandafter \ulined <<\thesisTitle>>.}
+	%\item Тема работы (на английском языке): \uline{\thesisTitleEn.} % вероятно после 2021 года
+	\item Срок сдачи студентом законченной работы\footnote{Последний день преддипломной практики согласно учебному плану.}: \uline{\thesisDeadline.} 
+	\item Исходные данные по работе: \uline{анализ существующих исламских цифровых сервисов; тексты Корана для векторной базы знаний RAG; требования ГОСТ к оформлению ВКР.}% не забываем точку!
+	%\printbibliographyTask % печать списка источников % КОММЕНТИРУЕМ ЕСЛИ НЕ ИСПОЛЬЗУЕТСЯ
+	% В СЛУЧАЕ, ЕСЛИ НЕ ИСПОЛЬЗУЕТСЯ МОЖНО ТАКЖЕ ЗАЙТИ В setup.tex и закомментировать \vspace{-0.28\curtextsize}
+	\item Содержание работы (перечень подлежащих разработке вопросов):
+	\begin{enumerate}[label=\theenumi\arabic*.]
+		\item Обзор литературы по теме ВКР.%не забываем точку
+		\item Исследование программных продуктов.%не забываем точку
+		\item Разработка метода/алгоритма/программы.%не забываем точку
+		\item Апробация разработанного метода/алгоритма/программы.%не забываем точку 
+	\end{enumerate}
+	\item Перечень графического материала (с указанием обязательных чертежей): 
+	\begin{enumerate}[label=\theenumi\arabic*.]
+		\item Схема работы метода/алгоритма.%не забываем точку
+		\item Архитектура разработанной программы/библиотеки.%не забываем точку
+	\end{enumerate}	
+		\item Перечень используемых информационных технологий, в том числе программное обеспечение, облачные сервисы, базы данных и прочие сквозные цифровые технологии (при наличии):
+		\begin{enumerate}[label=\theenumi\arabic*.]
+			\item СУБД Postgres/MySQL$\ldots$.%не забываем точку
+			\item Облачный сервис ХХХ.%не забываем точку
+		\end{enumerate}	
+		\item Консультанты по работе\footnote{Подпись консультанта по нормоконтролю пока не требуется. Назначается всем по умолчанию.}:
+		\begin{enumerate}[label=\theenumi\arabic*.] 
+		\item  \uline{\emakefirstuc{\ConsultantExtraDegree}, \ConsultantExtra.} % закомментировать при необходимости, идёт первый по порядку.
+		\item \uline{\emakefirstuc{\ConsultantNormDegree}, \ConsultantNorm{} (нормоконтроль).} %	Обязателен для всех студентов
+	\end{enumerate}
+		\item Дата выдачи задания\footnote{Как правило не позднее 3 месяцев до ГИА (утверждение тем ВКР по университету) или строго не позже 30 дней до ГИА.}: \uline{\thesisStartDate.}
+\end{enumerate}
+
+\intervalS%можно удалить пробел
+
+Руководитель ВКР \uline{\hspace*{0.1\textheight} \Supervisor}
+
+
+\intervalS%можно удалить пробел
+
+Консультант\footnote{В случае, если есть консультант, отличный от консультанта по нормоконтролю.}  \uline{\hspace*{0.1\textheight}\ConsultantExtra}
+
+
+\intervalS%можно удалить пробел
+
+%Консультант по нормоконтролю \uline{\hspace*{0.1\textheight} \ConsultantNorm}%ПОКА НЕ ТРЕБУЕТСЯ, Т.К. ОН У ВСЕХ ПО УМОЛЧАНИЮ
+
+Задание принял к исполнению \uline{\thesisStartDate}
+
+\intervalS%можно удалить пробел
+
+Студент \uline{\hspace*{0.1\textheight}  \Author}
+
+
+
+\input{my_folder/task_settings_restore}	% настройки - конец

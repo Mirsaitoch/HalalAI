@@ -1,0 +1,92 @@
+%%% Титульник ВКР / Thesis title 
+%%
+%% добавить лист в pdf-навигацию 
+%% add to pdf navigation menu
+%%
+\pdfbookmark[-1]{\pdfTitle}{tit}
+%%
+\thispagestyle{empty}%
+\makeatletter
+\newgeometry{top=2cm,bottom=2cm,left=3cm,right=1cm,headsep=0cm,footskip=0cm}
+\savegeometry{NoFoot}%
+\makeatother
+
+
+%%% Блок версии шаблона скрыт
+\vspace{0pt plus0.1fill}
+
+{\centering%
+	\Ministry\\
+	\SPbPU\\
+	{%\bfseries %2020 - указание на изменения, которые могут быть введены в 2020 году
+		\institute}
+\par}%
+
+
+\vspace{0pt plus1fill} %число перед fill = кратность относительно некоторого расстояния fill, кусками которого заполнены пустые места
+
+
+\noindent
+\begin{minipage}{\linewidth}
+	\vspace{\mfloatsep} % интервал 
+	\begin{tabularx}{\linewidth}{Xl}
+	&Работа допущена к защите     \\
+	&\HeadTitle     \\
+	&\underline{\hspace*{0.1\textheight}} \Head     \\
+	\end{tabularx}
+	\vspace{\mfloatsep} % интервал 	
+\end{minipage}
+
+
+\vspace{0pt plus2fill} %
+
+
+{\centering%
+	
+	\MakeUppercase{\bfseries{}\DocType} \\ 
+	\MakeUppercase{\normalfont{}\thesisDegree}%
+
+
+%\intervalS% %ОБЯЗАТЕЛЬНО ДОБАВИТЬ ОТСТУП, ЕСЛИ ХВАТАЕТ МЕСТА
+{\centering%
+	\MakeUppercase{\bfseries{\thesisTitle}}}%
+
+}\par%
+
+%\intervalS% %ОБЯЗАТЕЛЬНО ДОБАВИТЬ ОТСТУП, ЕСЛИ ХВАТАЕТ МЕСТА
+%по специальности % для специалистов
+\noindent	по направлению подготовки \thesisSpecialtyCodeAndTitle{}\\% для бакалавров и магистров 
+%\noindent Направленность  % для специалистов
+\noindent	Направленность (профиль)	\thesisOPCodeAndTitle % для бакалавров и магистров
+% Лучше по~профилю, но что делать, так составили Положение
+\par%
+
+
+
+
+
+\vspace{4mm plus2fill}%
+
+\noindent
+\begin{tabularx}{\linewidth}{lXl}
+	Выполнил              &	   &             \\
+	студент гр.~\group     &    & \Author     \\[\mfloatsep]
+
+	Руководитель 		  &    &             \\
+	\SupervisorJob 		  &    & \Supervisor \\[\mfloatsep]
+
+	Консультант  &    &  \\
+	по нормоконтролю  		 	  &    & \ConsultantNorm
+\end{tabularx} %
+
+
+%
+\vspace{0pt plus4fill}% 
+
+
+\begin{center}%
+Санкт-Петербург \\
+\thesisYear
+\end{center}%
+\restoregeometry
+\newpage

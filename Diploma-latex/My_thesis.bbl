@@ -1,0 +1,337 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global/global}
+    \entry{ref1}{online}{}{}
+      \list{organization}{1}{%
+        {ResearchGate}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{Key attributes of mobile apps for halal tourism: an analysis of online reviews using Leximancer}
+      \verb{urlraw}
+      \verb https://www.researchgate.net/publication/395269599_Key_attributes_of_mobile_apps_for_halal_tourism_an_analysis_of_online_reviews_using_Leximancer
+      \endverb
+      \verb{url}
+      \verb https://www.researchgate.net/publication/395269599_Key_attributes_of_mobile_apps_for_halal_tourism_an_analysis_of_online_reviews_using_Leximancer
+      \endverb
+    \endentry
+    \entry{ref2}{online}{}{}
+      \list{organization}{1}{%
+        {Pew Research Center}%
+      }
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{The future of the global Muslim population}
+      \verb{urlraw}
+      \verb https://www.pewresearch.org/religion/2011/01/27/the-future-of-the-global-muslim-population/
+      \endverb
+      \verb{url}
+      \verb https://www.pewresearch.org/religion/2011/01/27/the-future-of-the-global-muslim-population/
+      \endverb
+    \endentry
+    \entry{ref3}{online}{}{}
+      \list{organization}{1}{%
+        {Research Nester}%
+      }
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{Halal Food Market}
+      \verb{urlraw}
+      \verb https://www.researchnester.com/ru/reports/halal-food-market/6076
+      \endverb
+      \verb{url}
+      \verb https://www.researchnester.com/ru/reports/halal-food-market/6076
+      \endverb
+    \endentry
+    \entry{ref6}{online}{}{}
+      \list{organization}{1}{%
+        {Halal Matchmaking API}%
+      }
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{Mobile-first marketing in app advertising}
+      \verb{urlraw}
+      \verb https://api.halalmatchmaking.org/advertiser/blog/mobile-first-marketing-in-app-advertising
+      \endverb
+      \verb{url}
+      \verb https://api.halalmatchmaking.org/advertiser/blog/mobile-first-marketing-in-app-advertising
+      \endverb
+    \endentry
+    \entry{ref4}{online}{}{}
+      \list{organization}{1}{%
+        {Gulf News}%
+      }
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{App developers cater to Islamic consumer}
+      \verb{urlraw}
+      \verb https://gulfnews.com/technology/media/app-developers-cater-to-islamic-consumer-1.1865595
+      \endverb
+      \verb{url}
+      \verb https://gulfnews.com/technology/media/app-developers-cater-to-islamic-consumer-1.1865595
+      \endverb
+    \endentry
+    \entry{ref5}{online}{}{}
+      \list{organization}{1}{%
+        {Muzz.com}%
+      }
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{Muzz}
+      \verb{urlraw}
+      \verb https://muzz.com/
+      \endverb
+      \verb{url}
+      \verb https://muzz.com/
+      \endverb
+    \endentry
+    \entry{ref7}{online}{}{}
+      \list{organization}{1}{%
+        {Produkt.by}%
+      }
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labeltitlesource}{title}
+      \field{langid}{russian}
+      \field{title}{К 2023 году рынок халяль-продуктов и мусульманских услуг достигнет 3 млрд долларов}
+      \verb{urlraw}
+      \verb https://produkt.by/news/novosti-mira/k-2023-godu-rynok-khalyal-produktov-i-musulmanskikh-uslug-dostignet-3
+      \endverb
+      \verb{url}
+      \verb https://produkt.by/news/novosti-mira/k-2023-godu-rynok-khalyal-produktov-i-musulmanskikh-uslug-dostignet-3
+      \endverb
+    \endentry
+    \entry{ref8}{online}{}{}
+      \list{organization}{1}{%
+        {Indonesian Journal of Halal Industry}%
+      }
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{Artificial Intelligence in the Halal Industry: Bibliometric Analysis and Future Research Directions}
+      \verb{urlraw}
+      \verb https://journal.uii.ac.id/IJHI/article/view/39184/18195
+      \endverb
+      \verb{url}
+      \verb https://journal.uii.ac.id/IJHI/article/view/39184/18195
+      \endverb
+    \endentry
+    \entry{ref9}{online}{}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{Survey, Analysis and Issues of Islamic Mobile Applications}
+      \verb{urlraw}
+      \verb https://d1wqtxts1xzle7.cloudfront.net/69684260/pdf-libre.pdf
+      \endverb
+      \verb{url}
+      \verb https://d1wqtxts1xzle7.cloudfront.net/69684260/pdf-libre.pdf
+      \endverb
+    \endentry
+    \entry{ref10}{online}{}{}
+      \list{organization}{1}{%
+        {КиберЛенинка}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{langid}{russian}
+      \field{title}{Цифровизация религии: ислам в условиях информационного общества}
+      \verb{urlraw}
+      \verb https://cyberleninka.ru/article/n/tsifrovizatsiya-religii-islam
+      \endverb
+      \verb{url}
+      \verb https://cyberleninka.ru/article/n/tsifrovizatsiya-religii-islam
+      \endverb
+    \endentry
+    \entry{ref11}{online}{}{}
+      \list{organization}{1}{%
+        {КиберЛенинка}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{langid}{russian}
+      \field{title}{Специфика цифровизации ислама и IT-халяль}
+      \verb{urlraw}
+      \verb https://cyberleninka.ru/article/n/spetsifika-tsifrovizatsii-islama-i-it-halyal
+      \endverb
+      \verb{url}
+      \verb https://cyberleninka.ru/article/n/spetsifika-tsifrovizatsii-islama-i-it-halyal
+      \endverb
+    \endentry
+    \entry{ref12}{online}{}{}
+      \list{organization}{1}{%
+        {Journal of Contemporary Humanitarian Research}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{Artificial Intelligence-Based Quranic Chatbots and Digital Religious Tools}
+      \verb{urlraw}
+      \verb https://publish.kne-publishing.com/index.php/JCHR/article/download/14792/13916
+      \endverb
+      \verb{url}
+      \verb https://publish.kne-publishing.com/index.php/JCHR/article/download/14792/13916
+      \endverb
+    \endentry
+    \entry{ref13}{online}{}{}
+      \list{organization}{1}{%
+        {ResearchGate}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{{HALALCheck}: A Multi-Faceted Approach for Intelligent Halal Packaged Food Recognition and Analysis}
+      \verb{urlraw}
+      \verb https://www.researchgate.net/publication/378348937_HALALCheck_A_Multi-Faceted_Approach_for_Intelligent_Halal_Packaged_Food_Recognition_and_Analysis
+      \endverb
+      \verb{url}
+      \verb https://www.researchgate.net/publication/378348937_HALALCheck_A_Multi-Faceted_Approach_for_Intelligent_Halal_Packaged_Food_Recognition_and_Analysis
+      \endverb
+    \endentry
+    \entry{ref14}{online}{useauthor=false}{}
+      \true{moreauthor}
+      \name{author}{3}{}{%
+        {{hash=d2aa4ca344a7388fb2bbb725e0757875}{%
+           family={Lewis},
+           familyi={L\bibinitperiod},
+           given={P.},
+           giveni={P\bibinitperiod}}}%
+        {{hash=c23fa809648e68f7596758e32da75bc4}{%
+           family={Perez},
+           familyi={P\bibinitperiod},
+           given={E.},
+           giveni={E\bibinitperiod}}}%
+        {{hash=021a8637c166adc65d40e51b7c21b926}{%
+           family={Piktus},
+           familyi={P\bibinitperiod},
+           given={A.},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{authorbibnamehash}{b6314bebb7c7d9142aad7328efa6447c}
+      \strng{authornamehash}{b6314bebb7c7d9142aad7328efa6447c}
+      \strng{authorfullhash}{b6314bebb7c7d9142aad7328efa6447c}
+      \strng{authorfullhashraw}{b6314bebb7c7d9142aad7328efa6447c}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks}
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2005.11401
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2005.11401
+      \endverb
+    \endentry
+    \entry{ref15}{inproceedings}{useauthor=false}{}
+      \true{moreauthor}
+      \name{author}{3}{}{%
+        {{hash=6f895ccc4219e719c1b5b77eae5afeaa}{%
+           family={Karpukhin},
+           familyi={K\bibinitperiod},
+           given={V.},
+           giveni={V\bibinitperiod}}}%
+        {{hash=feea674f9fb24c8d0ccd0348dc46df7f}{%
+           family={Oguz},
+           familyi={O\bibinitperiod},
+           given={B.},
+           giveni={B\bibinitperiod}}}%
+        {{hash=16d9c07c636fbd24c13d7f8b2943ac7d}{%
+           family={Min},
+           familyi={M\bibinitperiod},
+           given={S.},
+           giveni={S\bibinitperiod}}}%
+      }
+      \strng{authorbibnamehash}{a443eed8fa3ab2da261aa1c52cfb340e}
+      \strng{authornamehash}{a443eed8fa3ab2da261aa1c52cfb340e}
+      \strng{authorfullhash}{a443eed8fa3ab2da261aa1c52cfb340e}
+      \strng{authorfullhashraw}{a443eed8fa3ab2da261aa1c52cfb340e}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of EMNLP 2020}
+      \field{langid}{english}
+      \field{title}{Dense Passage Retrieval for Open-Domain Question Answering}
+      \field{year}{2020}
+      \verb{urlraw}
+      \verb https://aclanthology.org/2020.emnlp-main.550/
+      \endverb
+      \verb{url}
+      \verb https://aclanthology.org/2020.emnlp-main.550/
+      \endverb
+    \endentry
+    \entry{ref16}{online}{useauthor=false}{}
+      \true{moreauthor}
+      \name{author}{3}{}{%
+        {{hash=7bbb6843e99282aefddce91798eba7e4}{%
+           family={Qu},
+           familyi={Q\bibinitperiod},
+           given={Y.},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=5c438ad28570ac8ec357231444b96757}{%
+           family={Cai},
+           familyi={C\bibinitperiod},
+           given={Y.},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=006d527428ae3b86c2093d6d28e16072}{%
+           family={Lin},
+           familyi={L\bibinitperiod},
+           given={H.},
+           giveni={H\bibinitperiod}}}%
+      }
+      \strng{authorbibnamehash}{5fe17da027509cde88028130e46b5059}
+      \strng{authornamehash}{5fe17da027509cde88028130e46b5059}
+      \strng{authorfullhash}{5fe17da027509cde88028130e46b5059}
+      \strng{authorfullhashraw}{5fe17da027509cde88028130e46b5059}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{title}{{RocketQA}: An Optimized Training Approach to Dense Passage Retrieval for Open-Domain Question Answering}
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2010.08191
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2010.08191
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

@@ -1,9 +1,9 @@
 %%%% Начало оформления заголовка - оставить без изменений !!! %%%%
-\input{my_folder/task_settings}	% настройки - начало 
+\input{my_folder/task_settings}	% настройки - начало
 
 
 {\centering%
-	
+
 	\Ministry\\
 	\SPbPU\\
 	\institute
@@ -12,20 +12,20 @@
 
 				\noindent
 				\begin{minipage}{\linewidth}
-				\vspace{\mfloatsep} % интервал 	
+				\vspace{\mfloatsep} % интервал
 				\begin{tabularx}{\linewidth}{Xl}
 					&УТВЕРЖДАЮ      \\
-					&\HeadTitle     \\			
+					&\HeadTitle     \\
 					&\underline{\hspace*{0.1\textheight}} \Head     \\
-					&<<\underline{\hspace*{0.05\textheight}}>> \underline{\hspace*{0.1\textheight}} \approveYear г.  \\  
+					&«\underline{\hspace*{0.05\textheight}}» \underline{\hspace*{0.1\textheight}} \thesisYear~г.  \\
 				\end{tabularx}
-				\vspace{\mfloatsep} % интервал 	
+				\vspace{\mfloatsep} % интервал
 				\end{minipage}
 
 \intervalS{\centering\bfseries%
 
 				ЗАДАНИЕ\\
-				на выполнение %с 2020 года 
+				на выполнение %с 2020 года
 				%по выполнению % до 2020 года
 				выпускной квалификационной работы
 
@@ -38,39 +38,46 @@
 \par}\intervalS%
 %%%%
 %%%% Конец оформления заголовка  %%%%
- 	
-	
-	
+
+
+
 \begin{enumerate}[1.]
-	\item Тема работы: {\expandafter \ulined <<\thesisTitle>>.}
+	\item Тема работы: {\expandafter \ulined <<Проектирование и реализация iOS"=при\-ложения как комплексного помощника для мусульман>>.}
 	%\item Тема работы (на английском языке): \uline{\thesisTitleEn.} % вероятно после 2021 года
-	\item Срок сдачи студентом законченной работы\footnote{Последний день преддипломной практики согласно учебному плану.}: \uline{\thesisDeadline.} 
-	\item Исходные данные по работе: \uline{анализ существующих исламских цифровых сервисов; тексты Корана для векторной базы знаний RAG; требования ГОСТ к оформлению ВКР.}% не забываем точку!
+	\item Срок сдачи студентом законченной работы: \uline{\thesisDeadline.}
+	\item Исходные данные по работе:
+	\begin{enumerate}[label=\theenumi\arabic*.]
+		\sloppy
+		\item Коран: переводы смыслов на русский язык [Электронный ресурс] // Quran.com: [официальный сайт]. "--- URL: \url{https://quran.com/ru} (дата обращения: 01.02.2026). "--- Режим доступа: свободный.
+		\item Apple Developer Documentation. Swift Programming Language [Электронный ресурс] // Apple Developer: [официальный сайт]. "--- URL: \url{https://developer.apple.com/documentation/swift}
+		\item Apple Developer Documentation. SwiftUI Framework [Электронный ресурс] // Apple Developer: [официальный сайт]. "--- URL: \url{https://developer.apple.com/documentation/swiftui}
+		\item PyTorch Documentation [Электронный ресурс] // PyTorch: [официальный сайт]. "--- URL: \url{https://pytorch.org/docs/stable/index.html}
+		\item Hugging Face Transformers Documentation [Электронный ресурс] // Hugging Face: [официальный сайт]. "--- URL: \url{https://huggingface.co/docs/transformers}
+		\item FastAPI Documentation [Электронный ресурс] // FastAPI: [официальный сайт]. "--- URL: \url{https://fastapi.tiangolo.com/}
+		\item Spring Framework Documentation [Электронный ресурс] // Spring: [официальный сайт]. "--- URL: \url{https://docs.spring.io/spring-framework/docs/current/reference/html/}
+	\end{enumerate}
 	%\printbibliographyTask % печать списка источников % КОММЕНТИРУЕМ ЕСЛИ НЕ ИСПОЛЬЗУЕТСЯ
-	% В СЛУЧАЕ, ЕСЛИ НЕ ИСПОЛЬЗУЕТСЯ МОЖНО ТАКЖЕ ЗАЙТИ В setup.tex и закомментировать \vspace{-0.28\curtextsize}
 	\item Содержание работы (перечень подлежащих разработке вопросов):
 	\begin{enumerate}[label=\theenumi\arabic*.]
-		\item Обзор литературы по теме ВКР.%не забываем точку
-		\item Исследование программных продуктов.%не забываем точку
-		\item Разработка метода/алгоритма/программы.%не забываем точку
-		\item Апробация разработанного метода/алгоритма/программы.%не забываем точку 
+		\item Анализ предметной области и обзор существующих решений для мусульманской аудитории.
+		\item Формулирование функциональных и нефункциональных требований к приложению.
+		\item Проектирование архитектуры системы (iOS-клиент, backend, RAG-пайплайн, БД).
+		\item Разработка и интеграция модулей приложения.
+		\item Тестирование работоспособности системы.
 	\end{enumerate}
-	\item Перечень графического материала (с указанием обязательных чертежей): 
+	\item Перечень графического материала (с указанием обязательных чертежей): \uline{Нет.}
+	\item Перечень используемых информационных технологий, в том числе программное обеспечение, облачные сервисы, базы данных и прочие сквозные цифровые технологии (при наличии):
 	\begin{enumerate}[label=\theenumi\arabic*.]
-		\item Схема работы метода/алгоритма.%не забываем точку
-		\item Архитектура разработанной программы/библиотеки.%не забываем точку
-	\end{enumerate}	
-		\item Перечень используемых информационных технологий, в том числе программное обеспечение, облачные сервисы, базы данных и прочие сквозные цифровые технологии (при наличии):
-		\begin{enumerate}[label=\theenumi\arabic*.]
-			\item СУБД Postgres/MySQL$\ldots$.%не забываем точку
-			\item Облачный сервис ХХХ.%не забываем точку
-		\end{enumerate}	
-		\item Консультанты по работе\footnote{Подпись консультанта по нормоконтролю пока не требуется. Назначается всем по умолчанию.}:
-		\begin{enumerate}[label=\theenumi\arabic*.] 
-		\item  \uline{\emakefirstuc{\ConsultantExtraDegree}, \ConsultantExtra.} % закомментировать при необходимости, идёт первый по порядку.
-		\item \uline{\emakefirstuc{\ConsultantNormDegree}, \ConsultantNorm{} (нормоконтроль).} %	Обязателен для всех студентов
+		\item СУБД PostgreSQL.
+		\item Облачный API-сервис OpenRouter (LLM-генерация).
+		\item Фреймворк FastAPI (Python).
+		\item Фреймворк Spring Boot (Java).
 	\end{enumerate}
-		\item Дата выдачи задания\footnote{Как правило не позднее 3 месяцев до ГИА (утверждение тем ВКР по университету) или строго не позже 30 дней до ГИА.}: \uline{\thesisStartDate.}
+	\item Консультанты по работе:
+	\begin{enumerate}[label=\theenumi\arabic*.]
+		\item \uline{\emakefirstuc{\ConsultantNormDegree}, \ConsultantNorm{} (нормоконтроль).}
+	\end{enumerate}
+	\item Дата выдачи задания: \uline{22.12.2025.}
 \end{enumerate}
 
 \intervalS%можно удалить пробел
@@ -80,14 +87,9 @@
 
 \intervalS%можно удалить пробел
 
-Консультант\footnote{В случае, если есть консультант, отличный от консультанта по нормоконтролю.}  \uline{\hspace*{0.1\textheight}\ConsultantExtra}
-
-
-\intervalS%можно удалить пробел
-
 %Консультант по нормоконтролю \uline{\hspace*{0.1\textheight} \ConsultantNorm}%ПОКА НЕ ТРЕБУЕТСЯ, Т.К. ОН У ВСЕХ ПО УМОЛЧАНИЮ
 
-Задание принял к исполнению \uline{\thesisStartDate}
+Задание принял к исполнению \uline{22.12.2025}
 
 \intervalS%можно удалить пробел
 

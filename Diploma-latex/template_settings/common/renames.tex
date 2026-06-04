@@ -9,7 +9,7 @@
 \newcommand{\Supervisor}{А.В.\,Сергеев} % И. О. Фамилия научного руководителя
 \newcommand{\SupervisorFull}{Сергеев Анатолий Васильевич} % Фамилия Имя Отчество научного руководителя
 \newcommand{\SupervisorVin}{А.В.\,Сергеева} % И. О. Фамилия научного руководителя  в винительном падеже (Кого? что? Руководителя ...)
-\newcommand{\SupervisorJob}{доцент} %
+\newcommand{\SupervisorJob}{к.т.н., доцент ВШПИ} %
 \newcommand{\SupervisorJobVin}{доцента} % в винительном падеже (Кого? что?  Програмиста ...)
 \newcommand{\SupervisorDegree}{} %
 \newcommand{\SupervisorTitle}{} % 
@@ -33,7 +33,7 @@
 \newcommand{\HeadApDep}{} % заменить на краткую аббревиатуру подразделения или оставить пустым, если утверждает руководитель ОП
 %%% Консультант по нормоконтролю
 \newcommand{\ConsultantNorm}{Е.Е.\,Андрианова} % И. О. Фамилия консультанта по нормоконтролю. ТОЛЬКО из числа ППС!
-\newcommand{\ConsultantNormDegree}{должность, степень} %   
+\newcommand{\ConsultantNormDegree}{Старший преподаватель ВШПИ} %
 %%% Первый консультант
 \newcommand{\ConsultantExtraFull}{Фамилия Имя Отчетство} % Фамилия Имя Отчетство дополнительного консультанта 
 \newcommand{\ConsultantExtra}{И.О.\,Фамилия} % И. О. Фамилия дополнительного консультанта 
@@ -63,7 +63,7 @@
 \newcommand{\thesisSpecialtyCode}{09.03.03}% код направления подготовки
 \newcommand{\thesisSpecialtyTitle}{Прикладная информатика} % наименование направления/специальности
 \newcommand{\thesisOPPostfix}{03} % последние цифры кода образовательной программы (после <<_>>)
-\newcommand{\thesisOPTitle}{Прикладная информатика}% наименование образовательной программы
+\newcommand{\thesisOPTitle}{Интеллектуальные инфокоммуникационные технологии}% наименование образовательной программы
 %%
 %%
 \newcommand{\institute}{
@@ -107,10 +107,26 @@
 %- область применения результатов ВКР;
 %- выводы.
 
-\newcommand{\abstractRu}{В выпускной квалификационной работе рассмотрены проектирование, разработка и тестирование многофункционального iOS-приложения для мусульман, объединяющего инструменты анализа халяльности продуктов, чат с искусственным интеллектом, модуль чтения Корана и систему расчета времени намаза. В работе проведен анализ существующих исламских цифровых сервисов и сформулированы функциональные и нефункциональные требования к системе. Разработана архитектура программного комплекса, включающая iOS-клиент на SwiftUI, backend-сервис на Spring Boot и отдельный LLM-сервис на FastAPI. Для формирования ответов AI-ассистента реализован retrieval-augmented generation (RAG) подход с использованием векторного поиска по текстам Корана. Реализован модуль анализа состава продуктов с использованием OCR и классификации ингредиентов по категориям халяль, харам и сомнительный. Проведено тестирование клиентской и серверной частей системы, а также оценка качества работы RAG-подсистемы. Результаты показали корректность работы основных модулей приложения и возможность применения разработанной системы в качестве комплексного цифрового помощника для мусульман.} % ВВЕДИТЕ текст аннотации по-русски
+\newcommand{\abstractRu}{%
+В выпускной квалификационной работе рассмотрены проектирование, разработка и тестирование многофункционального iOS-приложения для мусульман, объединяющего инструменты анализа халяльности продуктов, чат с искусственным интеллектом, модуль чтения Корана и систему расчета времени намаза.
+\texorpdfstring{\par}{}
+В работе проведен анализ существующих исламских цифровых сервисов и сформулированы функциональные и нефункциональные требования к системе. Разработана архитектура программного комплекса, включающая iOS-клиент на SwiftUI, backend-сервис на Spring Boot и отдельный LLM-сервис на FastAPI. Для формирования ответов AI-ассистента реализован retrieval-augmented generation (RAG) подход с использованием векторного поиска по текстам Корана.
+\texorpdfstring{\par}{}
+Реализован модуль анализа состава продуктов с использованием OCR и классификации ингредиентов по категориям «халяль», «харам» и «сомнительный». Выполнено проектирование REST API, базы данных PostgreSQL и механизма взаимодействия между сервисами.
+\texorpdfstring{\par}{}
+Проведено тестирование клиентской и серверной частей системы, а также оценка качества работы RAG-подсистемы и проверки состава продуктов. Результаты показали корректность работы основных модулей приложения и возможность применения разработанной системы в качестве комплексного цифрового помощника для мусульман.%
+} % ВВЕДИТЕ текст аннотации по-русски
 %%
 %%
-\newcommand{\abstractEn}{This thesis presents the design, development and testing of a multifunctional iOS application for Muslims that combines halal product analysis, an AI-based assistant, Quran reading functionality and prayer time calculations. The paper includes an analysis of existing Islamic digital services and defines functional and non-functional requirements for the system. A software architecture consisting of an iOS client developed with SwiftUI, a Spring Boot backend and a separate FastAPI-based LLM service was designed. A retrieval-augmented generation (RAG) approach with vector search over Quran texts was implemented for the AI assistant. A product ingredient analysis module based on OCR and ingredient classification into halal, haram and doubtful categories was implemented. Testing of the client, backend and LLM subsystems was carried out, including evaluation of the RAG pipeline and ingredient recognition quality. The results demonstrated the correctness of the implemented modules and the applicability of the developed system as a comprehensive digital assistant for Muslims.} % ВВЕДИТЕ текст аннотации по-английски
+\newcommand{\abstractEn}{%
+This thesis presents the design, development and testing of a multifunctional iOS application for Muslims that combines halal product analysis, an AI-based assistant, Quran reading functionality and prayer time calculations.
+\texorpdfstring{\par}{}
+The paper includes an analysis of existing Islamic digital services and defines functional and non-functional requirements for the system. A software architecture consisting of an iOS client developed with SwiftUI, a Spring Boot backend and a separate FastAPI-based LLM service was designed. A retrieval-augmented generation (RAG) approach with vector search over Quran texts was implemented for the AI assistant.
+\texorpdfstring{\par}{}
+A product ingredient analysis module based on OCR and ingredient classification into halal, haram and doubtful categories was implemented. REST API architecture, PostgreSQL database structure and service interaction mechanisms were also designed.
+\texorpdfstring{\par}{}
+Testing of the client, backend and LLM subsystems was carried out, including evaluation of the RAG pipeline and ingredient recognition quality. The results demonstrated the correctness of the implemented modules and the applicability of the developed system as a comprehensive digital assistant for Muslims.%
+} % ВВЕДИТЕ текст аннотации по-английски
 
 
 %%% РАЗДЕЛ ДЛЯ ОФОРМЛЕНИЯ ПРАКТИКИ

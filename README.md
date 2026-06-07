@@ -1,6 +1,6 @@
 # Halal AI
 
-Halal AI — это интеллектуальное мобильное приложение для iOS, которое помогает пользователям быстро получать ответы на вопросы, связанные с халяль-образом жизни. Система использует LLM (Large Language Models) с технологией RAG (Retrieval-Augmented Generation) для обработки запросов на естественном языке, обеспечивая точные и основанные на исламских источниках ответы.
+Halal AI — интеллектуальное мобильное приложение для iOS, помогающее мусульманам в повседневной жизни. Система использует LLM с технологией RAG (Retrieval-Augmented Generation) для точных ответов на основе исламских источников, а также включает модули расчёта времени намаза, чтения Корана, сканирования состава продуктов и поиска халяль-заведений.
 
 <img width="201" height="437" alt="image" src="https://github.com/user-attachments/assets/f5fcefad-118e-4fe1-8f9e-e89af1d11928" />
 <img width="201" height="437" alt="image" src="https://github.com/user-attachments/assets/a9d08325-574d-40cf-8ec4-679e15794b17" />
@@ -14,58 +14,52 @@ Halal AI — это интеллектуальное мобильное прил
 ### Компоненты системы
 
 * **iOS Client (SwiftUI)**
-  - Мобильное приложение для iOS
-  - Интерфейс для общения с AI-ассистентом
-  - Аутентификация пользователей
-  - Управление настройками (выбор модели, API ключи)
-  - Технологии: Swift, SwiftUI, Combine
+  - Мобильное приложение для iOS 17+
+  - AI-ассистент с поддержкой RAG по текстам Корана
+  - Расчёт времени намаза
+  - Чтение Корана с поддержкой всех сур и аятов
+  - Сканирование состава продуктов (халяль/харам/сомнительно)
+  - Поиск халяль-заведений на карте
+  - Система уведомлений о намазе (мазхаб, метод расчёта)
+  - Локализация (русский, английский)
+  - Технологии: Swift, SwiftUI, `@Observable`, Coordinator pattern
 
 * **Backend API (Java Spring Boot)**
-  - REST API для обработки запросов от iOS клиента
+  - REST API для iOS-клиента
   - Аутентификация и авторизация (JWT)
   - Маршрутизация запросов к LLM Service
   - Управление пользователями и сессиями
-  - Технологии: Java 17+, Spring Boot, Spring Security, Spring Data JPA
-
-* **Database (PostgreSQL)**
-  - Хранение данных пользователей (учетные записи, настройки)
-  - Хранение истории сессий и обратной связи
-  - Технологии: PostgreSQL, JPA/Hibernate
+  - Технологии: Java 17+, Spring Boot, Spring Security, Spring Data JPA, PostgreSQL
 
 * **LLM Service (Python FastAPI)**
-  - Микросервис для генерации ответов с использованием LLM
-  - **RAG Pipeline** (внутри LLM Service):
-    - Векторный поиск по базе знаний (аяты, хадисы, фетвы)
-    - Обогащение промпта релевантным контекстом
-    - Хранение векторных эмбеддингов в файловом хранилище
-  - Поддержка удаленных моделей через OpenRouter API (GPT-4, DeepSeek, Mimo и др.)
-  - Технологии: Python, FastAPI, PyTorch, Transformers, Sentence Transformers
+  - RAG Pipeline: семантический поиск по аятам Корана
+  - Векторные эмбеддинги: fine-tuned `mpnet-base-v2`
+  - Поддержка удалённых моделей через OpenRouter API (GPT-4, DeepSeek и др.)
+  - Технологии: Python, FastAPI, PyTorch, Sentence Transformers
 
-* **Vector Store (внутри LLM Service)**
-  - Файловое хранилище векторных эмбеддингов (`vector_store.pt`)
-  - Используется RAG Pipeline для семантического поиска
-  - Технологии: PyTorch тензоры, косинусное сходство
+* **Database (PostgreSQL)**
+  - Данные пользователей, история сессий
+  - Автоматический запуск через Docker Compose
 
-## Схема архитектуры
+### Схема архитектуры
 
-### Mermaid Diagram
 ```mermaid
 graph TB
     iOS[iOS Client<br/>SwiftUI] -->|REST API| Backend[Backend API<br/>Spring Boot]
     Backend -->|SQL/JPA| DB[(PostgreSQL<br/>Database)]
     Backend -->|REST API| LLM[LLM Service<br/>FastAPI]
-    
-    LLM --> RAG[RAG Pipeline<br/>внутри LLM Service]
-    RAG --> Vector[Vector Store<br/>SimpleVectorStore<br/>vector_store.pt]
+
+    LLM --> RAG[RAG Pipeline<br/>mpnet-base-v2 fine-tuned]
+    RAG --> Vector[Vector Store<br/>vector_store.pt]
     Vector -->|embeddings| RAG
-    
+
     RAG -->|enriched prompt| LLM
-    LLM -->|OpenRouter API| Remote[Remote LLM<br/>GPT-4, DeepSeek, Mimo, etc.]
+    LLM -->|OpenRouter API| Remote[Remote LLM<br/>GPT-4, DeepSeek, etc.]
 
     Remote -->|response| LLM
     LLM -->|ChatResponse| Backend
     Backend -->|JSON| iOS
-    
+
     style RAG fill:#e1f5ff
     style Vector fill:#fff4e1
     style LLM fill:#f0f0f0
@@ -74,49 +68,95 @@ graph TB
 ## Основные функции
 
 * **Чат с AI-ассистентом**
-  - Интеллектуальные ответы на вопросы об исламе
-  - Поддержка контекстной беседы с историей сообщений
-  - Использование RAG для точных ответов на основе исламских источников
+  - Ответы на вопросы об исламе на основе текстов Корана (RAG)
+  - Контекстная беседа с историей сообщений
+  - Поддержка кастомных моделей через OpenRouter
 
-* **Гибкая конфигурация моделей**
-  - Использование локальной модели по умолчанию (бесплатно)
-  - Возможность подключения удаленных моделей через OpenRouter
-  - Настройка параметров генерации (max_tokens, температура)
+* **Расчёт времени намаза**
+  - Астрономический алгоритм
+  - Поддержка мазхабов и методов расчёта
+  - Уведомления на 5 намазов × 7 дней
 
-* **Аутентификация и безопасность**
-  - Регистрация и вход пользователей
-  - JWT токены для авторизации
-  - Защита API endpoints
+* **Чтение Корана**
+  - Доступ ко всем сурам и аятам
+  - Настройка размера шрифта
+  - Запоминание последнего места чтения
 
-* **База знаний (RAG)**
-  - Векторный поиск по исламским источникам
-  - Автоматическое обогащение ответов релевантным контекстом
-  - Возможность добавления новых документов в базу знаний
+* **Сканер состава продуктов**
+  - Распознавание ингредиентов через камеру
+  - Классификация: халяль / харам / мушбух
+  - Поддержка E-кодов и названий на русском и английском
+
+* **Поиск халяль-заведений**
+  - Карта с ближайшими халяль-ресторанами и магазинами
+
+* **Гибкая конфигурация LLM**
+  - Модель по умолчанию (бесплатно)
+  - Подключение собственных моделей через OpenRouter API
 
 ## Структура проекта
 
 ```
 HalalAIMono/
-├── HalalAI-ios/              # iOS приложение
+├── HalalAI-ios/
 │   └── HalalAI/
-│       ├── App/             # Точка входа
-│       ├── Screens/         # Экраны приложения
-│       ├── Services/        # Сервисы для API
-│       └── Coordinators/    # Навигация
+│       ├── App/              # Точка входа, DI-контейнер
+│       ├── Features/         # Функциональные модули
+│       │   ├── Auth/         # Авторизация
+│       │   ├── Chat/         # AI-ассистент
+│       │   ├── Home/         # Главный экран, намаз
+│       │   ├── Prayer/       # Настройки намаза
+│       │   ├── Quran/        # Чтение Корана
+│       │   ├── Scanner/      # Сканер состава
+│       │   ├── HalalMap/     # Карта заведений
+│       │   └── Settings/     # Настройки приложения
+│       ├── Core/             # Сервисы, компоненты, локализация
+│       ├── Navigation/       # Coordinator-паттерн
+│       └── Resources/        # Ассеты, локализация (ru/en)
 │
 ├── HalalAI-backend/
-│   ├── HalalAI-backend-main/  # Spring Boot Backend
+│   ├── HalalAI-backend-main/ # Spring Boot Backend
 │   │   └── src/main/java/
-│   │       ├── controller/    # REST контроллеры
-│   │       ├── service/       # Бизнес-логика
-│   │       ├── repository/    # Репозитории JPA
-│   │       └── model/         # Модели данных
+│   │       ├── controller/   # REST контроллеры
+│   │       ├── service/      # Бизнес-логика
+│   │       ├── repository/   # Репозитории JPA
+│   │       └── model/        # Модели данных
 │   │
-│   └── LLM-service/          # Python LLM Service
-│       ├── main.py           # FastAPI приложение
-│       ├── services/         # Локальная LLM
-│       ├── rag/              # RAG Pipeline
-│       └── data/             # Vector Store
+│   ├── LLM-service/          # Python LLM Service
+│   │   ├── main.py           # FastAPI приложение
+│   │   ├── rag/              # RAG Pipeline
+│   │   ├── models/           # Векторные модели
+│   │   └── data/             # Vector Store
+│   │
+│   └── docker-compose.yml    # Полный стек
 │
+├── Diploma-latex/            # Текст ВКР (LaTeX, СПбПУ)
 └── README.md
 ```
+
+## Быстрый старт
+
+**Вся система (iOS + Backend + LLM Service):**
+```bash
+cd HalalAI-backend
+docker-compose up -d
+```
+
+Запустит:
+- PostgreSQL (БД)
+- LLM Service (FastAPI, порт 8001)
+- Spring Boot Backend (порт 8080)
+
+**iOS:**
+```bash
+open HalalAI-ios/HalalAI.xcodeproj
+```
+
+## Окружение
+
+| Компонент | Требования |
+|-----------|------------|
+| iOS | Xcode 26+, Swift 5.10+, iOS 17+ |
+| Backend | Java 17+, Maven |
+| LLM Service | Python 3.9+, pip |
+| БД | PostgreSQL 13+ (через Docker) |
